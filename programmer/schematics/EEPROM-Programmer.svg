@@ -1532,5 +1532,8 @@
         <path d="M 210 270 L 210 140 L 1130 140 L 1130 270" fill="none"
               stroke="#005fbf" stroke-width="2" stroke-miterlimit="10"
               pointer-events="none"/>
+        <path d="M 460 410 L 460 540 L 1090 540 L 1090 410" fill="none"
+              stroke="#ff7f00" stroke-width="2" stroke-miterlimit="10"
+              pointer-events="none"/>
     </g>
 </svg>
