@@ -1,11 +1,10 @@
-#define DATA     14
-#define SHIFT    10
-#define LATCH    16
+#define DATA        9
+#define SHIFT      10
+#define LATCH      16
 
-#define EEPROM_D0      2
-#define EEPROM_D7      9
+char data_pins[] = { 6, 7, 8, 15, 18, 19, 20, 21 };
 
-#define WRITE_EN    15
+#define WRITE_EN   14
 
 #include "SerialCommand.h"
 
@@ -37,6 +36,10 @@ void setup() {
   sCmd.addCommand("s", shift_cmd);
   sCmd.addCommand("set",  set_cmd);
   sCmd.setDefaultHandler(unrecognized_cmd);      // Handler for command that isn't matched  (says "What?")
+
+  for( char i=0; i<8; i++ ) {
+    pinMode(data_pins[i], OUTPUT);
+  }
 }
 
 void loop() {
