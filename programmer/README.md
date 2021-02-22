@@ -6,7 +6,7 @@
 - [Datasheets](#datasheets)
 - [References](#references)
 
-![](../programmer/schematics/EEPROM-Programmer.png)
+![](../programmer/schematics/EEPROM-Programmer.svg)
 
 # Introduction
 

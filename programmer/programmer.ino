@@ -17,24 +17,67 @@ void pulse(int pin) {
 }
 
 void setAddress(int address, bool outputEnable) {
+  //shiftOut(DATA, SHIFT, MSBFIRST, (address >> 8) | ( bank << 6 )  | (outputEnable ? 0x00 : 0x80));
   shiftOut(DATA, SHIFT, MSBFIRST, (address >> 8) | (outputEnable ? 0x00 : 0x80));
   shiftOut(DATA, SHIFT, MSBFIRST, address);
 
   pulse(LATCH);
 }
 
+byte readEEPROM(unsigned int address) {
+  // set data pin as input (we read)
+  for( char i=0; i<8; i++ ) {
+    pinMode(data_pins[i], INPUT);
+  }
+
+  setAddress(address, true); // oe=true aka, we read
+
+  byte data = 0;
+  for (int i = 7; i >= 0; i--) {
+    data = (data << 1) + digitalRead(data_pins[i]);
+  }
+  
+  return data;
+}
+
+void writeEEPROM(unsigned int address, byte data) {
+  // set data pin as input (we read)
+  for( char i=0; i<8; i++ ) {
+    pinMode(data_pins[i], OUTPUT);
+  }
+
+  setAddress(address, false); // oe=false aka, we will write
+
+  for (int i = 0; i <= 7; i++) {
+    digitalWrite(data_pins[i], data & 1);
+    data = data >> 1;
+  }  
+
+  digitalWrite(WRITE_EN, LOW);
+  delayMicroseconds(1);
+  digitalWrite(WRITE_EN, HIGH);
+  delay(10);
+}
+
+
 void setup() {
   pinMode(DATA, OUTPUT);
   pinMode(SHIFT, OUTPUT);
   pinMode(LATCH, OUTPUT);
 
-  digitalWrite(WRITE_EN, HIGH);
-  pinMode(WRITE_EN, OUTPUT);
+  digitalWrite(WRITE_EN, HIGH); // we first set HIGH (no write),
+  pinMode(WRITE_EN, OUTPUT);    // then we set as output
 
   Serial.begin(115200);
+  while(!Serial);
+  Serial.println("EEPROM Programmer Ready");
 
   sCmd.addCommand("s", shift_cmd);
   sCmd.addCommand("set",  set_cmd);
+  sCmd.addCommand("r",  read_cmd);
+  sCmd.addCommand("w",  write_cmd);
+  sCmd.addCommand("d",  dump_cmd);
+  sCmd.addCommand("erase",  erase_cmd);
   sCmd.setDefaultHandler(unrecognized_cmd);      // Handler for command that isn't matched  (says "What?")
 
   for( char i=0; i<8; i++ ) {
@@ -49,7 +92,7 @@ void loop() {
 void shift_cmd() {
   // s [0|1]
   // shift a digit through the shift registers
-  int aNumber = 0;
+  unsigned int aNumber = 0;
   char *arg;
 
   arg = sCmd.next();
@@ -73,7 +116,7 @@ void shift_cmd() {
 }
 
 void set_cmd() {
-  int addr = 0;
+  unsigned int addr = 0;
   int oe = 0;
 
   char *arg;
@@ -93,6 +136,103 @@ void set_cmd() {
   Serial.print(" ");
   Serial.println(oe);
   setAddress(addr, (oe == 0)?false:true);
+
+}
+
+void write_cmd() {
+  unsigned int addr = 0;
+  byte data = 0;
+
+  char *arg;
+
+  arg = sCmd.next();
+  if (arg != NULL) {
+    addr = atoi(arg);
+  }
+
+  arg = sCmd.next();
+  if (arg != NULL) {
+    data = (byte)(atoi(arg));
+  }
+
+  Serial.print("write addr ");
+  Serial.print(addr);
+  Serial.print(" ");
+  Serial.println(data);
+  writeEEPROM(addr, data);
+
+}
+
+void dump(unsigned int start, int pages) {
+  char buf[10];
+  unsigned int addr_end = start + 256*pages - 1;
+  //for(unsigned int a = 0; a<=32767; a++) {
+  for(unsigned int a = start; a<=addr_end ; a++) {
+    if( a % 256 == 0 ) {
+      Serial.println();
+    }
+    if( a % 16 == 0 ) {
+      // new line and print address
+      sprintf(buf, "%04x:  ", a);
+      Serial.print(buf);
+    }
+    if( a % 16 == 8 ) {
+      // middle of line
+      Serial.print("  ");
+    }
+    sprintf(buf, "%02x ", readEEPROM(a));
+    Serial.print(buf);
+
+    if( a % 16 == 15 ) {
+      // end of line
+      Serial.println();
+    }
+  }
+}
+
+void erase_cmd() {
+  Serial.println("Erasing");
+  for(unsigned int a = 0; a<1024 ; a++) {
+    if( a % 256 == 0 ) {
+      Serial.print(".");
+    }
+    writeEEPROM(a, 170);
+  }
+}
+
+void dump_cmd() {
+  unsigned int start = 0;
+  int pages = 1;
+
+  char *arg;
+
+  arg = sCmd.next();
+  if (arg != NULL) {
+    start = atoi(arg);
+  }
+
+  arg = sCmd.next();
+  if (arg != NULL) {
+    pages = atoi(arg);
+  }
+
+  dump(start, pages);
+
+}
+
+void read_cmd() {
+  unsigned int addr = 0;
+  char *arg;
+
+  arg = sCmd.next();
+  if (arg != NULL) {
+    addr = atoi(arg);
+  }
+
+  Serial.print("Read addr ");
+  Serial.print(addr);
+  Serial.print(" = ");
+  Serial.println(readEEPROM(addr));
 
 }
 

@@ -30,7 +30,7 @@ SerialCommand::SerialCommand()
   : commandList(NULL),
     commandCount(0),
     defaultHandler(NULL),
-    term('\n'),           // default terminator for commands, newline character
+    term('\r'),           // default terminator for commands, newline character
     last(NULL)
 {
   strcpy(delim, " "); // strtok_r needs a null-terminated string
