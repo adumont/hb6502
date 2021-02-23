@@ -4,6 +4,8 @@
 
 char data_pins[] = { 6, 7, 8, 15, 18, 19, 20, 21 };
 
+int data_pin_mode = 1234; // dummy value
+
 #define WRITE_EN   14
 
 #include "SerialCommand.h"
@@ -26,11 +28,11 @@ void setAddress(int address, bool outputEnable) {
 
 byte readEEPROM(unsigned int address) {
   // set data pin as input (we read)
-  for( char i=0; i<8; i++ ) {
-    pinMode(data_pins[i], INPUT);
-  }
+  setDataPinMode(INPUT);
 
   setAddress(address, true); // oe=true aka, we read
+
+  _delay_loop_1(1); // ~188ns @ 16MHz
 
   byte data = 0;
   for (int i = 7; i >= 0; i--) {
@@ -40,11 +42,19 @@ byte readEEPROM(unsigned int address) {
   return data;
 }
 
+void setDataPinMode(int mode) {
+  if(data_pin_mode == mode)
+    return;
+    
+  for( char i=0; i<8; i++ ) {
+    pinMode(data_pins[i], mode);
+  }
+  data_pin_mode = mode;
+}
+
 void writeEEPROM(unsigned int address, byte data) {
   // set data pin as input (we read)
-  for( char i=0; i<8; i++ ) {
-    pinMode(data_pins[i], OUTPUT);
-  }
+  setDataPinMode(OUTPUT);
 
   setAddress(address, false); // oe=false aka, we will write
 
@@ -55,12 +65,14 @@ void writeEEPROM(unsigned int address, byte data) {
 
   digitalWrite(WRITE_EN, LOW);
   delayMicroseconds(1);
+  //_delay_loop_1(1); // ~188ns @ 16MHz
   digitalWrite(WRITE_EN, HIGH);
   delay(10);
 }
 
 
 void setup() {
+  setDataPinMode(INPUT);
   pinMode(DATA, OUTPUT);
   pinMode(SHIFT, OUTPUT);
   pinMode(LATCH, OUTPUT);
@@ -79,10 +91,6 @@ void setup() {
   sCmd.addCommand("d",  dump_cmd);
   sCmd.addCommand("erase",  erase_cmd);
   sCmd.setDefaultHandler(unrecognized_cmd);      // Handler for command that isn't matched  (says "What?")
-
-  for( char i=0; i<8; i++ ) {
-    pinMode(data_pins[i], OUTPUT);
-  }
 }
 
 void loop() {
@@ -160,7 +168,6 @@ void write_cmd() {
   Serial.print(" ");
   Serial.println(data);
   writeEEPROM(addr, data);
-
 }
 
 void dump(unsigned int start, int pages) {
@@ -192,12 +199,16 @@ void dump(unsigned int start, int pages) {
 
 void erase_cmd() {
   Serial.println("Erasing");
-  for(unsigned int a = 0; a<1024 ; a++) {
+  for(unsigned int a = 0; a<32*1024 ; a++) {
     if( a % 256 == 0 ) {
       Serial.print(".");
     }
-    writeEEPROM(a, 170);
+    if( a!=0 && (a % (32*256)) == 0 ) {
+      Serial.println();
+    }
+    writeEEPROM(a, 255);
   }
+  Serial.println("done");
 }
 
 void dump_cmd() {
@@ -238,4 +249,21 @@ void read_cmd() {
 
 void unrecognized_cmd(const char *command) {
   Serial.println("What?");
+}
+
+// https://code.google.com/archive/p/arduino-xmodem/wikis/Usage.wiki
+
+int recvChar(int msDelay) {
+  int cnt = 0;
+  while(cnt < msDelay) {
+    if(Serial.available() > 0)
+      return Serial.read();
+    delay(1);
+    cnt++;
+  }
+  return -1;
+}
+
+void sendChar(char sym) {
+  Serial.write(sym);
 }
