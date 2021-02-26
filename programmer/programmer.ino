@@ -8,9 +8,9 @@ int data_pin_mode = 1234; // dummy value
 
 #define WRITE_EN   14
 
-#include "SerialCommand.h"
+#include "src/SerialCommand.h"
 
-SerialCommand sCmd;     // The demo SerialCommand object
+SerialCommand sCmd;
 
 void pulse(int pin) {
   digitalWrite(pin, LOW);
@@ -249,21 +249,4 @@ void read_cmd() {
 
 void unrecognized_cmd(const char *command) {
   Serial.println("What?");
-}
-
-// https://code.google.com/archive/p/arduino-xmodem/wikis/Usage.wiki
-
-int recvChar(int msDelay) {
-  int cnt = 0;
-  while(cnt < msDelay) {
-    if(Serial.available() > 0)
-      return Serial.read();
-    delay(1);
-    cnt++;
-  }
-  return -1;
-}
-
-void sendChar(char sym) {
-  Serial.write(sym);
 }
