@@ -932,7 +932,7 @@
                  stroke-width="2" pointer-events="none"/>
         <path d="M 690 270 L 690 260 L 580 260 L 580 270" fill="none"
               stroke="#000000" stroke-width="2" stroke-miterlimit="10"
-              pointer-events="none"/>
+              stroke-dasharray="2 2" pointer-events="none"/>
         <path d="M 730 270 L 730 240 L 522 240" fill="none" stroke="#0000ff"
               stroke-width="2" stroke-miterlimit="10" pointer-events="none"/>
         <ellipse cx="520" cy="240" rx="2" ry="2" fill="#0000ff" stroke="#0000ff"
@@ -1420,7 +1420,7 @@
                 AT28C256 32K x 8 EEPROM
             </text>
         </g>
-        <path d="M 460 270 L 460 220 L 820 220 L 820 560 L 1130 560 L 1130 410"
+        <path d="M 460 270 L 460 220 L 400 220 L 400 560 L 1130 560 L 1130 410"
               fill="none" stroke="#ff7f00" stroke-width="2"
               stroke-miterlimit="10" pointer-events="none"/>
         <path d="M 1110 410 L 1110 550 L 440 550 L 440 410" fill="none"
@@ -1462,10 +1462,6 @@
         <path d="M 750 410 L 750 430 L 950 430 L 950 410" fill="none"
               stroke="#ff7f00" stroke-width="2" stroke-miterlimit="10"
               pointer-events="none"/>
-        <path d="M 770 410 L 770 420 L 870 420 L 870 200 L 1070 200 L 1070 270"
-              fill="none" stroke="#000000" stroke-width="2"
-              stroke-miterlimit="10" stroke-dasharray="2 2"
-              pointer-events="none"/>
         <path d="M 950 270 L 950 92" fill="none" stroke="#ff0000"
               stroke-width="2" stroke-miterlimit="10" pointer-events="none"/>
         <ellipse cx="950" cy="90" rx="2" ry="2" fill="#ff0000" stroke="#ff0000"
@@ -1474,18 +1470,14 @@
               stroke-width="2" stroke-miterlimit="10" pointer-events="none"/>
         <ellipse cx="1210" cy="630" rx="2" ry="2" fill="#000000"
                  stroke="#000000" stroke-width="2" pointer-events="none"/>
-        <path d="M 1110 270 L 1110 82" fill="none" stroke="#000000"
-              stroke-width="2" stroke-miterlimit="10" pointer-events="none"/>
-        <ellipse cx="1110" cy="80" rx="2" ry="2" fill="#000000" stroke="#000000"
-                 stroke-width="2" pointer-events="none"/>
-        <rect x="1030" y="0" width="260" height="120" fill="transparent"
+        <rect x="1030" y="0" width="260" height="60" fill="transparent"
               stroke="transparent" pointer-events="none"/>
         <g>
             <foreignObject style="overflow: visible; text-align: left;"
                            pointer-events="none" width="100%" height="100%">
                 <div xmlns="http://www.w3.org/1999/xhtml"
                      style="display: flex; align-items: unsafe flex-start; justify-content: unsafe flex-start; width: 258px; height: 1px; padding-top: 7px; margin-left: 1032px;">
-                    <div style="box-sizing: border-box; font-size: 0; text-align: left; max-height: 111px; overflow: hidden; ">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: left; max-height: 51px; overflow: hidden; ">
                         <div style="display: inline-block; font-size: 12px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
                             <p style="text-align: right ; margin: 0px">
                                 <font style="font-size: 2em">
@@ -1506,7 +1498,7 @@
               fill="none" stroke="#003f7f" stroke-width="2"
               stroke-miterlimit="10" pointer-events="none"/>
         <path d="M 970 270 L 970 190 L 310 190 L 310 270" fill="none"
-              stroke="#7f7f00" stroke-width="2" stroke-miterlimit="10"
+              stroke="#bf5f00" stroke-width="2" stroke-miterlimit="10"
               pointer-events="none"/>
         <path d="M 330 410 L 330 570 L 1190 570 L 1190 410" fill="none"
               stroke="#005fbf" stroke-width="2" stroke-miterlimit="10"
@@ -1535,5 +1527,251 @@
         <path d="M 460 410 L 460 540 L 1090 540 L 1090 410" fill="none"
               stroke="#ff7f00" stroke-width="2" stroke-miterlimit="10"
               pointer-events="none"/>
+        <path d="M 270 410 L 270 600 L 890 600 L 890 120 L 1110 120 L 1110 270"
+              fill="none" stroke="#000000" stroke-width="2"
+              stroke-miterlimit="10" pointer-events="none"/>
+        <path d="M 1070 270 L 1070 130 L 910 130 L 910 610 L 250 610 L 250 410"
+              fill="none" stroke="#000000" stroke-width="2"
+              stroke-miterlimit="10" pointer-events="none"/>
+        <rect x="280" y="430" width="20" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 18px; height: 1px; padding-top: 437px; margin-left: 282px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    D0
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="300" y="430" width="20" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 18px; height: 1px; padding-top: 437px; margin-left: 302px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    D1
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="320" y="430" width="20" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 18px; height: 1px; padding-top: 437px; margin-left: 322px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    D2
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="350" y="410" width="30" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 28px; height: 1px; padding-top: 417px; margin-left: 352px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    SER
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="250" y="470" width="30" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 28px; height: 1px; padding-top: 477px; margin-left: 252px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    CE#
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="230" y="450" width="30" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 28px; height: 1px; padding-top: 457px; margin-left: 232px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    OE#
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="310" y="190" width="30" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 28px; height: 1px; padding-top: 197px; margin-left: 312px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    WE#
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="280" y="240" width="20" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 18px; height: 1px; padding-top: 247px; margin-left: 282px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    D3
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="260" y="240" width="20" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 18px; height: 1px; padding-top: 247px; margin-left: 262px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    D4
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="240" y="240" width="20" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 18px; height: 1px; padding-top: 247px; margin-left: 242px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    D5
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="220" y="240" width="20" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 18px; height: 1px; padding-top: 247px; margin-left: 222px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    D6
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
+        <rect x="200" y="240" width="20" height="30" fill="transparent"
+              stroke="transparent" pointer-events="none"/>
+        <g>
+            <foreignObject style="overflow: visible; text-align: left;"
+                           pointer-events="none" width="100%" height="100%">
+                <div xmlns="http://www.w3.org/1999/xhtml"
+                     style="display: flex; align-items: unsafe flex-start; justify-content: unsafe center; width: 18px; height: 1px; padding-top: 247px; margin-left: 202px;">
+                    <div style="box-sizing: border-box; font-size: 0; text-align: center; max-height: 21px; overflow: hidden; ">
+                        <div style="display: inline-block; font-size: 8px; font-family: Arial,Helvetica; color: #000; line-height: 1.2; pointer-events: none; white-space: normal; word-wrap: normal; ">
+                            <p style="margin: 0px">
+                                <span style="font-size: 12px">
+                                    D7
+                                </span>
+                                <br/>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </foreignObject>
+        </g>
     </g>
 </svg>
