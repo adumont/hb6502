@@ -76,9 +76,8 @@ void pulse(int pin) {
   digitalWrite(pin, LOW);
 }
 
-void setAddress(uint32_t address, bool outputEnable) {
-  //shiftOut(DATA, SHIFT, MSBFIRST, (address >> 8) | ( bank << 6 )  | (outputEnable ? 0x00 : 0x80));
-  shiftOut(DATA, SHIFT, MSBFIRST, (address >> 8) | (outputEnable ? 0x00 : 0x80));
+void setAddress(uint32_t address) {
+  shiftOut(DATA, SHIFT, MSBFIRST, address >> 8);
   shiftOut(DATA, SHIFT, MSBFIRST, address);
 
   pulse(LATCH);
@@ -108,7 +107,7 @@ byte readEEPROM(uint32_t address) {
   // set data pin as input (we read)
   setDataBusMode(INPUT);
 
-  setAddress(address, true); // oe=true aka, we read
+  setAddress(address); // oe=true aka, we read
 
   CE_LOW;
   _delay_loop_1(1);
@@ -146,7 +145,7 @@ void writeEEPROM(uint32_t address, byte data) {
   // set data pin as input (we read)
   setDataBusMode(OUTPUT);
 
-  setAddress(address, false);
+  setAddress(address);
   OE_HIGH;
   _delay_loop_1(1);
   CE_LOW;
@@ -234,24 +233,15 @@ void set_cmd() {
   Serial.print("set addr ");
   sprintf(buf, "%04x:  ", addr);
   Serial.println(buf);
-  setAddress(addr,oe);
+  setAddress(addr);
 }
 
 void write_cmd() {
-  uint32_t addr = parse_cmd_hex32(0);
-  byte data = (byte)(parse_cmd_hex32(0));
-
-  Serial.println(addr);
-  Serial.println(data);
+  uint16_t addr = parse_cmd_hex32(0);
+  uint8_t  data = parse_cmd_hex32(0);
 
   char buf[256];
-  sprintf(buf, "write addr %04x: %04x", addr, data);
-  Serial.println(buf);
-  sprintf(buf, "write addr %04x: %04x", data, addr );
-  Serial.println(buf);
-  sprintf(buf, "write addr %02x: %02x", addr, data);
-  Serial.println(buf);
-  sprintf(buf, "write addr %02x: %02x", data, addr );
+  sprintf(buf, "write addr %04x: %02x", addr, data);
   Serial.println(buf);
   writeEEPROM(addr, data);
 }
@@ -391,9 +381,9 @@ void test_cmd() {
 
   Serial.println("Pin 1 (A14)");
   while(Serial.read()!='n') {
-    setAddress(1<<14, 0);
+    setAddress(1<<14);
     delay(250);
-    setAddress(0, 0);
+    setAddress(0);
     delay(250);
   }
 
@@ -426,7 +416,7 @@ void test_cmd() {
   for(char i = 0; i<15; i++) {
     d=1<<i;
 
-    setAddress(d, 0);
+    setAddress(d);
 
     sprintf(buf, "  address bit %d is 1 : %d", i, d);
     Serial.println(buf);
@@ -438,7 +428,7 @@ void test_cmd() {
   for(char i = 0; i<15; i++) {
     d=~(1<<i);
 
-    setAddress(d, 0);
+    setAddress(d);
 
     sprintf(buf, "  address bit %d is 0 : %d", i, d);
     Serial.println(buf);
