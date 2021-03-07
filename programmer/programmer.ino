@@ -81,7 +81,7 @@ void pulse(int pin) {
   digitalWrite(pin, LOW);
 }
 
-void set_address(uint32_t address) {
+void set_address(uint16_t address) {
   shiftOut(DATA, SHIFT, MSBFIRST, address >> 8);
   shiftOut(DATA, SHIFT, MSBFIRST, address);
 
@@ -124,7 +124,7 @@ void write_data_bus(byte data) {
                               | ( BITN(data, 7) << 4);
 }
 
-uint8_t read_eeprom_byte(uint32_t address) {
+uint8_t read_eeprom_byte(uint16_t address) {
   // set data pin as input (we read)
   data_bus_mode(INPUT);
 
@@ -144,13 +144,13 @@ uint8_t read_eeprom_byte(uint32_t address) {
   return data;
 }
 
-void write_eeprom_byte(uint32_t address, byte data) {
+void write_eeprom_byte(uint16_t address, byte data) {
   // set data pin as input (we read)
   OE_HIGH;
   WE_HIGH;
 
   set_address(address);
-  
+
   data_bus_mode(OUTPUT);
 
   write_data_bus(data);
@@ -169,6 +169,43 @@ void write_eeprom_byte(uint32_t address, byte data) {
 
   //delay(10);
   while(data != read_data_bus()); // DATA polling, faster then waiting 10ms
+
+  CE_HIGH;
+  OE_HIGH;
+}
+
+void test_write_eeprom_page(uint16_t base) {
+  //uint16_t base = 0;
+  uint8_t  data;
+  // set data pin as input (we read)
+  OE_HIGH;
+  WE_HIGH;
+
+  data_bus_mode(OUTPUT);
+
+  for(uint16_t address = base ; address<base+64; address++) {
+    set_address(address);
+
+    data = 255-address;
+    write_data_bus(data);
+    delayMicroseconds(1);
+
+    CE_LOW;
+    WE_LOW;
+    delayMicroseconds(1);
+    CE_HIGH;
+    WE_HIGH;
+
+  }
+
+  // DATA polling on last write
+  data_bus_mode(INPUT);
+
+  CE_LOW;
+  OE_LOW;
+
+  //delay(10);
+  while(data != read_data_bus()); 
 
   CE_HIGH;
   OE_HIGH;
@@ -193,17 +230,22 @@ void setup() {
   while(!Serial);
   Serial.println("EEPROM Programmer Ready");
 
-  // uint32_t m1 = millis();
+  uint32_t m1 = millis();
 
   // for(int i = 0; i<256; i++){
   //   write_eeprom_byte(i, i);
   // }
 
-  // uint32_t m2 = millis();
+  test_write_eeprom_page(0);
+  test_write_eeprom_page(64);
+  test_write_eeprom_page(64*2);
+  test_write_eeprom_page(64*3);
 
-  // Serial.println(m2-m1);
+  uint32_t m2 = millis();
 
-  // dump(0,1);
+  Serial.println(m2-m1);
+
+  dump(0,1);
 
   sCmd.addCommand("s", shift_cmd);  // shift a byte into the shift register and latch it
   sCmd.addCommand("set",  set_cmd); // 
@@ -247,7 +289,7 @@ void shift_cmd() {
 
 // set address to arg (in hex)
 void set_cmd() {
-  uint32_t addr = parse_cmd_hex32(0);
+  uint16_t addr = parse_cmd_hex32(0);
   bool oe = 0;
 
   char buf[10];
@@ -314,8 +356,8 @@ void erase_cmd() {
 }
 
 void dump_cmd() {
-  uint32_t start = parse_cmd_hex32(0);
-  int pages = parse_cmd_int(0);
+  uint16_t start = parse_cmd_hex32(0);
+  int pages = parse_cmd_int(1);
 
   dump(start, pages);
 
@@ -323,10 +365,10 @@ void dump_cmd() {
 
 // binary dump
 void bdump_cmd() {
-  uint32_t start_addr = parse_cmd_hex32(0);
-  uint32_t end_addr = parse_cmd_hex32(0);
+  uint16_t start_addr = parse_cmd_hex32(0);
+  uint16_t end_addr = parse_cmd_hex32(0);
 
-  for(uint32_t i = start_addr; i<=end_addr; i++) {
+  for(uint16_t i = start_addr; i<=end_addr; i++) {
     Serial.write( read_eeprom_byte(i) );
   }
 
@@ -343,7 +385,7 @@ int read_serial_byte(void)
   return Serial.read();
 }
 
-uint32_t parse_cmd_hex32(uint32_t defaultValue) {
+uint16_t parse_cmd_hex32(uint16_t defaultValue) {
   char *arg;
 
   arg = sCmd.next();
@@ -354,7 +396,7 @@ uint32_t parse_cmd_hex32(uint32_t defaultValue) {
   }
 }
 
-uint32_t parse_cmd_int(uint32_t defaultValue) {
+uint16_t parse_cmd_int(uint16_t defaultValue) {
   char *arg;
 
   arg = sCmd.next();
@@ -367,13 +409,13 @@ uint32_t parse_cmd_int(uint32_t defaultValue) {
 
 // flash to eeprom from binary feed
 void bflash_cmd() {
-  uint32_t start_addr = parse_cmd_hex32(0);
-  uint32_t end_addr = parse_cmd_hex32(0);
+  uint16_t start_addr = parse_cmd_hex32(0);
+  uint16_t end_addr = parse_cmd_hex32(0);
 
   int b;
 
   Serial.println("Receiving bytes");
-  for(uint32_t i = start_addr; i<=end_addr; i++) {
+  for(uint16_t i = start_addr; i<=end_addr; i++) {
     b = read_serial_byte();
     if(b==-1) {
       Serial.println("ERROR: timeout getting data");
