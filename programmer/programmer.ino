@@ -15,6 +15,11 @@
  *   WE#  PORTB, bit 3   Arduino pin 14 (miso)
  *   OE#  PORTD, bit 4   Arduino pin  4 (digital  4)
  *   CE#  PORTC, bit 6   Arduino pin  5 (digital  5)
+ * 
+ * Shift Registers Pins
+ *  DATA  PORTB, bit 5   Arduino pin  9 (digital  9)
+ *  SHIFT PORTB, bit 6   Arduino pin 10 (digital 10)
+ *  LATCH PORTB, bit 2   Arduino pin 16 (mosi)
  */
 
 
@@ -76,61 +81,39 @@ void pulse(int pin) {
   digitalWrite(pin, LOW);
 }
 
-void setAddress(uint32_t address) {
+void set_address(uint32_t address) {
   shiftOut(DATA, SHIFT, MSBFIRST, address >> 8);
   shiftOut(DATA, SHIFT, MSBFIRST, address);
 
   pulse(LATCH);
 }
 
-void setDataBusMode(int mode) {
+void data_bus_mode(uint8_t mode) {
   if(data_pin_mode == mode)
     return;
     
-  for( char i=0; i<8; i++ ) {
+  for( uint8_t i=0; i<8; i++ ) {
     pinMode(data_pins[i], mode);
   }
   data_pin_mode = mode;
 }
 
-byte readDATA() {
-  setDataBusMode(INPUT);
+byte read_data_bus() {
+  data_bus_mode(INPUT);
 
-  byte data = 0;
-  for (int i = 7; i >= 0; i--) {
-    data = (data << 1) + digitalRead(data_pins[i]);
-  }
-  return data;  
+  return BITN(PINF,4) << 7 |
+         BITN(PINF,5) << 6 |
+         BITN(PINF,6) << 5 |
+         BITN(PINF,7) << 4 |
+         BITN(PINB,1) << 3 |
+         BITN(PINB,4) << 2 |
+         BITN(PINE,6) << 1 |
+         BITN(PIND,7) ;
 }
 
-byte readEEPROM(uint32_t address) {
-  // set data pin as input (we read)
-  setDataBusMode(INPUT);
+void write_data_bus(byte data) {
+  data_bus_mode(OUTPUT);
 
-  setAddress(address); // oe=true aka, we read
-
-  CE_LOW;
-  _delay_loop_1(1);
-  OE_LOW;
-  _delay_loop_1(1);
-
-  uint8_t data = readDATA();
-
-  OE_HIGH;
-  _delay_loop_1(1);
-  CE_HIGH;
-  _delay_loop_1(1);
-
-  return data;
-}
-
-void setData(byte data) {
-  setDataBusMode(OUTPUT);
-
-  // for (int i = 0; i <= 7; i++) {
-  //   digitalWrite(data_pins[i], data & 1);
-  //   data = data >> 1;
-  // }
   PORTD = (PORTD & B01111111) | ( BITN(data, 0) << 7); // put data bit 0 into port D bit 7
   PORTE = (PORTE & B10111111) | ( BITN(data, 1) << 6);
   PORTB = (PORTB & B11101101) | ( BITN(data, 2) << 4) 
@@ -141,32 +124,58 @@ void setData(byte data) {
                               | ( BITN(data, 7) << 4);
 }
 
-void writeEEPROM(uint32_t address, byte data) {
+uint8_t read_eeprom_byte(uint32_t address) {
   // set data pin as input (we read)
-  setDataBusMode(OUTPUT);
+  data_bus_mode(INPUT);
 
-  setAddress(address);
-  OE_HIGH;
-  _delay_loop_1(1);
+  set_address(address);
+
   CE_LOW;
-  
-  setData(data);
+  OE_LOW;
 
-  _delay_loop_1(1);
-  WE_LOW;
-  _delay_loop_1(1);
+  // _delay_loop_1(1);
+  delayMicroseconds(1);
+
+  uint8_t data = read_data_bus();
+
+  OE_HIGH;
+  CE_HIGH;
+
+  return data;
+}
+
+void write_eeprom_byte(uint32_t address, byte data) {
+  // set data pin as input (we read)
+  OE_HIGH;
   WE_HIGH;
-  _delay_loop_1(1);
+
+  set_address(address);
+  
+  data_bus_mode(OUTPUT);
+
+  write_data_bus(data);
+
+  CE_LOW;
+
+  WE_LOW;
+
+  delayMicroseconds(1);
+
+  WE_HIGH;
+
+  data_bus_mode(INPUT);
+
+  OE_LOW;
+
+  //delay(10);
+  while(data != read_data_bus()); // DATA polling, faster then waiting 10ms
 
   CE_HIGH;
   OE_HIGH;
-  _delay_loop_1(1);
-
-  delay(10);
 }
 
 void setup() {
-  setDataBusMode(INPUT);
+  data_bus_mode(INPUT);
   pinMode(DATA, OUTPUT);
   pinMode(SHIFT, OUTPUT);
   pinMode(LATCH, OUTPUT);
@@ -183,6 +192,18 @@ void setup() {
   Serial.begin(115200);
   while(!Serial);
   Serial.println("EEPROM Programmer Ready");
+
+  // uint32_t m1 = millis();
+
+  // for(int i = 0; i<256; i++){
+  //   write_eeprom_byte(i, i);
+  // }
+
+  // uint32_t m2 = millis();
+
+  // Serial.println(m2-m1);
+
+  // dump(0,1);
 
   sCmd.addCommand("s", shift_cmd);  // shift a byte into the shift register and latch it
   sCmd.addCommand("set",  set_cmd); // 
@@ -233,17 +254,22 @@ void set_cmd() {
   Serial.print("set addr ");
   sprintf(buf, "%04x:  ", addr);
   Serial.println(buf);
-  setAddress(addr);
+  set_address(addr);
 }
 
 void write_cmd() {
   uint16_t addr = parse_cmd_hex32(0);
   uint8_t  data = parse_cmd_hex32(0);
 
+  write_eeprom_byte(addr, data);
+}
+
+void read_cmd() {
+  uint16_t addr = parse_cmd_hex32(0);
+
   char buf[256];
-  sprintf(buf, "write addr %04x: %02x", addr, data);
+  sprintf(buf, "%04x: %02x", addr, read_eeprom_byte(addr));
   Serial.println(buf);
-  writeEEPROM(addr, data);
 }
 
 void dump(unsigned int start, int pages) {
@@ -263,7 +289,7 @@ void dump(unsigned int start, int pages) {
       // middle of line
       Serial.print("  ");
     }
-    sprintf(buf, "%02x ", readEEPROM(a));
+    sprintf(buf, "%02x ", read_eeprom_byte(a));
     Serial.print(buf);
 
     if( a % 16 == 15 ) {
@@ -282,7 +308,7 @@ void erase_cmd() {
     if( a!=0 && (a % (32*256)) == 0 ) {
       Serial.println();
     }
-    writeEEPROM(a, 255);
+    write_eeprom_byte(a, 255);
   }
   Serial.println("done");
 }
@@ -301,7 +327,7 @@ void bdump_cmd() {
   uint32_t end_addr = parse_cmd_hex32(0);
 
   for(uint32_t i = start_addr; i<=end_addr; i++) {
-    Serial.write( readEEPROM(i) );
+    Serial.write( read_eeprom_byte(i) );
   }
 
 }
@@ -353,19 +379,9 @@ void bflash_cmd() {
       Serial.println("ERROR: timeout getting data");
       return;
     }
-    writeEEPROM(i, b);
+    write_eeprom_byte(i, b);
   }
   Serial.println("Done");
-
-}
-
-void read_cmd() {
-  uint32_t addr = parse_cmd_hex32(0);
-
-  Serial.print("Read addr ");
-  Serial.print(addr);
-  Serial.print(" = ");
-  Serial.println(readEEPROM(addr));
 
 }
 
@@ -381,9 +397,9 @@ void test_cmd() {
 
   Serial.println("Pin 1 (A14)");
   while(Serial.read()!='n') {
-    setAddress(1<<14);
+    set_address(1<<14);
     delay(250);
-    setAddress(0);
+    set_address(0);
     delay(250);
   }
 
@@ -416,7 +432,7 @@ void test_cmd() {
   for(char i = 0; i<15; i++) {
     d=1<<i;
 
-    setAddress(d);
+    set_address(d);
 
     sprintf(buf, "  address bit %d is 1 : %d", i, d);
     Serial.println(buf);
@@ -428,7 +444,7 @@ void test_cmd() {
   for(char i = 0; i<15; i++) {
     d=~(1<<i);
 
-    setAddress(d);
+    set_address(d);
 
     sprintf(buf, "  address bit %d is 0 : %d", i, d);
     Serial.println(buf);
@@ -440,7 +456,7 @@ void test_cmd() {
   for(char i = 0; i<8; i++) {
     d=1<<i;
 
-    setData(d);
+    write_data_bus(d);
 
     sprintf(buf, "  data bit %d is 1 : %d", i, d);
     Serial.println(buf);
@@ -452,7 +468,7 @@ void test_cmd() {
   for(char i = 0; i<8; i++) {
     d=~(1<<i);
 
-    setData(d);
+    write_data_bus(d);
 
     sprintf(buf, "data bit %d is 0 : %d", i, d);
     Serial.println(buf);
