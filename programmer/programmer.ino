@@ -144,6 +144,36 @@ uint8_t read_eeprom_byte(uint16_t address) {
   return data;
 }
 
+void wait_write_completed(uint8_t data) {
+  data_bus_mode(INPUT);
+
+  uint8_t b1, b2; // for D6
+
+  while(1) {
+    CE_HIGH;
+    OE_HIGH;
+    delayMicroseconds(1);
+    CE_LOW;
+    OE_LOW;
+    delayMicroseconds(1);
+    b1 = read_data_bus();
+
+    CE_HIGH;
+    OE_HIGH;
+    delayMicroseconds(1);
+    CE_LOW;
+    OE_LOW;
+    delayMicroseconds(1);
+    b2 = read_data_bus();
+
+    if( b1 == b2 && b2 == data ) {
+      break;
+    }
+  }
+  CE_HIGH;
+  OE_HIGH;  
+}
+
 void write_eeprom_byte(uint16_t address, byte data) {
   // set data pin as input (we read)
   OE_HIGH;
@@ -163,31 +193,23 @@ void write_eeprom_byte(uint16_t address, byte data) {
 
   WE_HIGH;
 
-  data_bus_mode(INPUT);
-
-  OE_LOW;
-
-  //delay(10);
-  while(data != read_data_bus()); // DATA polling, faster then waiting 10ms
+  wait_write_completed(data);
 
   CE_HIGH;
   OE_HIGH;
 }
 
-void test_write_eeprom_page(uint16_t base) {
-  //uint16_t base = 0;
-  uint8_t  data;
+void write_eeprom_page(uint16_t base, uint8_t page[], uint8_t len) {
   // set data pin as input (we read)
   OE_HIGH;
   WE_HIGH;
 
   data_bus_mode(OUTPUT);
 
-  for(uint16_t address = base ; address<base+64; address++) {
-    set_address(address);
+  for(uint8_t offset = 0 ; offset<len; offset++) {
+    set_address(base + offset);
 
-    data = 255-address;
-    write_data_bus(data);
+    write_data_bus(page[offset]);
     delayMicroseconds(1);
 
     CE_LOW;
@@ -198,14 +220,11 @@ void test_write_eeprom_page(uint16_t base) {
 
   }
 
-  // DATA polling on last write
-  data_bus_mode(INPUT);
+  uint8_t data = page[len-1]; // last byte to be written
 
-  CE_LOW;
-  OE_LOW;
+  WE_HIGH;
 
-  //delay(10);
-  while(data != read_data_bus()); 
+  wait_write_completed(data);
 
   CE_HIGH;
   OE_HIGH;
@@ -230,22 +249,28 @@ void setup() {
   while(!Serial);
   Serial.println("EEPROM Programmer Ready");
 
-  uint32_t m1 = millis();
-
-  // for(int i = 0; i<256; i++){
-  //   write_eeprom_byte(i, i);
+  // // fill a dummy 64B page with data
+  // uint8_t page[64];
+  // for(uint8_t i=0;i<64;i++){
+  //   page[i]=i;
   // }
 
-  test_write_eeprom_page(0);
-  test_write_eeprom_page(64);
-  test_write_eeprom_page(64*2);
-  test_write_eeprom_page(64*3);
+  // uint32_t m1 = millis();
 
-  uint32_t m2 = millis();
+  // // for(int i = 0; i<256; i++){
+  // //   write_eeprom_byte(i, 170);
+  // // }
 
-  Serial.println(m2-m1);
+  // write_eeprom_page(  0, page, 64);
+  // write_eeprom_page( 64, page, 64);
+  // write_eeprom_page(128, page, 64);
+  // write_eeprom_page(192, page, 64);
 
-  dump(0,1);
+  // uint32_t m2 = millis();
+
+  // Serial.println(m2-m1);
+
+  // dump(0,1);
 
   sCmd.addCommand("s", shift_cmd);  // shift a byte into the shift register and latch it
   sCmd.addCommand("set",  set_cmd); // 
@@ -254,6 +279,7 @@ void setup() {
   sCmd.addCommand("d",  dump_cmd);
   sCmd.addCommand("erase", erase_cmd);
   sCmd.addCommand("test",  test_cmd);
+  sCmd.addCommand("put", bflash_cmd);
   sCmd.setDefaultHandler(unrecognized_cmd);      // Handler for command that isn't matched  (says "What?")
 }
 
@@ -342,15 +368,18 @@ void dump(unsigned int start, int pages) {
 }
 
 void erase_cmd() {
-  Serial.println("Erasing");
-  for(unsigned int a = 0; a<32*1024 ; a++) {
-    if( a % 256 == 0 ) {
-      Serial.print(".");
-    }
-    if( a!=0 && (a % (32*256)) == 0 ) {
-      Serial.println();
-    }
-    write_eeprom_byte(a, 255);
+  uint8_t data = parse_cmd_hex32(255);
+
+  // fill a dummy 64B page with data
+  uint8_t page[64];
+  for(uint8_t i=0;i<64;i++){
+    page[i]=data;
+  }
+
+  Serial.print("Erasing ");
+  for(uint16_t a = 0; a<32*1024 ; a+=64) {
+    write_eeprom_page(a, page, 64);
+    Serial.print(".");
   }
   Serial.println("done");
 }
@@ -405,25 +434,54 @@ uint16_t parse_cmd_int(uint16_t defaultValue) {
   } else {
     return defaultValue;
   }
+
 }
 
+// PUT ADDR (hex) LENGTH (dec)
 // flash to eeprom from binary feed
 void bflash_cmd() {
   uint16_t start_addr = parse_cmd_hex32(0);
-  uint16_t end_addr = parse_cmd_hex32(0);
+  uint16_t len = parse_cmd_int(0);
 
+  uint16_t page_start, block_len;
+
+  uint16_t end_addr = start_addr + len - 1;
+
+  uint8_t page[64]; // byte array to hold a page
+
+  uint8_t d = start_addr % 64;
   int b;
 
-  Serial.println("Receiving bytes");
-  for(uint16_t i = start_addr; i<=end_addr; i++) {
-    b = read_serial_byte();
-    if(b==-1) {
-      Serial.println("ERROR: timeout getting data");
-      return;
+  char buf[80]; 
+
+  Serial.println("GO - receiving data...");
+
+  while(len>0) {
+    block_len = 64 - ( start_addr % 64 );
+    if ( len < block_len ) {
+      block_len = len;
     }
-    write_eeprom_byte(i, b);
+
+    sprintf(buf, "  start_addr: $%04x, block_len : %02d ...", start_addr, block_len); Serial.print(buf);
+
+    for(uint8_t i = 0; i<block_len; i++) {
+      b = read_serial_byte();
+      if(b==-1) {
+        Serial.println("ERROR: timeout getting data");
+        return;
+      }
+      page[i]=b;
+    }
+
+    write_eeprom_page(start_addr, page, block_len);
+
+    Serial.println("OK: page written");
+
+    start_addr += block_len;
+    len -= block_len;
   }
-  Serial.println("Done");
+
+  Serial.println("DONE");
 
 }
 
@@ -468,7 +526,6 @@ void test_cmd() {
   WE_HIGH;
   Serial.println("WE High");
   while(Serial.read()!='n');
-
 
   Serial.println("Moving 1 on address bus");
   for(char i = 0; i<15; i++) {
