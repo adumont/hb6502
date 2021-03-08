@@ -59,10 +59,12 @@ Use `./eeprom.py` as a command line interface.
 
 # Credits
 
-Here are some awesome projects from which I have taken inspiration and code:
+Here are some awesome projects from which I have taken inspiration and sometimes also some code:
 
 - [Build an Arduino EEPROM programmer](https://www.youtube.com/watch?v=K88pgWhEb1M) by Ben Eaters
   - [Source code](https://github.com/beneater/eeprom-programmer#arduino-eeprom-programmer)
+- [mkeller0815/MEEPROMMER: EEPROM / EPROM programmer based on Arduino hardware](https://github.com/mkeller0815/MEEPROMMER/)
+- [TomNisbet/TommyPROM: Simple Arduino-based EEPROM programmer](https://github.com/TomNisbet/TommyPROM)
 
 # Datasheets
 
