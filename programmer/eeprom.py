@@ -27,6 +27,7 @@ task = parser.add_mutually_exclusive_group(required=True)
 task.add_argument('-p', '--put', dest="cmd", action="store_const", const="put", help='Write a file to EEPROM (binary)')
 task.add_argument('-d', '--dump', dest="cmd", action="store_const", const="dump", help='Dump from EEPROM (ascii)')
 task.add_argument('-g', '--get', dest="cmd", action="store_const", const="get", help='Read from EEPROM (binary)')
+task.add_argument('--erase', dest="cmd", action="store_const", const="erase", help='Erase EEPROM')
 # task.add_argument('-e', '--erase', dest="cmd", action="store_const", const="erase", help='Erase EEPROM')
 
 parser.add_argument("args",nargs="*")
@@ -63,15 +64,18 @@ def main():
 
   wait_for_prompt(show=False, timeout=200)
 
-  print(vars(args))
+  print(vars(args), len(args.args))
 
   a0 = "" if len(args.args) == 0 else args.args[0]
-  a1 = "" if len(args.args)  < 1 else args.args[1]
-  a2 = "" if len(args.args)  < 2 else args.args[2]
+  a1 = "" if len(args.args) <= 1 else args.args[1]
+  a2 = "" if len(args.args) <= 2 else args.args[2]
 
   if args.cmd == "dump":
     print("d %s %s\r" % ( a0, a1))
     ser.write( str.encode("d %s %s\r" % ( a0, a1) ) )
+  elif args.cmd == "erase":
+    print("erase %s\r" % a0)
+    ser.write( str.encode("erase %s\r" % a0 ) )
   elif args.cmd == "put":
     l = os.stat(a1).st_size
     
