@@ -54,6 +54,8 @@ char data_pins[] = { 6, 7, 8, 15, 18, 19, 20, 21 };
 
 int data_pin_mode = 1234; // dummy value
 
+//#define DEBUG
+#undef DEBUG
 
 // WE# 
 #define WE_LOW  _CLEAR(WE_PIN)
@@ -249,44 +251,26 @@ void setup() {
   while(!Serial);
   Serial.println("EEPROM Programmer Ready");
 
-  // // fill a dummy 64B page with data
-  // uint8_t page[64];
-  // for(uint8_t i=0;i<64;i++){
-  //   page[i]=i;
-  // }
-
-  // uint32_t m1 = millis();
-
-  // // for(int i = 0; i<256; i++){
-  // //   write_eeprom_byte(i, 170);
-  // // }
-
-  // write_eeprom_page(  0, page, 64);
-  // write_eeprom_page( 64, page, 64);
-  // write_eeprom_page(128, page, 64);
-  // write_eeprom_page(192, page, 64);
-
-  // uint32_t m2 = millis();
-
-  // Serial.println(m2-m1);
-
-  // dump(0,1);
-
+#ifdef DEBUG
   sCmd.addCommand("s", shift_cmd);  // shift a byte into the shift register and latch it
   sCmd.addCommand("set",  set_cmd); // 
+  sCmd.addCommand("test",  test_cmd);
+#endif
   sCmd.addCommand("r",  read_cmd);
   sCmd.addCommand("w",  write_cmd);
   sCmd.addCommand("d",  dump_cmd);
   sCmd.addCommand("erase", erase_cmd);
-  sCmd.addCommand("test",  test_cmd);
   sCmd.addCommand("put", bflash_cmd);
+  sCmd.addCommand("get", bdump_cmd);
   sCmd.setDefaultHandler(unrecognized_cmd);      // Handler for command that isn't matched  (says "What?")
+  Serial.print(">");
 }
 
 void loop() {
   sCmd.readSerial();
 }
 
+#ifdef DEBUG
 void shift_cmd() {
   // s [0|1]
   // shift a digit through the shift registers
@@ -324,6 +308,7 @@ void set_cmd() {
   Serial.println(buf);
   set_address(addr);
 }
+#endif //DEBUG
 
 void write_cmd() {
   uint16_t addr = parse_cmd_hex32(0);
@@ -340,11 +325,10 @@ void read_cmd() {
   Serial.println(buf);
 }
 
-void dump(unsigned int start, int pages) {
+void dump(uint16_t start, int pages) {
   char buf[10];
-  unsigned int addr_end = start + 256*pages - 1;
-  //for(unsigned int a = 0; a<=32767; a++) {
-  for(unsigned int a = start; a<=addr_end ; a++) {
+  uint16_t addr_end = start + 256*pages - 1;
+  for(uint16_t a = start; a<=addr_end ; a++) {
     if( a % 256 == 0 ) {
       Serial.println();
     }
@@ -388,6 +372,16 @@ void dump_cmd() {
   uint16_t start = parse_cmd_hex32(0);
   int pages = parse_cmd_int(1);
 
+  if( start > 0x7f00 ) {
+    start=0x7f00;
+  }
+
+  start = (start / 256) * 256;
+
+  if( pages == 0 ) {
+    pages = 1;
+  }
+
   dump(start, pages);
 
 }
@@ -395,11 +389,17 @@ void dump_cmd() {
 // binary dump
 void bdump_cmd() {
   uint16_t start_addr = parse_cmd_hex32(0);
-  uint16_t end_addr = parse_cmd_hex32(0);
+  uint16_t len = parse_cmd_int(0);
 
-  for(uint16_t i = start_addr; i<=end_addr; i++) {
+  if(len==0){
+    Serial.println("ERROR: length can't be 0");
+  }
+
+  for(uint16_t i = start_addr; i<start_addr+len; i++) {
     Serial.write( read_eeprom_byte(i) );
   }
+
+  Serial.println("Done");
 
 }
 
@@ -454,7 +454,7 @@ void bflash_cmd() {
 
   char buf[80]; 
 
-  Serial.println("GO - receiving data...");
+  // Serial.println("GO - receiving data...");
 
   while(len>0) {
     block_len = 64 - ( start_addr % 64 );
@@ -462,7 +462,7 @@ void bflash_cmd() {
       block_len = len;
     }
 
-    sprintf(buf, "  start_addr: $%04x, block_len : %02d ...", start_addr, block_len); Serial.print(buf);
+    // sprintf(buf, "  start_addr: $%04x, block_len : %02d ...", start_addr, block_len); Serial.print(buf);
 
     for(uint8_t i = 0; i<block_len; i++) {
       b = read_serial_byte();
@@ -475,7 +475,7 @@ void bflash_cmd() {
 
     write_eeprom_page(start_addr, page, block_len);
 
-    Serial.println("OK: page written");
+    // Serial.println("OK: page written");
 
     start_addr += block_len;
     len -= block_len;
@@ -489,6 +489,7 @@ void unrecognized_cmd(const char *command) {
   Serial.println("What?");
 }
 
+#ifdef DEBUG
 void test_cmd() {
   char buf[256];
   byte d;
@@ -576,3 +577,4 @@ void test_cmd() {
   }
 
 }
+#endif //DEBUG

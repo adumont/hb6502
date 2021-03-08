@@ -104,12 +104,14 @@ void SerialCommand::readSerial() {
 
             // Execute the stored handler function for the command
             (*commandList[i].function)();
+            Serial.print(">");
             matched = true;
             break;
           }
         }
         if (!matched && (defaultHandler != NULL)) {
           (*defaultHandler)(command);
+          Serial.print(">");
         }
       }
       clearBuffer();
