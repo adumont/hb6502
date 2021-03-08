@@ -2,13 +2,14 @@
 
 - [Breadboard EEPROM Programmer](#breadboard-eeprom-programmer)
 - [Introduction](#introduction)
+- [Schematics](#schematics)
 - [How to use](#how-to-use)
   - [Command line interface](#command-line-interface)
 - [Credits](#credits)
 - [Datasheets](#datasheets)
 - [References](#references)
 
-![](../programmer/schematics/EEPROM-Programmer.svg)
+![](../imgs/programmer.jpg)
 
 # Introduction
 
@@ -16,6 +17,10 @@ This subproject is an EEPROM Programmer on a breadboard using:
 - a Sparkfun Arduino Pro Micro
 - two SN74HC595 Serial-In Parallel-Out (SIPO) Shift Registers, to minimize the pin needed on the Arduino.
 - a AT28C256 32K x8 Paged Parallel EEPROM
+
+# Schematics
+![](schematics/EEPROM-Programmer.svg)
+
 # How to use
 
 ## Command line interface
