@@ -61,6 +61,7 @@ Use `./eeprom.py` as a command line interface.
 | Command                                  | Meaning                                                            |
 | ---------------------------------------- | ------------------------------------------------------------------ |
 | `./eeprom.py -g/--get 02F0 256 file.bin` | Get 256 bytes from EEPROM starting at $02F0 and save to `file.bin` |
+| `./eeprom.py --get 0 32768 file.bin` | Dump the whole EEPROM (32K) and save it to `file.bin` |
 
 # Credits
 
