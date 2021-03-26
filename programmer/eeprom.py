@@ -72,7 +72,7 @@ def main():
 
   if args.cmd == "dump":
     print("d %s %s\r" % ( a0, a1))
-    ser.write( str.encode("d %s %s\r" % ( a0, a1) ) )
+    ser.write( str.encode("d %s %s %s\r" % ( a0, a1, a2) ) )
   elif args.cmd == "erase":
     print("erase %s\r" % a0)
     ser.write( str.encode("erase %s\r" % a0 ) )

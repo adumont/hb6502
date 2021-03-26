@@ -325,29 +325,43 @@ void read_cmd() {
   Serial.println(buf);
 }
 
-void dump(uint16_t start, int pages) {
-  char buf[10];
-  uint16_t addr_end = start + 256*pages - 1;
-  for(uint16_t a = start; a<=addr_end ; a++) {
-    if( a % 256 == 0 ) {
-      Serial.println();
-    }
-    if( a % 16 == 0 ) {
-      // new line and print address
-      sprintf(buf, "%04x:  ", a);
-      Serial.print(buf);
-    }
-    if( a % 16 == 8 ) {
-      // middle of line
-      Serial.print("  ");
-    }
-    sprintf(buf, "%02x ", read_eeprom_byte(a));
-    Serial.print(buf);
+void txt_dump(uint16_t start, uint16_t pages, uint16_t offset) {
+  char buf_hex[41];
+  char buf_asc[17];
+  buf_asc[16]=0;
 
-    if( a % 16 == 15 ) {
-      // end of line
-      Serial.println();
+  uint8_t b;
+  uint16_t a = start;
+  for(uint16_t p=0; p<pages; p++) {
+    for(uint8_t r=0; r<16; r++) {
+      sprintf(buf_hex, "%08x: ", a + offset);
+      Serial.print(buf_hex);
+
+      uint8_t i = 0 ; // index in buf
+
+      for(uint8_t c=0; c<16; c++) {
+
+        b=(uint8_t)read_eeprom_byte(a);
+
+        buf_asc[c]=( b<32 || b>126 ) ? '.' : b ;
+
+        buf_hex[i++] = hex[b  >>  4];
+        buf_hex[i++] = hex[b & 0x0f];
+
+        if(c % 2 == 1) {
+          buf_hex[i++] = ' ';
+        }
+
+        a++;
+      }
+      buf_hex[i] = 0;
+
+      Serial.print(buf_hex);
+      Serial.print(" ");
+      Serial.println(buf_asc);
+
     }
+    Serial.println("");
   }
 }
 
@@ -370,7 +384,8 @@ void erase_cmd() {
 
 void dump_cmd() {
   uint16_t start = parse_cmd_hex32(0);
-  int pages = parse_cmd_int(1);
+  uint16_t pages = parse_cmd_int(1);
+  uint16_t offset = parse_cmd_hex32(0);
 
   if( start > 0x7f00 ) {
     start=0x7f00;
@@ -382,7 +397,7 @@ void dump_cmd() {
     pages = 1;
   }
 
-  dump(start, pages);
+  txt_dump(start, pages, offset);
 
 }
 
