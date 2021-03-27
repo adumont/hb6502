@@ -10,10 +10,6 @@ from time import sleep
 
 from glob import glob
 
-port = glob("/dev/ttyACM*")
-
-assert( len(port) > 0 )
-
 # logging.basicConfig(format='[%(name)s.%(funcName)s:%(lineno)d] %(levelname)s %(message)s', level=level)
 
 # def log(className):
@@ -33,6 +29,10 @@ task.add_argument('--erase', dest="cmd", action="store_const", const="erase", he
 parser.add_argument("args",nargs="*")
 
 args = parser.parse_args()
+
+port = glob("/dev/ttyACM*")
+
+assert( len(port) > 0 )
 
 ser = serial.Serial(
     port=port[0],
