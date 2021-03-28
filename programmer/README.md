@@ -25,21 +25,45 @@ This subproject is an EEPROM Programmer on a breadboard using:
 
 ## Command line interface
 
-Use `./eeprom.py` as a command line interface.
-
-### Dump 256 byte pages as text
-
-`./eeprom.py -d/--dump [ADDR [n [offset]]]` will dump `n` pages of 256 bytes starting at address `ADDR` (in hex). If `ADDR` isn't a multiple of 256, it will dump around `ADDR`. If `offset` is specified, the address showned will be offset by `offset` (in hex).
-
-| Command                      | Meaning                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------- |
-| `./eeprom.py -d`             | Dump page 0000                                                            |
-| `./eeprom.py -d ADDR`        | Dump page at address `ADDR` (hex)                                         |
-| `./eeprom.py -d ADDR 2`      | Dump 2 pages starting at address `ADDR` (hex)                             |
-| `./eeprom.py -d 0000 1 8000` | Dump 1 page starting at address $0000, and show starting address as $8000 |
+Use `./eeprom.py` as a command line interface:
 
 ```
-$ ./eeprom.py --dump 0 1 8000
+usage: eeprom.py [-h] [-p PORT] {flash,save,dump,erase} ...
+
+EEPROM Programmer CLI
+
+positional arguments:
+  {flash,save,dump,erase}
+    flash               Flash a binary file to EEPROM
+    save                Save EEPROM to binary file
+    dump                Dump EEPROM as text (hex/ascii)
+    erase               Erase EEPROM
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p PORT, --port PORT  USB port to use
+
+Written by @adumont
+```
+
+### Dump 256 byte pages as text (hexa/ascii)
+
+```
+usage: eeprom.py dump [-h] [-a ADDR] [-n PAGES] [-o OFFSET]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a ADDR, --addr ADDR  Address (hexadecimal), default: 0000
+  -n PAGES, --pages PAGES
+                        Number of 256B pages to dump (decimal)
+  -o OFFSET, --offset OFFSET
+                        Offset to show addresses (hexadecimal), default: 8000
+```
+
+`./eeprom.py dump` will dump `PAGES` pages of 256 bytes starting at address `ADDR` (in hex). If `ADDR` isn't a multiple of 256, it will dump the 256 bytes page aligned around `ADDR`. If `offset` is specified, the addresses showned will be offset by `offset` (in hex).
+
+```
+$ ./eeprom.py dump
 Connected to programmer on port: /dev/ttyACM0
 
 00008000: 58d8 a9ff 8d03 60a9 aa85 00a9 ffa5 008d  X.....`.........
@@ -50,36 +74,52 @@ Connected to programmer on port: /dev/ttyACM0
 00008050: e610 d0ef 6000 0000 0000 0000 0000 0000  ....`...........
 [...]
 ```
+### Flash a binary file to EEPROM
+
+```
+usage: eeprom.py flash [-h] [-a ADDR] file
+
+positional arguments:
+  file                  File to write to EEPROM
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a ADDR, --addr ADDR  Address (hexadecimal), default: 0000
+```
+
+`./eeprom.py flash` will flash the file FILE at address ADDR. It takes about 13s to flash 32KB.
+
+### Save EEPROM content to a binary file
+
+```
+usage: eeprom.py save [-h] [-a ADDR] [-l LEN] file
+
+positional arguments:
+  file                  File to save as
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -a ADDR, --addr ADDR  Address (hexadecimal), default: 0000
+  -l LEN, --len LEN     Length (bytes, decimal)
+```
+
+`./eeprom.py save` will save LEN bytes (dec) from EEPROM starting at address ADDR (hex) to file FILE. It takes about 5.5s to download 16KB.
 
 ### Erase EEPROM
 
-`./eeprom.py --erase [HH]` write HH (hex) to all the EEPROM. It takes about 13s to erase 32KB.
+```
+usage: eeprom.py erase [-h] [-f FILL]
 
-| Command                  | Meaning                         |
-| ------------------------ | ------------------------------- |
-| `./eeprom.py --erase`    | Fill the EEPROM with $FF        |
-| `./eeprom.py --erase HH` | Fill the EEPROM with `HH` (hex) |
+optional arguments:
+  -h, --help            show this help message and exit
+  -f FILL, --fill FILL  Fill byte (hexadecimal), default: ff
+```
 
-### Upload/Flash a binary file to EEPROM
-
-`./eeprom.py -p/--put ADDR FILE` upload and flash the file FILE at address ADDR. It takes about 7s to flash 16KB.
-
-| Command                        | Meaning                                 |
-| ------------------------------ | --------------------------------------- |
-| `./eeprom.py --put 0 file.bin` | Flash `file.bin` to EEPROM at address 0 |
-
-### Download a binary file from EEPROM
-
-`./eeprom.py -g/--get ADDR LEN FILE` LEN bytes (dec) from EEPROM startig at address ADDR (hex) to file FILE. It takes about 5.5s to download 16KB.
-
-| Command                               | Meaning                                                            |
-| ------------------------------------- | ------------------------------------------------------------------ |
-| `./eeprom.py --get 02F0 256 file.bin` | Get 256 bytes from EEPROM starting at $02F0 and save to `file.bin` |
-| `./eeprom.py --get 0 32768 file.bin`  | Dump the whole EEPROM (32K) and save it to `file.bin`              |
+`./eeprom.py erase` will write FF (hex) to all the EEPROM. It takes about 13s to erase 32KB.
 
 # Credits
 
-Here are some awesome projects from which I have taken inspiration and sometimes also some code:
+Here are some awesome projects from which I have taken inspiration and sometimes also some code as a starting point:
 
 - [Build an Arduino EEPROM programmer](https://www.youtube.com/watch?v=K88pgWhEb1M) by Ben Eaters
   - [Source code](https://github.com/beneater/eeprom-programmer#arduino-eeprom-programmer)

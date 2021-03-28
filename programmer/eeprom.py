@@ -10,40 +10,76 @@ from time import sleep
 
 from glob import glob
 
-# logging.basicConfig(format='[%(name)s.%(funcName)s:%(lineno)d] %(levelname)s %(message)s', level=level)
+def flash(args):
+  l = os.stat(args.file).st_size
+  
+  print("put %s %s\r" % ( args.addr, l))
+  ser.write( str.encode("put %s %s\r" % ( args.addr, l) ) )
 
-# def log(className):
-#   return logging.getLogger(className)
+  with open(args.file, "rb") as f:
+    count = 0
+    while True:
+      c=f.read(64)
+      if not c:
+        break
+      ser.write(c)
+      count = count + len(c)
+      print("  %3.2f %%" % (100.0*count/l), end="\r")
+  print()
+
+def save(args):
+  print("get %s %d\r" % ( args.addr, args.len))
+  ser.write( str.encode("get %s %d\r" % ( args.addr, args.len)) )
+  with open(args.file, "wb") as f:
+    count = 0
+    while True:
+      c=ser.read(1)
+      if not c:
+        continue
+      f.write(c)
+      count = count+1
+      if(count%256) or count == args.len:
+        print("  %3.2f %%" % (100.0*count/args.len), end="\r")
+      if count == args.len:
+        break
+  print()
+
+def dump(args):
+  print("d %s %s %s\r" % ( args.addr, args.pages, args.offset))
+  ser.write( str.encode("d %s %s %s\r" % ( args.addr, args.pages, args.offset) ) )
+
+def erase(args):
+  print("erase %s\r" % args.fill)
+  ser.write( str.encode("erase %s\r" % args.fill ) )
 
 parser = argparse.ArgumentParser(
         description='EEPROM Programmer CLI',
-        epilog='@adumont')
+        epilog='Written by @adumont')
 
-task = parser.add_mutually_exclusive_group(required=True)
-task.add_argument('-p', '--put', dest="cmd", action="store_const", const="put", help='Write a file to EEPROM (binary)')
-task.add_argument('-d', '--dump', dest="cmd", action="store_const", const="dump", help='Dump from EEPROM (ascii)')
-task.add_argument('-g', '--get', dest="cmd", action="store_const", const="get", help='Read from EEPROM (binary)')
-task.add_argument('--erase', dest="cmd", action="store_const", const="erase", help='Erase EEPROM')
-# task.add_argument('-e', '--erase', dest="cmd", action="store_const", const="erase", help='Erase EEPROM')
+parser.add_argument('-p', '--port', help='USB port to use' )
 
-parser.add_argument("args",nargs="*")
+subparsers = parser.add_subparsers()
 
-args = parser.parse_args()
+parser_put = subparsers.add_parser('flash', help='Flash a binary file to EEPROM')
+parser_put.add_argument('file', help='File to write to EEPROM')
+parser_put.add_argument('-a', '--addr', help='Address (hexadecimal), default: 0000', default='0' )
+parser_put.set_defaults(func=flash)
 
-port = glob("/dev/ttyACM*")
+parser_get = subparsers.add_parser('save', help='Save EEPROM to binary file')
+parser_get.add_argument('file', help='File to save as')
+parser_get.add_argument('-a', '--addr', help='Address (hexadecimal), default: 0000', default='0' )
+parser_get.add_argument('-l', '--len', type=int, help='Length (bytes, decimal)', default=32*1024 )
+parser_get.set_defaults(func=save)
 
-assert( len(port) > 0 )
+parser_dump = subparsers.add_parser('dump', help='Dump EEPROM as text (hex/ascii)')
+parser_dump.add_argument('-a', '--addr', help='Address (hexadecimal), default: 0000', default='0' )
+parser_dump.add_argument('-n', '--pages', type=int, help='Number of 256B pages to dump (decimal)', default=1 )
+parser_dump.add_argument('-o', '--offset', help='Offset to show addresses (hexadecimal), default: 8000', default='8000' )
+parser_dump.set_defaults(func=dump)
 
-ser = serial.Serial(
-    port=port[0],
-    baudrate=115200,
-    parity=serial.PARITY_NONE,
-    stopbits=serial.STOPBITS_ONE,
-    bytesize=serial.EIGHTBITS,
-    timeout=0
-)
-
-print("Connected to programmer on port: " + ser.portstr)
+parser_erase = subparsers.add_parser('erase', help='Erase EEPROM')
+parser_erase.add_argument('-f', '--fill', help='Fill byte (hexadecimal), default: ff', default="ff" )
+parser_erase.set_defaults(func=erase)
 
 def wait_for_prompt(show=True, timeout=0):
   prompt = False
@@ -58,62 +94,31 @@ def wait_for_prompt(show=True, timeout=0):
         break
       if show:
         print("%c" % c, end='', flush=True)
-    
 
-def main():
+if __name__ == '__main__':
+  args = parser.parse_args()
+  print(vars(args))
+
+  if args.port == None:
+    port = glob("/dev/ttyACM*")
+    assert( len(port) > 0 )
+    port = port[0]
+  else:
+    port = args.port
+
+  ser = serial.Serial(
+      port=port,
+      baudrate=115200,
+      parity=serial.PARITY_NONE,
+      stopbits=serial.STOPBITS_ONE,
+      bytesize=serial.EIGHTBITS,
+      timeout=0
+  )
+  print("Connected to programmer on port: " + ser.portstr)
 
   wait_for_prompt(show=False, timeout=200)
 
-  print(vars(args), len(args.args))
+  args.func(args)
 
-  a0 = "" if len(args.args) == 0 else args.args[0]
-  a1 = "" if len(args.args) <= 1 else args.args[1]
-  a2 = "" if len(args.args) <= 2 else args.args[2]
-
-  if args.cmd == "dump":
-    print("d %s %s\r" % ( a0, a1))
-    ser.write( str.encode("d %s %s %s\r" % ( a0, a1, a2) ) )
-  elif args.cmd == "erase":
-    print("erase %s\r" % a0)
-    ser.write( str.encode("erase %s\r" % a0 ) )
-  elif args.cmd == "put":
-    l = os.stat(a1).st_size
-    
-    print("put %s %s\r" % ( a0, l))
-    ser.write( str.encode("put %s %s\r" % ( a0, l) ) )
-
-    with open(a1, "rb") as f:
-      count = 0
-      while True:
-        c=f.read(64)
-        if not c:
-          break
-        ser.write(c)
-        count = count + len(c)
-        # print(" %3.00g %%" % (100.0*count/l), end="\r")
-        print("  %3.2f %%" % (100.0*count/l), end="\r")
-    print()
-
-  elif args.cmd == "get":
-    print("get %s %s\r" % ( a0, a1))
-    ser.write( str.encode("get %s %s\r" % ( a0, a1)) )
-    l=int(a1)
-    with open(a2, "wb") as f:
-      count = 0
-      while True:
-        c=ser.read(1)
-        if not c:
-          continue
-        f.write(c)
-        count = count+1
-        if(count%256) or count == l:
-          print("  %3.2f %%" % (100.0*count/l), end="\r")
-        if count == l:
-          break
-    print()
-
-  wait_for_prompt() 
+  wait_for_prompt()
   ser.close()
-
-if __name__== "__main__":
-  main()
