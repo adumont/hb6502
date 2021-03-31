@@ -77,7 +77,7 @@ Connected to programmer on port: /dev/ttyACM0
 ### Flash a binary file to EEPROM
 
 ```
-usage: eeprom.py flash [-h] [-a ADDR] file
+usage: eeprom.py flash [-h] [-a ADDR] [-l LEN] file
 
 positional arguments:
   file                  File to write to EEPROM
@@ -85,6 +85,7 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   -a ADDR, --addr ADDR  Address (hexadecimal), default: 0000
+  -l LEN, --len LEN     Length (bytes, decimal), default: file size
 ```
 
 `./eeprom.py flash` will flash the file FILE at address ADDR. It takes about 13s to flash 32KB.

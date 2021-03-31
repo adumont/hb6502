@@ -7,11 +7,15 @@ import time
 import os.path
 import logging
 from time import sleep
+import math
 
 from glob import glob
 
 def flash(args):
   l = os.stat(args.file).st_size
+
+  if args.len:
+    l = min(l, math.ceil(args.len/64)*64)
   
   print("put %s %s\r" % ( args.addr, l))
   ser.write( str.encode("put %s %s\r" % ( args.addr, l) ) )
@@ -25,6 +29,7 @@ def flash(args):
       ser.write(c)
       count = count + len(c)
       print("  %3.2f %%" % (100.0*count/l), end="\r")
+      if count >= l: break
   print()
 
 def save(args):
@@ -63,6 +68,7 @@ subparsers = parser.add_subparsers()
 parser_put = subparsers.add_parser('flash', help='Flash a binary file to EEPROM')
 parser_put.add_argument('file', help='File to write to EEPROM')
 parser_put.add_argument('-a', '--addr', help='Address (hexadecimal), default: 0000', default='0' )
+parser_put.add_argument('-l', '--len', type=int, help='Length (bytes, decimal), default: file size', default=None )
 parser_put.set_defaults(func=flash)
 
 parser_get = subparsers.add_parser('save', help='Save EEPROM to binary file')
