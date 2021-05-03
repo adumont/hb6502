@@ -57,6 +57,14 @@ def erase(args):
   print("erase %s\r" % args.fill)
   ser.write( str.encode("erase %s\r" % args.fill ) )
 
+def lock(args):
+  print("lock\r")
+  ser.write( str.encode("lock\r") )
+
+def unlock(args):
+  print("unlock\r")
+  ser.write( str.encode("unlock\r") )
+
 parser = argparse.ArgumentParser(
         description='EEPROM Programmer CLI',
         epilog='Written by @adumont')
@@ -86,6 +94,12 @@ parser_dump.set_defaults(func=dump)
 parser_erase = subparsers.add_parser('erase', help='Erase EEPROM')
 parser_erase.add_argument('-f', '--fill', help='Fill byte (hexadecimal), default: ff', default="ff" )
 parser_erase.set_defaults(func=erase)
+
+parser_lock   = subparsers.add_parser('lock'  , help='Enable Software Data Protection')
+parser_lock.set_defaults(func=lock)
+
+parser_unlock = subparsers.add_parser('unlock', help='Disable Software Data Protection')
+parser_unlock.set_defaults(func=unlock)
 
 def wait_for_prompt(show=True, timeout=0):
   prompt = False

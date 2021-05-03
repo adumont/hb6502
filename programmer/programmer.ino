@@ -232,6 +232,70 @@ void write_eeprom_page(uint16_t base, uint8_t page[], uint8_t len) {
   OE_HIGH;
 }
 
+// only used in Software Data Protection Enable/Disable Algorithm
+void write_eeprom_byte_dataprotection(uint16_t address, byte data) {
+  set_address(address);
+  write_data_bus(data);
+  CE_LOW;
+  WE_LOW;
+  delayMicroseconds(1);
+  WE_HIGH;
+  CE_HIGH;
+  delayMicroseconds(1);
+}
+
+
+/* 
+ * Software Data Protection Disable Algorithm
+ */
+void unlock_eeprom(void)
+{
+  OE_HIGH;
+  CE_HIGH;
+  OE_HIGH;
+
+  data_bus_mode(OUTPUT);
+
+  write_eeprom_byte_dataprotection(0x5555, 0xAA);
+  write_eeprom_byte_dataprotection(0x2aaa, 0x55);
+  write_eeprom_byte_dataprotection(0x5555, 0x80);
+  write_eeprom_byte_dataprotection(0x5555, 0xAA);
+  write_eeprom_byte_dataprotection(0x2aaa, 0x55);
+  write_eeprom_byte_dataprotection(0x5555, 0x20);
+
+  delay(10);
+
+  data_bus_mode(INPUT);
+  OE_HIGH;
+  CE_HIGH;
+  OE_HIGH;
+  Serial.println("");
+}
+
+/* 
+ * Software Data Protection Enable Algorithm
+ */
+void lock_eeprom(void)
+{
+  OE_HIGH;
+  CE_HIGH;
+  OE_HIGH;
+
+  data_bus_mode(OUTPUT);
+
+  write_eeprom_byte_dataprotection(0x5555, 0xAA);
+  write_eeprom_byte_dataprotection(0x2aaa, 0x55);
+  write_eeprom_byte_dataprotection(0x5555, 0xA0);
+
+  delay(10);
+
+  data_bus_mode(INPUT);
+  OE_HIGH;
+  CE_HIGH;
+  OE_HIGH;
+  Serial.println("");
+}
+
 void setup() {
   data_bus_mode(INPUT);
   pinMode(DATA, OUTPUT);
@@ -262,6 +326,8 @@ void setup() {
   sCmd.addCommand("erase", erase_cmd);
   sCmd.addCommand("put", bflash_cmd);
   sCmd.addCommand("get", bdump_cmd);
+  sCmd.addCommand("lock", lock_eeprom);
+  sCmd.addCommand("unlock", unlock_eeprom);
   sCmd.setDefaultHandler(unrecognized_cmd);      // Handler for command that isn't matched  (says "What?")
   Serial.print(">");
 }
@@ -315,6 +381,7 @@ void write_cmd() {
   uint8_t  data = parse_cmd_hex32(0);
 
   write_eeprom_byte(addr, data);
+  Serial.println();
 }
 
 void read_cmd() {
