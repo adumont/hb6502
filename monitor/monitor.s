@@ -143,14 +143,14 @@ cmd_return:
 	CMP #'j'		; Jmp
 	BEQ exec_cmd
 
-	CMP #'c'		; Continue
-	BEQ cont_cmd
-
 	CPX #2			; 2 chars --> a value
 	BEQ it_is_a_value
 
 	CPX #4			; 4 chars --> an addr
 	BEQ it_is_an_addr
+
+	CMP #'c'		; Continue
+	BEQ cont_cmd
 
 	CPX #3
 	BNE error
