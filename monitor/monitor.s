@@ -460,51 +460,57 @@ _nmi_int:  RTI                    ; Return from all NMI interrupts
 ; -----------------------------------------------------------------------
 ; Maskable interrupt (IRQ) service routine
 
-_irq_int:  
+_irq_int:
 	; Save registers
-	STA MON_A
-	STX MON_X
-	STY MON_Y
-	TSX		; get SP into X
-	INX		; add 3 to get real 
+	STX MON_X							; before    |  xx   |  after the
+	STY MON_Y							; interrupt |  xx   |  interrupt
+	STA MON_A							;           |  xx   |
+	TSX		; get current SP into X		;  old SP ->| PC HI |  SP+3
+										;           | PC LO |  SP+2
+	LDA $0102,X	; SP+2 -> PC LO			;           |   P   |  SP+1
+	STA MON_PC							;           |       | <- SP (new SP)
+										;
+	LDA $0103,X	; SP+3 -> PC HI			;
+	STA MON_PC+1						;
+
+	LDA $0101,X	; SP+1 -> P
+	STA MON_P
+
+	INX		; add 3 to get
 	INX		; SP before IRQ
 	INX
 	STX MON_S
-	PLA 		; P is on stack
-	STA MON_P
-	PLA
-	STA MON_PC
-	PLA
-	STA MON_PC+1
-	PHA		; put P back on stack
-	LDA MON_PC
-	PHA
-	LDA MON_P
-	PHA
+
 	; is it a BRK?
 	LDA #$10	; position of B bit
 	BIT MON_P	; is B bit set, indicating BRK and not IRQ?
 	BNE BRKhandler
 
-    ; here it's not a BRK
-    ; Another type of IRQ then...
+  ; here it's not a BRK
+  ; Another type of IRQ then...
+	LDA #'i'
+	JSR putc
+	LDA #'r'
+	JSR putc
+	LDA #'q'
+	JSR putc
 
-	LDX MON_S
-	TXS
 	LDY MON_Y
 	LDX MON_X
 	LDA MON_A
 	RTI
 
 BRKhandler:
+  CLI   ; we reenable Interrupts (in case other more urgent IRQ arrives)
 	JSR Print_Registers
-	
+
 	LDX MON_S
 	TXS
 	LDY MON_Y
 	LDX MON_X
 	LDA MON_A
 
+  CLI
 	JMP put_newline
 	;RTI
 
