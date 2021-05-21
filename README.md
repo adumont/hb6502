@@ -8,7 +8,6 @@
 - [Software](#software)
   - [Monitor](#monitor)
   - [FORTH](#forth)
-- [Credits](#credits)
 - [Datasheets](#datasheets)
 - [References](#references)
 
@@ -29,6 +28,11 @@ The ROM is programmed using my self-made [EEPROM programmer](programmer/README.m
 See [this file](sbc/schematics/6502.pdf).
 
 ## Memory Map
+
+The address decoding logic is following the one described by Garth Wilson in his [6502 Primer, Address decoding](https://wilsonminesco.com/6502primer/addr_decoding.html) page. The corresponding schematics is:
+
+![](https://wilsonminesco.com/6502primer/32kROM16kRAMlogic.jpg)
+(picture by Garth Wilson from his 6502 Primer)
 
 | Address       | Component  |
 | ------------- | ---------- |
@@ -82,12 +86,6 @@ This is a sample (and somewhat absurd) FORTH program, at the moment it is hardco
 
 ![](forth/imgs/PROG.png)
 
-# Credits
-
-Here are some awesome projects. From some of them I have taken inspiration, from others I have copied lines of code.
-
-- [Build a 6502 computer | Ben Eater](https://eater.net/6502): This is definitely what started all this.
-
 # Datasheets
 
 - [W65C02S 8–bit Microprocessor](datasheets/w65c02s.pdf)
@@ -102,6 +100,8 @@ Here are some awesome projects. From some of them I have taken inspiration, from
 
 # References
 
+- [6502 PRIMER: Building your own 6502 computer](https://wilsonminesco.com/6502primer/)
+  - [Address Decoding](https://wilsonminesco.com/6502primer/addr_decoding.html)
 - [ca65 Users Guide](https://cc65.github.io/doc/ca65.html)
 - [6502 Instruction Set](https://www.masswerk.at/6502/6502_instruction_set.html)
 - FORTH:
