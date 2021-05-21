@@ -16,7 +16,7 @@
 
 This project is about building a single board 65c02 computer.
 
-It's built around a WDC 65C02s CPU driven by a 1.8432MHz oscillator clock, with 32KB of SRAM (only 16K used), 32K of ROM, a 65c22 VIA interface, a 6551 ACIA serial interface, and an 20x4 LCD screen.
+It's powered by a WDC 65C02s CPU driven by a 1.8432MHz oscillator clock, with 32KB of SRAM (only 16K used), 32K of ROM, a 65c22 VIA interface, a 6551 ACIA serial interface, and an 20x4 LCD screen.
 
 The ROM is programmed using my self-made [EEPROM programmer](programmer/README.md).
 
@@ -30,7 +30,12 @@ See [this file](sbc/schematics/6502.pdf).
 
 ## Memory Map
 
-TBD
+| Address       | Component  |
+| ------------- | ---------- |
+| `$0000-$3FFF` | RAM (16KB) |
+| `$4200-$4203` | ACIA       |
+| `$6000-$600F` | VIA        |
+| `$8000-$FFFF` | ROM (32KB) |
 
 # Software
 
