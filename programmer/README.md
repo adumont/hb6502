@@ -9,7 +9,7 @@
 - [Datasheets](#datasheets)
 - [References](#references)
 
-![](../imgs/programmer.jpg)
+![](imgs/programmer.jpg)
 
 # Introduction
 
