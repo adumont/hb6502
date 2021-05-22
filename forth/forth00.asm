@@ -21,12 +21,7 @@ RES_vec
     	LDX #DTOP
     	CLI
 
-	LDA #<lbl_test1
-	STA IP
-	LDA #>lbl_test1
-	STA IP+1
-
-
+; This is a Direct Threaded Code based FORTH
 NEXT: 	.MACRO
 ; (IP) --> W
 	LDY #0
@@ -46,26 +41,69 @@ NEXT: 	.MACRO
 ; JMP (W)
 	JMP (W)
 	.ENDM
-	
+
+; Load the entry point of our main FORTH
+; program and start execution (with NEXT)
+	; Place forth_prog ADDR into IP register
+	LDA #<forth_prog
+	STA IP
+	LDA #>forth_prog
+	STA IP+1
+	; run NEXT
 	NEXT
 	
-	
+
+; Implemented words:
+; LIT, SWAP, DUP, TO_R (>R), FROM_R (<R)
+; PUTC , GETC, FETCH (@), STORE (!)
+; JUMP
+
+; For now, this is the Entry POint of our
+; FORTH program.
 	
 	*= $4000
-lbl_test1:	
-	.DW forth_prog
+forth_prog:	
+;	.DW word1
+
+	.DW do_LIT
+	.DW $AABB
+
+	.DW do_LIT
+	.DW $2FF4
+
+	.DW do_STORE
+
+	.DW do_PUSH1
+	.DW do_GETC
+	.DW do_PLUS
+	.DW do_PUTC
+	; repeat
+	.DW do_JUMP
+	.DW forth_prog ; arg for JUMP
 	
-	*= $4100
-forth_prog:
+; Example of some COLON definitions:
+; add to the program using:
+;	.DW word1
+
+; A word COLON definition
+; MUST start with a LABEL followed
+; by JMP do_COLON:
+;
+; do_LABEL:
+;	JMP do_COLON
+; and MUST end with:
+;	.DW do_SEMI
+
+word1:
 	JMP do_COLON
 	.DW do_PUSH1
 	.DW do_DUP
 	.DW do_DROP
-	.DW other_word
+	.DW word2
 	.DW do_DROP
 	.DW do_SEMI
 
-other_word:
+word2:
 	JMP do_COLON
 	.DW do_LIT
 	.DW $0002
@@ -181,6 +219,141 @@ do_PLUS:
 	ADC 3,X
 	STA 3,X
 	NEXT
+
+do_PUTC: ; "c," emit a single char
+	; char is on stack
+	LDA 2,X
+	INX
+	INX
+	JSR putc
+	NEXT
+
+do_GETC:
+; get a single char from IO, leave on stack
+	JSR getc ; leaves the char in A
+	STA 0,X
+	STZ 1,X
+	DEX
+	DEX
+	NEXT
+
+do_TO_R:
+; >R: pop a cell (possibly an ADDR) from
+; the stack and pushes it to the Return Stack
+	INX
+	INX
+	LDA 1,X
+	PHA
+	LDA 0,X
+	PHA
+	NEXT
+
+do_FROM_R:
+; <R: pop a cell from the Return Stack
+; and pushes it to the Stack
+	PLA
+	STA 0,X
+	PLA
+	STA 1,X
+	DEX
+	DEX
+	NEXT
+
+do_AT_R:
+; @R : copy the cell from the Return Stack
+; to the Stack
+	PHX 	;\
+	TSX	; \ 
+	TXA	;  | put SP into Y
+	TAY	; / (a bit involved...)
+	PLX	;/ we mess A,Y, but don't care...
+	LDA $0102,Y
+	STA 0,X
+	LDA $0103,Y
+	STA 1,X
+	DEX
+	DEX
+	NEXT
+
+do_JUMP:
+; (IP) points to literal address to jump to
+; instead of next instruction ;)
+	; we push the addr to the Return Stack
+	LDY #1
+	LDA (IP),y
+	PHA
+	DEY
+	LDA (IP),y
+	PHA
+	; and jump to do_SEMI to handle the rest ;)
+	JMP do_SEMI
+
+	
+do_JUMP_OLD: ; alternative way of jumping, no Return Stack
+; (IP) points to literal address to jump to
+; instead of next instruction ;)
+	LDY #0
+	LDA (IP),y
+	PHA
+	INY
+	LDA (IP),y
+	STA IP+1
+	PLA
+	STA IP
+	NEXT
+
+do_FETCH:
+; @ ( ADDR -- value ) 
+; We read the data at the address on the 
+; stack and put the value on the stack
+	; copy address from stack to W
+	LDA 2,X	; LO
+	STA W
+	LDA 3,X	; HI
+	STA W+1
+	; Read data at (W) and save
+	; in the TOS
+	LDY #0
+	LDA (W),y
+	STA 2,X
+	INY
+	LDA (W),y
+	STA 3,X
+	NEXT
+
+do_STORE:
+; ! ( value ADDR -- )
+	; copy the address to W
+	LDA 2,X	; LO
+	STA W
+	LDA 3,X	; HI
+	STA W+1
+	; save the value to (W)
+	; LO
+	LDY #0
+	LDA 4,X
+	STA (W),y
+	; HI
+	INY
+	LDA 5,X
+	STA (W),y
+	INX
+	INX
+	INX
+	INX
+	NEXT
+
+; Kowalkski I/O routines
+; to change for SBC
+
+getc:
+  LDA IO_AREA+4
+  BEQ getc
+  RTS
+
+putc:
+  STA IO_AREA+1
+  RTS
 	
 msg	.BYTE "Monitor v0", 0
 
