@@ -10,9 +10,9 @@
 ; W : Address of the code to run
 W	.= $FE		; 2 bytes, an address
 IP	.= W -2
-G1	.= IP-2		; general purpose register
-G2	.= G1-2		; general purpose register
-DTOP	.= G2-2
+G2	.= IP-2		; general purpose register
+G1	.= G2-2		; general purpose register
+DTOP	.= G1-2		; Stack TOP
 
 ; Offset of the WORD name in the label
 ; 2 bytes after the Header's addr
