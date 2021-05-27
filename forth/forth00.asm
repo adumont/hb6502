@@ -85,7 +85,17 @@ forth_prog:
 
 ;	.DW do_DUP, do_PRINT, do_CRLF
 
-	.DW do_DSP
+	.DW do_LIT
+	.DW TEST_STR+1
+	
+	.DW do_LIT, $0004
+	
+	.DW do_FIND
+	
+	.DW do_PRINT, do_CRLF
+
+
+	.DW do_DP
 	.DW do_DUP, do_PRINT, do_CRLF
 	
 	.DW do_LIT, $0002, do_PLUS    ; $0002 +
@@ -252,9 +262,9 @@ do_LIT:
 	LDA IP
 	ADC #2
 	STA IP
-	BCC skip1
+	BCC .skip
 	INC IP+1
-skip1:
+.skip:
 	JMP NEXT
 
 h_DUP:
@@ -432,26 +442,24 @@ h_FIND:
 	.DW h_STORE
 	.STR "FIND"
 do_FIND:
-; ( ADDRi -- ADDRo )
+; ( ADDRi LEN -- ADDRo )
 ; ADDRi: Address of a string
+; LEN: Length of the string (LO byte only)
 ; ADDRo: Address of the header if Found
 ; or 0000 if not found
 
 ; Store the addr on the STACK in G2
-; Addr to the counted string we look in
-; the dictionary
-	LDA 2,X	; LO
+	LDA 4,X	; LO
 	STA G2
-	LDA 3,X	; HI
+	LDA 5,X	; HI
 	STA G2+1
 ; store LATEST in W
-	CLC
 	LDA LATEST
 	STA W
 	LDA LATEST+1
 	STA W+1
-nxt_word: ; previous word in the dictionary
-; store W+2 in G1
+nxt_word:
+; store W+2 in G1 (G1 points to the counted str)
 	CLC
 	LDA W
 	ADC #HDR_OFFSET_STR
@@ -460,11 +468,25 @@ nxt_word: ; previous word in the dictionary
 	ADC #0
 	STA G1+1
 
+; compare length
+	LDA 2,X		; len on stack (1byte)
+	CMP (G1)	; compare to 
+	BNE advance_w	; not same length, advance to next word
+; same length: compare str
+	; G1+1 --> G1 (now points to STR, not length)
+	CLC
+	INC G1
+	BNE .skip
+	INC G1+1
+.skip:	
+	TAY		; we previously loaded LEN in A --> Y
 	JSR STRCMP
 	BEQ found
+
 ; not found: look for next word in
 ; dictionnary
 
+advance_w:
 	; W points to the previous entry
 	; (W) -> W
 	LDA (W)
@@ -477,18 +499,18 @@ nxt_word: ; previous word in the dictionary
 	BNE nxt_word
 	LDA W+1
 	BNE nxt_word
-	; here: not found :(
+	; here: not found :(, we put 00 on stack and exit
 	INX
 	INX
-	JMP do_PUSH0
+	JMP do_PUSH0 ; this will also exit (NEXT)
 	
 found:	; ADDR is W -> TOS
-	SEC
+	INX
+	INX
 	LDA W
 	STA 2,X
 	LDA W+1
 	STA 3,X
-
 	JMP NEXT
 
 STRCMP:
@@ -499,33 +521,16 @@ STRCMP:
 ; Output:
 ; - Z flag set if both str equals
 ; - Z flag cleared if not equals
-	; compare the length (1rst byte)
-	LDA (G1)
-	CMP (G2)
-	;BNE not_same
-	BNE strcmp_exit
-
-	; here we know both str have
-	; same length (in A)
-	; now, we put Len in Y
-	TAY	; Y=length
-next_char:
+.next_char:
+	DEY
 	LDA (G1),Y
 	CMP (G2),Y
-	;BNE not_same
-	BNE strcmp_exit
-	DEY
-	; BEQ same
-	BNE next_char
-strcmp_exit:
+	BNE .strcmp_exit
+	CPY #0
+	BNE .next_char
+.strcmp_exit:
 	RTS
 
-not_same:
-	CLC
-	RTS
-same:
-	SEC
-	RTS
 
 h_DP:
 	.DW h_FIND
@@ -662,7 +667,7 @@ NMI_vec
 	
 
 
-TEST_STR: .STR "JUMP"
+TEST_STR: .STR "HERE"
 
 	*= $0200
 
