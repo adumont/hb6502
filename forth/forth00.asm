@@ -36,6 +36,11 @@ RES_vec
 	LDA #>h_LATEST
 	STA LATEST+1
 
+	LDA #<USER_BASE
+	STA DP
+	LDA #>USER_BASE
+	STA DP+1
+
 ; This is a Direct Threaded Code based FORTH
 	
 ; Load the entry point of our main FORTH
@@ -49,10 +54,9 @@ RES_vec
 
 NEXT:
 ; (IP) --> W
-	LDY #0
-	LDA (IP),y
+	LDA (IP)
 	STA W
-	INY
+	LDY #1
 	LDA (IP),y
 	STA W+1
 ; IP+2 --> IP
@@ -76,8 +80,27 @@ NEXT:
 ; FORTH program.
 	
 	;*= $4000
-forth_prog:	
+forth_prog:
 ;	.DW word1
+
+;	.DW do_DUP, do_PRINT, do_CRLF
+
+	.DW do_DSP
+	.DW do_DUP, do_PRINT, do_CRLF
+	
+	.DW do_LIT, $0002, do_PLUS    ; $0002 +
+	.DW do_DP, do_STORE 	      ; DP !
+
+	; Print 1234 5678 on output
+	.DW do_LIT, $1234, do_PRINT   ; $1234
+	.DW do_SPACE
+	.DW do_LIT, $5678, do_PRINT
+	.DW do_CRLF
+	.DW do_LIT, $ABCD, do_PRINT
+
+	.DW do_LIT, $1234	   ; $1234
+	.DW do_DP, do_FETCH 	   ; DP @ (HERE)
+	.DW do_STORE               ; !
 
 	.DW do_LIT
 	.DW TEST_STR
@@ -217,10 +240,9 @@ h_LIT:
 do_LIT:
 ; (IP) points to literal
 ; instead of next instruction ;)
-	LDY #0
-	LDA (IP),y
+	LDA (IP)
 	STA 0,X
-	INY
+	LDY #1
 	LDA (IP),y
 	STA 1,X
 	DEX
@@ -342,8 +364,7 @@ do_JUMP:
 	LDY #1
 	LDA (IP),y
 	PHA
-	DEY
-	LDA (IP),y
+	LDA (IP)
 	PHA
 	; and jump to do_SEMI to handle the rest ;)
 	JMP do_SEMI
@@ -352,10 +373,9 @@ do_JUMP:
 do_JUMP_OLD: ; alternative way of jumping, no Return Stack
 ; (IP) points to literal address to jump to
 ; instead of next instruction ;)
-	LDY #0
-	LDA (IP),y
+	LDA (IP)
 	PHA
-	INY
+	LDY #1
 	LDA (IP),y
 	STA IP+1
 	PLA
@@ -377,10 +397,9 @@ do_FETCH:
 	STA W+1
 	; Read data at (W) and save
 	; in the TOS
-	LDY #0
-	LDA (W),y
+	LDA (W)
 	STA 2,X
-	INY
+	LDY #1
 	LDA (W),y
 	STA 3,X
 	JMP NEXT
@@ -397,11 +416,10 @@ do_STORE:
 	STA W+1
 	; save the value to (W)
 	; LO
-	LDY #0
 	LDA 4,X
-	STA (W),y
+	STA (W)
 	; HI
-	INY
+	LDY #1
 	LDA 5,X
 	STA (W),y
 	INX
@@ -449,10 +467,9 @@ nxt_word: ; previous word in the dictionary
 
 	; W points to the previous entry
 	; (W) -> W
-	LDY #0
-	LDA (W),Y
+	LDA (W)
 	STA 0,X ; we store it there temporarily
-	INY
+	LDY #1
 	LDA (W),Y
 	STA W+1
 	LDA 0,X
@@ -483,9 +500,8 @@ STRCMP:
 ; - Z flag set if both str equals
 ; - Z flag cleared if not equals
 	; compare the length (1rst byte)
-	LDY #0
-	LDA (G1),Y	
-	CMP (G2),Y
+	LDA (G1)
+	CMP (G2)
 	;BNE not_same
 	BNE strcmp_exit
 
@@ -511,9 +527,87 @@ same:
 	SEC
 	RTS
 
+h_DP:
+	.DW h_FIND
+	.STR "DP"
+do_DP:
+; DP ( -- addr )
+
+; Alternative, as word definition:
+;	JMP do_COLON
+;	.DW do_LIT, CP, do_SEMI
+	LDA #<DP
+	STA 0,X
+	LDA #>DP
+	STA 1,X
+	DEX
+	DEX
+	JMP NEXT
+
+; Print a WORD
+h_PRINT:
+	.DW h_DP
+	.STR "PRINT"
+do_PRINT:
+	INX
+	INX
+	LDA 1,X
+	JSR print_byte
+	LDA 0,X
+	JSR print_byte
+	JMP NEXT
+
+h_SPACE:
+	.DW h_PRINT
+	.STR "SPACE"
+do_SPACE:
+	LDA #' '
+	JSR putc
+	JMP NEXT
+
+h_CRLF:
+	.DW h_SPACE
+	.STR "CRLF"
+do_CRLF:
+	LDA #$0a ; CR
+	JSR putc
+	LDA #$0d ; LF
+	JSR putc
+	JMP NEXT
+
+h_HERE:
+	.DW h_CRLF
+	.STR "HERE"
+do_HERE:
+; : HERE	DP @ ;
+	JMP do_COLON
+	.DW do_DP, do_FETCH, do_SEMI
+
+h_ALLOT:
+	.DW h_HERE
+	.STR "ALLOT"
+do_ALLOT:
+; : ALLOT	HERE + DP ! ;
+	JMP do_COLON
+	.DW do_HERE, do_PLUS, do_DP, do_STORE, do_SEMI
+
+
+; Put Data Stack Pointer on the stack
+h_DSP:
+	.DW h_ALLOT
+	.STR "DSP"
+do_DSP:
+	TXA
+	STA 0,X
+	STZ 1,X
+	DEX
+	DEX
+	JMP NEXT
+
+
 ; ALWAYS update the latest word's 
-; header address
-h_LATEST .= h_FIND
+; header address h_*
+h_LATEST .= h_DSP
 
 
 ; Kowalkski I/O routines
@@ -530,9 +624,42 @@ putc:
 	
 msg	.BYTE "Monitor v0", 0
 
+
+; Print routines
+
+print_byte:
+	PHA	; save A for 2nd nibble
+	LSR	; here we shift right
+	LSR	; to get HI nibble
+	LSR
+	LSR
+	JSR nibble_value_to_asc
+	JSR putc
+
+	PLA
+	AND #$0F ; LO nibble
+	JSR nibble_value_to_asc
+	JSR putc
+	RTS
+
+nibble_value_to_asc:
+	CMP #$0A
+	BCC skip3
+	ADC #$66
+skip3:
+	EOR #$30
+	RTS
+
+
+; Interrupts routines
+
 IRQ_vec
 NMI_vec
 	RTI
+	
+	
+	
+	
 
 
 TEST_STR: .STR "JUMP"
@@ -540,7 +667,11 @@ TEST_STR: .STR "JUMP"
 	*= $0200
 
 LATEST	.DS 2	; Store the latest ADDR of the Dictionary
-CMD	.DS 16	; CMD string
+CMD	.DS 80	; CMD string
+DP	.DS 2	; Data Pointer: Store the latest ADDR of next free space in RAM (HERE)
+
+; Base of user memory area.
+USER_BASE:
 
 ; system vectors
 
