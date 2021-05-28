@@ -52,6 +52,14 @@ RES_vec
 	STA IP+1
 	BRA NEXT
 
+; Lots of primitive words were ending with:
+; 	DEX
+;	DEX
+;	JMP NEXT
+; I have put this right here before NEXT, so now in the
+; primitive word I jump to DEX2_NEXT, and DEX2_NEXT will
+; fall through to NEXT. We save on ROM memory
+
 DEX2_NEXT:
 	DEX
 	DEX
@@ -90,40 +98,29 @@ forth_prog:
 
 ;	.DW do_DUP, do_PRINT, do_CRLF
 	
-	.DW do_LIT
-	.DW do_PRINT
-
-	.DW do_DUP
-
-	.DW do_EXEC
-
-	.DW do_DUP
-	.DW do_TO_R
-	.DW do_SEMI
-
-	; Put Addr of a WORD
+	; Put Addr of a string
 	.DW do_LIT
 	.DW h_PRINT+3
-	
-	; Put LENGTH of the same word
+		
+	; Put LENGTH of the string
 	.DW do_LIT, $0005
 	
 	.DW do_FIND
 	
-	.DW do_DUP, do_PRINT, do_CRLF
 
-	.DW do_1PLUS, do_1PLUS     ; 1+ 1+
-	.DW do_DUP, do_CFETCH, do_1PLUS, do_PLUS ; DUP c@ 1+ +
-
-	.DW do_DUP,do_PRINT, do_CRLF
+; do_CFA
+	.DW do_1PLUS, do_1PLUS     ; 1+ 1+	; skip prev. word link
+	.DW do_DUP, do_CFETCH, do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
+;	
+	.DW do_DUP,do_PRINT, do_CRLF	; print
 	
-	.DW do_DUP, do_TO_R, do_SEMI
+	.DW do_DUP
+
+	.DW do_EXEC
 
 	.DW do_DP
-	.DW do_DUP, do_PRINT, do_CRLF
-	
-	.DW do_LIT, $0002, do_PLUS    ; $0002 +
-	.DW do_DP, do_STORE 	      ; DP !
+	.DW do_1PLUS, do_1PLUS     ; 1+ 1+
+	.DW do_DP, do_STORE 	   ; DP !
 
 	; Print 1234 5678 on output
 	.DW do_LIT, $1234, do_PRINT   ; $1234
@@ -276,8 +273,8 @@ do_LIT:
 	LDY #1
 	LDA (IP),y
 	STA 1,X
-	DEX
-	DEX
+;	DEX
+;	DEX
 ; Now advance IP
 ; IP+2 --> IP
 	LDA IP
@@ -286,7 +283,7 @@ do_LIT:
 	BCC .skip
 	INC IP+1
 .skip:
-	JMP NEXT
+	JMP DEX2_NEXT
 
 h_DUP:
 	.DW h_LIT
@@ -304,15 +301,13 @@ h_PLUS:
 	.STR "+"
 do_PLUS:
 	CLC
-	INX
-	INX
-	LDA 0,X
-	ADC 2,X
-	STA 2,X
-	LDA 1,X
-	ADC 3,X
-	STA 3,X
-	JMP NEXT
+	LDA 2,X
+	ADC 4,X
+	STA 4,X
+	LDA 3,X
+	ADC 5,X
+	STA 5,X
+	JMP do_DROP
 
 h_1PLUS:
 	.DW h_PLUS
@@ -565,13 +560,11 @@ advance_w:
 	JMP do_PUSH0 ; this will also exit (NEXT)
 	
 found:	; ADDR is W -> TOS
-	INX
-	INX
 	LDA W
-	STA 2,X
+	STA 4,X
 	LDA W+1
-	STA 3,X
-	JMP NEXT
+	STA 5,X
+	JMP do_DROP
 
 STRCMP:
 ; Clobbers: A, Y
@@ -613,8 +606,6 @@ h_PRINT:
 	.DW h_DP
 	.STR "PRINT"
 do_PRINT:
-	;INX
-	;INX
 	LDA 3,X
 	JSR print_byte
 	LDA 2,X
@@ -653,12 +644,24 @@ h_ALLOT:
 do_ALLOT:
 ; : ALLOT	HERE + DP ! ;
 	JMP do_COLON
-	.DW do_HERE, do_PLUS, do_DP, do_STORE, do_SEMI
+	.DW do_HERE, do_PLUS, do_DP, do_STORE
+	.DW do_SEMI
 
+h_CFA:
+	.DW h_ALLOT
+	.STR ">CFA"
+do_CFA:
+	JMP do_COLON
+	; ( ADDR -- ADDR )
+	; takes the dictionary pointer to a word
+	; returns the codeword pointer
+	.DW do_1PLUS, do_1PLUS  ; 1+ 1+	; skip prev. word link
+	.DW do_DUP, do_CFETCH, do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
+	.DW do_SEMI
 
 ; Put Data Stack Pointer on the stack
 h_DSP:
-	.DW h_ALLOT
+	.DW h_CFA
 	.STR "DSP"
 do_DSP:
 	TXA
