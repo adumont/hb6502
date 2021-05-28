@@ -50,7 +50,12 @@ RES_vec
 	STA IP
 	LDA #>forth_prog
 	STA IP+1
-	; run NEXT
+	BRA NEXT
+
+DEX2_NEXT:
+	DEX
+	DEX
+	; fall through NEXT
 
 NEXT:
 ; (IP) --> W
@@ -84,16 +89,35 @@ forth_prog:
 ;	.DW word1
 
 ;	.DW do_DUP, do_PRINT, do_CRLF
-
-	.DW do_LIT
-	.DW TEST_STR+1
 	
-	.DW do_LIT, $0004
+	.DW do_LIT
+	.DW do_PRINT
+
+	.DW do_DUP
+
+	.DW do_EXEC
+
+	.DW do_DUP
+	.DW do_TO_R
+	.DW do_SEMI
+
+	; Put Addr of a WORD
+	.DW do_LIT
+	.DW h_PRINT+3
+	
+	; Put LENGTH of the same word
+	.DW do_LIT, $0005
 	
 	.DW do_FIND
 	
-	.DW do_PRINT, do_CRLF
+	.DW do_DUP, do_PRINT, do_CRLF
 
+	.DW do_1PLUS, do_1PLUS     ; 1+ 1+
+	.DW do_DUP, do_CFETCH, do_1PLUS, do_PLUS ; DUP c@ 1+ +
+
+	.DW do_DUP,do_PRINT, do_CRLF
+	
+	.DW do_DUP, do_TO_R, do_SEMI
 
 	.DW do_DP
 	.DW do_DUP, do_PRINT, do_CRLF
@@ -228,9 +252,7 @@ h_PUSH0:
 do_PUSH0:
 	STZ 0,x
 	STZ 1,x
-	DEX
-	DEX
-	JMP NEXT
+	JMP DEX2_NEXT
 
 h_PUSH1:
 	.DW h_PUSH0
@@ -239,9 +261,8 @@ do_PUSH1:
 	LDA #1
 	STA 0,x
 	STZ 1,x
-	DEX
-	DEX
-	JMP NEXT
+	JMP DEX2_NEXT
+
 
 ; Push a literal word (2 bytes)
 h_LIT:
@@ -275,9 +296,8 @@ do_DUP:
 	STA 0,X
 	LDA 3,X
 	STA 1,X
-	DEX
-	DEX
-	JMP NEXT	
+	JMP DEX2_NEXT
+	
 
 h_PLUS:
 	.DW h_DUP
@@ -294,16 +314,24 @@ do_PLUS:
 	STA 3,X
 	JMP NEXT
 
-h_PUTC:
+h_1PLUS:
 	.DW h_PLUS
+	.STR "1+"
+do_1PLUS:
+	CLC
+	INC 2,X
+	BNE .skip
+	INC 3,X
+.skip:	JMP NEXT
+
+h_PUTC:
+	.DW h_1PLUS
 	.STR "PUTC"
 do_PUTC: ; "c," emit a single char
 	; char is on stack
 	LDA 2,X
-	INX
-	INX
 	JSR putc
-	JMP NEXT
+	JMP do_DROP
 
 h_GETC:
 	.DW h_PUTC
@@ -313,9 +341,8 @@ do_GETC:
 	JSR getc ; leaves the char in A
 	STA 0,X
 	STZ 1,X
-	DEX
-	DEX
-	JMP NEXT
+	JMP DEX2_NEXT
+
 
 h_TO_R:
 	.DW h_GETC
@@ -323,13 +350,11 @@ h_TO_R:
 do_TO_R:
 ; >R: pop a cell (possibly an ADDR) from
 ; the stack and pushes it to the Return Stack
-	INX
-	INX
-	LDA 1,X
+	LDA 3,X
 	PHA
-	LDA 0,X
+	LDA 2,X
 	PHA
-	JMP NEXT
+	JMP do_DROP
 
 h_FROM_R:
 	.DW h_TO_R
@@ -341,9 +366,8 @@ do_FROM_R:
 	STA 0,X
 	PLA
 	STA 1,X
-	DEX
-	DEX
-	JMP NEXT
+	JMP DEX2_NEXT
+
 
 h_AT_R:
 	.DW h_FROM_R
@@ -360,9 +384,8 @@ do_AT_R:
 	STA 0,X
 	LDA $0103,Y
 	STA 1,X
-	DEX
-	DEX
-	JMP NEXT
+	JMP DEX2_NEXT
+
 
 h_JUMP:
 	.DW h_AT_R
@@ -432,14 +455,51 @@ do_STORE:
 	LDY #1
 	LDA 5,X
 	STA (W),y
+end_do_STORE:	
 	INX
 	INX
-	INX
-	INX
+	;INX       ; INX INX NEXT is do_DROP
+	;INX
+	;JMP NEXT 	
+	JMP do_DROP
+
+h_CFETCH:
+	.DW h_STORE
+	.STR "c@"
+do_CFETCH:
+; c@ ( ADDR -- byte ) 
+; We read the data at the address on the 
+; stack and put the value on the stack
+	; copy address from stack to W
+	LDA 2,X	; LO
+	STA W
+	LDA 3,X	; HI
+	STA W+1
+	; Read data at (W) and save
+	; in the TOS
+	LDA (W)
+	STA 2,X
+	STz 3,X
 	JMP NEXT
 
+h_CSTORE:
+	.DW h_CFETCH
+	.STR "C!"
+do_CSTORE:
+; C! ( value ADDR -- )
+	; copy the address to W
+	LDA 2,X	; LO
+	STA W
+	LDA 3,X	; HI
+	STA W+1
+	; save the value to (W)
+	; LO
+	LDA 4,X
+	STA (W)
+	BRA end_do_STORE
+
 h_FIND:
-	.DW h_STORE
+	.DW h_CSTORE
 	.STR "FIND"
 do_FIND:
 ; ( ADDRi LEN -- ADDRo )
@@ -545,22 +605,21 @@ do_DP:
 	STA 0,X
 	LDA #>DP
 	STA 1,X
-	DEX
-	DEX
-	JMP NEXT
+	JMP DEX2_NEXT
+
 
 ; Print a WORD
 h_PRINT:
 	.DW h_DP
 	.STR "PRINT"
 do_PRINT:
-	INX
-	INX
-	LDA 1,X
+	;INX
+	;INX
+	LDA 3,X
 	JSR print_byte
-	LDA 0,X
+	LDA 2,X
 	JSR print_byte
-	JMP NEXT
+	JMP do_DROP
 
 h_SPACE:
 	.DW h_PRINT
@@ -605,18 +664,33 @@ do_DSP:
 	TXA
 	STA 0,X
 	STZ 1,X
-	DEX
-	DEX
-	JMP NEXT
+	JMP DEX2_NEXT
 
 
+; Put Data Stack Pointer on the stack
+h_EXEC:
+	.DW h_DSP
+	.STR "EXEC"
+do_EXEC:
+	LDA 2,X
+	STA W
+	LDA 3,X
+	STA W+1
+	INX
+	INX
+	JMP (W)
+
+
+;-----------------------------------------------------------------
 ; ALWAYS update the latest word's 
 ; header address h_*
-h_LATEST .= h_DSP
+h_LATEST .= h_EXEC
 
 
-; Kowalkski I/O routines
-; to change for SBC
+
+;-----------------------------------------------------------------
+; I/O routines for Kowalkski simulator 
+; Change for SBC
 
 getc:
   LDA IO_AREA+4
