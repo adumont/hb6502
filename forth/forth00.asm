@@ -56,9 +56,13 @@ RES_vec
 ; 	DEX
 ;	DEX
 ;	JMP NEXT
+
 ; I have put this right here before NEXT, so now in the
 ; primitive word I jump to DEX2_NEXT, and DEX2_NEXT will
 ; fall through to NEXT. We save on ROM memory
+
+; we don't add here INX INX jmp NEXT as this is
+; like "jmp do_DROP"! --> use that.
 
 DEX2_NEXT:
 	DEX
@@ -94,9 +98,31 @@ NEXT:
 	
 	;*= $4000
 forth_prog:
+
+; this is just a bunch of FORTH instructions
+; hand compiled here, just for testing them...
+
+	.DW do_LIT, h_PRINT+3
+	.DW do_DUP
+
+	.DW do_LIT, $0FF0
+	
+	.DW do_AND
+	.DW do_PRINT, do_CRLF	; print
+	
+	.DW do_LIT, $0FF0
+	.DW do_OR
+	.DW do_DUP, do_PRINT, do_CRLF	; print
+	
+	.DW do_NOT
+	.DW do_DUP, do_PRINT, do_CRLF	; print
+
 ;	.DW word1
 
 ;	.DW do_DUP, do_PRINT, do_CRLF
+
+	.DW do_PUSH1, do_EQZ
+	.DW do_DUP, do_PRINT, do_CRLF	; print
 	
 	; Put Addr of a string
 	.DW do_LIT
@@ -108,10 +134,7 @@ forth_prog:
 	.DW do_FIND
 	
 
-; do_CFA
-	.DW do_1PLUS, do_1PLUS     ; 1+ 1+	; skip prev. word link
-	.DW do_DUP, do_CFETCH, do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
-;	
+
 	.DW do_DUP,do_PRINT, do_CRLF	; print
 	
 	.DW do_DUP
@@ -630,8 +653,69 @@ do_CRLF:
 	JSR putc
 	JMP NEXT
 
-h_HERE:
+; 0=, it's also equivalent to logical "NOT" (not bitwise NOT)
+; logical NOT --> use 0=
+; 0<> --> use 0= 0=  (twice!)
+h_EQZ:
 	.DW h_CRLF
+	.STR "0="
+do_EQZ:
+; ( n -- bool )
+; TRUE  (FFFF) if n is 0000
+; FALSE (0000) otherwise
+	LDA 2,X
+	ORA 3,X
+	BEQ .true
+.false:	STZ 2,X
+	STZ 3,X
+	JMP NEXT
+.true:
+	LDA #$FF
+	STA 2,X
+	STA 3,X
+	JMP NEXT
+
+h_AND:
+	.DW h_EQZ
+	.STR "AND"
+do_AND:
+; ( a b -- a&b ) bitwise AND
+	LDA 2,X
+	AND 4,X
+	STA 4,X
+	LDA 3,X
+	AND 5,X
+	STA 5,X
+	JMP do_DROP
+
+h_OR:
+	.DW h_AND
+	.STR "OR"
+do_OR:
+; ( a b -- a|b ) bitwise AND
+	LDA 2,X
+	ORA 4,X
+	STA 4,X
+	LDA 3,X
+	ORA 5,X
+	STA 5,X
+	JMP do_DROP
+
+h_NOT:
+	.DW h_OR
+	.STR "NOT"
+do_NOT:
+; ( a -- not(a) ) bitwise NOT
+	LDA 2,X
+	EOR #$FF
+	STA 2,X
+	LDA 3,X
+	EOR #$FF
+	STA 3,X
+	JMP NEXT
+
+h_HERE:
+	.DW h_NOT
 	.STR "HERE"
 do_HERE:
 ; : HERE	DP @ ;
