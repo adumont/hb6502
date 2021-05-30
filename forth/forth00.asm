@@ -106,8 +106,7 @@ forth_prog:
 	.DW do_LIT, $0002
 	.DW do_LIT, $0003
 
-	.DW do_ROT
-	.DW do_NROT
+	.DW do_OVER
 
 	.DW do_PRINT, do_CRLF	; print
 	.DW do_PRINT, do_CRLF	; print
@@ -321,6 +320,17 @@ do_NROT:
 	LDA W+1
 	STA 7,X
 	JMP NEXT
+
+h_OVER:
+	.DW h_NROT
+	.STR "OVER"
+do_OVER:
+; ( x y -- x y x )
+	LDA 4,X
+	STA 0,X
+	LDA 5,X
+	STA 1,X
+	JMP DEX2_NEXT
 
 h_DROP:
 	.DW h_NROT
