@@ -40,6 +40,8 @@ RES_vec
 	STA DP
 	LDA #>USER_BASE
 	STA DP+1
+	
+	STZ INP_IDX	; initialize INP_IDX to 0
 
 ; This is a Direct Threaded Code based FORTH
 	
@@ -103,10 +105,23 @@ forth_prog:
 
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
-	.DW do_LIT, h_PRINT+3 ; start of "PRINT" string
-	.DW do_HERE	      ; HERE
-	.DW do_LIT, 5
+	.DW do_LIT, TEST_STR 	; Addr of "TEST_STR" string
+	.DW do_DUP
+	.DW do_CFETCH		; get length
+	.DW do_SWAP
+	.DW do_1PLUS		; Add 1 --> point to STR
+	.DW do_LIT, INPUT
+	.DW do_ROT		; ( src dst len )
 	.DW do_CMOVE
+loop:	.DW do_WORD
+	.DW do_FIND
+	.DW do_DUP, do_PRINT, do_CRLF
+	.DW do_CFA
+	.DW do_DUP, do_PRINT, do_CRLF
+
+	; wait a key!
+	.DW do_GETC, do_JUMP, loop
+	
 
 ;	.DW word1
 
@@ -313,7 +328,7 @@ do_OVER:
 	JMP DEX2_NEXT
 
 h_DROP:
-	.DW h_NROT
+	.DW h_OVER
 	.STR "DROP"
 do_DROP:
 	INX
@@ -840,9 +855,62 @@ do_CMOVE:
 
 	JMP NEXT
 
+h_WORD:
+	.DW h_CMOVE
+	.STR "WORD"
+do_WORD:
+; Find next word in input buffer (and advance INP_IDX)
+; ( -- ADDR LEN )
+	; INPUT --> W
+	LDA #<INPUT
+	STA W
+	LDA #>INPUT
+	STA W+1
+	; INP_IDX --> Y
+	LDY INP_IDX
+.next1:
+	LDA (W),Y	; load char at (W)+Y in A
+	
+	CMP #' '
+	BNE .startW
+	INY
+	BRA .next1
+
+; start of word
+.startW:
+	; First we store the ADDR on stack
+	TYA
+	STA G1	; we save Y in G1, temporarily
+	CLC
+	ADC W
+	STA 0,X
+	LDA W+1
+	ADC #0
+	STA 1,X
+	DEX
+	DEX
+.next2:
+	INY
+	LDA (W),Y	; load char at (W)+Y in A
+	
+	CMP #' '
+	BEQ .endW
+	BRA .next2
+.endW:
+	; compute length
+	SEC
+	TYA
+	SBC G1	; earlier we saved Y in G1 ;)
+	STA 0,X
+	STZ 1,X
+	; Save Y in INP_IDX
+	STY INP_IDX
+	;
+	JMP DEX2_NEXT
+
 ; Put Data Stack Pointer on the stack
 h_EXEC:
-	.DW h_CMOVE
+	.DW h_WORD
 	.STR "EXEC"
 do_EXEC:
 	LDA 2,X
@@ -905,23 +973,18 @@ skip3:
 
 ; Interrupts routines
 
-IRQ_vec
-NMI_vec
+IRQ_vec:
+NMI_vec:
 	RTI
-	
-	
-	
-	
 
-
-TEST_STR: .STR "HERE"
+TEST_STR: .STR " >R  DUP OVER ROT -ROT "
 
 	*= $0200
 
 LATEST	.DS 2	; Store the latest ADDR of the Dictionary
-CMD	.DS 80	; CMD string
+INPUT	.DS 80	; CMD string (extend as needed, up to 256!)
+INP_IDX  .DS 1	; Index into the INPUT Buffer (for reading it with KEY)
 DP	.DS 2	; Data Pointer: Store the latest ADDR of next free space in RAM (HERE)
-
 ; Base of user memory area.
 USER_BASE:
 
