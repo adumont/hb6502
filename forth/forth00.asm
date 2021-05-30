@@ -102,6 +102,18 @@ forth_prog:
 ; this is just a bunch of FORTH instructions
 ; hand compiled here, just for testing them...
 
+	.DW do_LIT, $0001
+	.DW do_LIT, $0002
+	.DW do_LIT, $0003
+
+	.DW do_ROT
+	.DW do_NROT
+
+	.DW do_PRINT, do_CRLF	; print
+	.DW do_PRINT, do_CRLF	; print
+	.DW do_PRINT, do_CRLF	; print
+	.DW do_GETC
+
 	.DW do_LIT, h_PRINT+3
 	.DW do_DUP
 
@@ -256,8 +268,62 @@ do_SWAP:
 	STA 5,X
 	JMP NEXT
 
-h_DROP:
+h_ROT:
 	.DW h_SWAP
+	.STR "ROT"
+do_ROT:
+; ( x y z -- y z x )
+; X, stack 2 -> W
+	LDA 6,X
+	STA W
+	LDA 7,X
+	STA W+1
+; Y, stack 1 -> stack 2
+	LDA 4,X
+	STA 6,X
+	LDA 5,X
+	STA 7,X
+; Z, stack 0 -> stack 1
+	LDA 2,X
+	STA 4,X
+	LDA 3,X
+	STA 5,X
+; W --> Stack 0
+	LDA W
+	STA 2,X
+	LDA W+1
+	STA 3,X
+	JMP NEXT
+
+h_NROT:
+	.DW h_ROT
+	.STR "-ROT"
+do_NROT:
+; ( x y z -- z x y )
+; Stack 0 --> W
+	LDA 2,X
+	STA W
+	LDA 3,X
+	STA W+1
+; Stack 1 --> Stack 0
+	LDA 4,X
+	STA 2,X
+	LDA 5,X
+	STA 3,X
+; Stack 2 --> Stack 1
+	LDA 6,X
+	STA 4,X
+	LDA 7,X
+	STA 5,X
+; W --> Stack 2
+	LDA W
+	STA 6,X
+	LDA W+1
+	STA 7,X
+	JMP NEXT
+
+h_DROP:
+	.DW h_NROT
 	.STR "DROP"
 do_DROP:
 	INX
@@ -318,7 +384,6 @@ do_DUP:
 	STA 1,X
 	JMP DEX2_NEXT
 	
-
 h_PLUS:
 	.DW h_DUP
 	.STR "+"
