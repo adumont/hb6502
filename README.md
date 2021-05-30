@@ -68,7 +68,7 @@ Early demo of the Monitor in Kowalksi 6502 simulator:
 
 ## FORTH
 
-I'm trying to develop a FORTH kernel for my Homebrew 6502.
+I'm trying to develop a FORTH kernel for my Homebrew 6502. Read more here [hb6502/forth](https://github.com/adumont/hb6502/tree/main/forth#homebrew-6502-sbc---forth).
 
 It's very early, but for now it seems to work in Kowalksi 6502 simulator.
 
