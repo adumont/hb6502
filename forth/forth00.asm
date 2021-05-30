@@ -86,12 +86,11 @@ NEXT:
 .skip:
 	JMP (W)
 
-	
-
 ; Implemented words:
-; LIT, SWAP, DUP, TO_R (>R), FROM_R (<R)
-; PUTC , GETC, FETCH (@), STORE (!)
-; JUMP
+; 1PLUS ALLOT AND AT_R CFA CFETCH CMOVE COLON CRLF CSTORE
+; DP DROP DUP EQZ EXEC FETCH FIND FROM_R GETC HERE JUMP
+; LIT NOT NROT OR OVER PLUS PRINT PUSH0 PUSH1 PUTC ROT SEMI
+; SP SPACE STORE SWAP TO_R
 
 ; For now, this is the Entry POint of our
 ; FORTH program.
@@ -102,31 +101,12 @@ forth_prog:
 ; this is just a bunch of FORTH instructions
 ; hand compiled here, just for testing them...
 
-	.DW do_LIT, $0001
-	.DW do_LIT, $0002
-	.DW do_LIT, $0003
+;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
-	.DW do_OVER
-
-	.DW do_PRINT, do_CRLF	; print
-	.DW do_PRINT, do_CRLF	; print
-	.DW do_PRINT, do_CRLF	; print
-	.DW do_GETC
-
-	.DW do_LIT, h_PRINT+3
-	.DW do_DUP
-
-	.DW do_LIT, $0FF0
-	
-	.DW do_AND
-	.DW do_PRINT, do_CRLF	; print
-	
-	.DW do_LIT, $0FF0
-	.DW do_OR
-	.DW do_DUP, do_PRINT, do_CRLF	; print
-	
-	.DW do_NOT
-	.DW do_DUP, do_PRINT, do_CRLF	; print
+	.DW do_LIT, h_PRINT+3 ; start of "PRINT" string
+	.DW do_HERE	      ; HERE
+	.DW do_LIT, 5
+	.DW do_CMOVE
 
 ;	.DW word1
 
@@ -819,19 +799,50 @@ do_CFA:
 	.DW do_SEMI
 
 ; Put Data Stack Pointer on the stack
-h_DSP:
+h_SP:
 	.DW h_CFA
-	.STR "DSP"
-do_DSP:
+	.STR "SP"
+do_SP:
 	TXA
 	STA 0,X
 	STZ 1,X
 	JMP DEX2_NEXT
 
+h_CMOVE:
+	.DW h_SP
+	.STR "CMOVE"
+do_CMOVE:
+; (src dst len -- )
+; copy len bytes from src to dst
+	; LEN --> Y
+	LDY 2,X
+	; put SRC in G1
+	LDA 6,X
+	STA G1
+	LDA 7,X
+	STA G1+1
+	; put DST in G2
+	LDA 4,X
+	STA G2
+	LDA 5,X
+	STA G2+1
+.loop:
+	DEY
+	LDA (G1),Y
+	STA (G2),Y
+	CPY #0
+	BNE .loop
+	; remove top 3 elements of the stack
+	TXA
+	CLC
+	ADC #6
+	TAX
+
+	JMP NEXT
 
 ; Put Data Stack Pointer on the stack
 h_EXEC:
-	.DW h_DSP
+	.DW h_CMOVE
 	.STR "EXEC"
 do_EXEC:
 	LDA 2,X
