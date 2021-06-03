@@ -624,8 +624,9 @@ nxt_word:
 	STA G1+1
 
 ; compare length
-	LDA 2,X		; len on stack (1byte)
-	CMP (G1)	; compare to 
+	LDA (G1)	; load current dictionay word's length
+	AND #$1F		; remove flags (3 MSB)
+	CMP 2,X		; compare to len on stack (1byte)
 	BNE advance_w	; not same length, advance to next word
 ; same length: compare str
 	; G1+1 --> G1 (now points to STR, not length)
