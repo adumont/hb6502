@@ -112,6 +112,21 @@ forth_prog:
 
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
+
+; test getline
+	.DW do_INPUT
+	.DW do_CRLF
+loop1:	.DW do_WORD
+	.DW do_FIND
+	;.DW do_DUP, do_PRINT, do_CRLF
+	.DW do_CFA
+	;.DW do_DUP, do_PRINT, do_CRLF
+	.DW do_EXEC
+	;.DW do_DUP, do_PRINT, do_CRLF
+	.DW do_JUMP, loop1
+
+
+
 	.DW do_LIT, TEST_STR 	; Addr of "TEST_STR" string
 	.DW do_DUP
 	.DW do_CFETCH		; get length
@@ -129,6 +144,8 @@ loop:	.DW do_WORD
 	; wait a key!
 	.DW do_GETC, do_JUMP, loop
 	
+
+
 
 ;	.DW word1
 
@@ -346,7 +363,7 @@ do_DROP:
 
 h_PUSH0:
 	.DW h_DROP
-	.STR "PUSH0"
+	.STR "0"
 do_PUSH0:
 	STZ 0,x
 	STZ 1,x
@@ -354,7 +371,7 @@ do_PUSH0:
 
 h_PUSH1:
 	.DW h_PUSH0
-	.STR "PUSH1"
+	.STR "1"
 do_PUSH1:
 	LDA #1
 	STA 0,x
@@ -929,11 +946,17 @@ do_EXEC:
 	INX
 	JMP (W)
 
+h_INPUT:
+	.DW h_EXEC
+	.STR "INPUT"
+do_INPUT:
+	JSR getline
+	JMP NEXT
 
 ;-----------------------------------------------------------------
 ; ALWAYS update the latest word's 
 ; header address h_*
-h_LATEST .= h_EXEC
+h_LATEST .= h_INPUT
 
 
 
@@ -955,6 +978,7 @@ msg	.BYTE "Monitor v0", 0
 ; Input Buffer Routines
 
 getline:
+	STZ INP_IDX	; reset Input index
 	LDY #0
 .next:	JSR getc
 
