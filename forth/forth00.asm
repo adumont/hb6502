@@ -13,6 +13,8 @@ IP	.= W -2
 G2	.= IP-2		; general purpose register
 G1	.= G2-2		; general purpose register
 DTOP	.= G1-2		; Stack TOP
+BKSPACE .= $08
+MAX_LEN .= 80		; Input Buffer MAX length
 
 ; Offset of the WORD name in the label
 ; 2 bytes after the Header's addr
@@ -41,7 +43,9 @@ RES_vec
 	LDA #>USER_BASE
 	STA DP+1
 	
+	STZ INP_LEN
 	STZ INP_IDX	; initialize INP_IDX to 0
+
 
 ; This is a Direct Threaded Code based FORTH
 	
@@ -52,6 +56,9 @@ RES_vec
 	STA IP
 	LDA #>forth_prog
 	STA IP+1
+
+
+; Start FORTH
 	BRA NEXT
 
 ; Lots of primitive words were ending with:
@@ -944,6 +951,43 @@ putc:
 	
 msg	.BYTE "Monitor v0", 0
 
+; Input Buffer Routines
+
+getline:
+	LDY #0
+.next:	JSR getc
+
+	CMP #BKSPACE
+	BEQ .bkspace
+
+	CMP #$0D ; \n
+	BEQ .finish
+
+	CPY #MAX_LEN
+	BEQ .maxlen
+
+	STA INPUT,y	; save char to INPUT
+	JSR putc	; echo char
+	INY
+
+	BRA .next
+.maxlen:
+	PHA
+	LDA #BKSPACE	; send bckspace to erase last char
+	JSR putc
+	PLA		; restore new char
+	STA INPUT-1,y	; save char to INPUT
+	JSR putc
+	BRA .next
+.bkspace:
+	CPY #0		; start of line?
+	BEQ .next	; do nothing
+	JSR putc	; echo char
+	DEY		; else: Y--
+	BRA .next
+.finish:
+	STY INP_LEN
+	RTS
 
 ; Print routines
 
@@ -982,8 +1026,9 @@ TEST_STR: .STR " >R  DUP OVER ROT -ROT "
 	*= $0200
 
 LATEST	.DS 2	; Store the latest ADDR of the Dictionary
+INP_LEN .DS 1	;
 INPUT	.DS 80	; CMD string (extend as needed, up to 256!)
-INP_IDX  .DS 1	; Index into the INPUT Buffer (for reading it with KEY)
+INP_IDX .DS 1	; Index into the INPUT Buffer (for reading it with KEY)
 DP	.DS 2	; Data Pointer: Store the latest ADDR of next free space in RAM (HERE)
 ; Base of user memory area.
 USER_BASE:
