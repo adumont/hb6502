@@ -114,8 +114,9 @@ forth_prog:
 
 
 ; test getline
-	.DW do_INPUT
-	.DW do_CRLF
+
+;	.DW do_INPUT
+;	.DW do_CRLF
 loop1:	.DW do_WORD
 	.DW do_FIND
 	;.DW do_DUP, do_PRINT, do_CRLF
@@ -742,11 +743,15 @@ h_CRLF:
 	.DW h_SPACE
 	.STR "CRLF"
 do_CRLF:
+	JSR _crlf
+	JMP NEXT
+
+_crlf:
 	LDA #$0a ; CR
 	JSR putc
 	LDA #$0d ; LF
 	JSR putc
-	JMP NEXT
+	RTS
 
 ; 0=, it's also equivalent to logical "NOT" (not bitwise NOT)
 ; logical NOT --> use 0=
@@ -894,12 +899,19 @@ do_WORD:
 	; INP_IDX --> Y
 	LDY INP_IDX
 .next1:
+	CPY INP_LEN	; reached end of input string?
+	BEQ .eos
+
 	LDA (W),Y	; load char at (W)+Y in A
 	
 	CMP #' '
 	BNE .startW
 	INY
 	BRA .next1
+
+.eos:	; refill input string
+	JSR getline	
+	BRA do_WORD	; and try again
 
 ; start of word
 .startW:
@@ -916,6 +928,10 @@ do_WORD:
 	DEX
 .next2:
 	INY
+
+	CPY INP_LEN	; reached end of input string?
+	BEQ .endW
+
 	LDA (W),Y	; load char at (W)+Y in A
 	
 	CMP #' '
@@ -966,7 +982,7 @@ h_LATEST .= h_INPUT
 
 getc:
   LDA IO_AREA+4
-  BEQ getc
+swap  BEQ getc
   RTS
 
 putc:
@@ -1012,6 +1028,7 @@ getline:
 	BRA .next
 .finish:
 	STY INP_LEN
+	JSR _crlf
 	RTS
 
 ; Print routines
