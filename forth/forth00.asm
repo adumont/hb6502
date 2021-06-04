@@ -113,20 +113,18 @@ forth_prog:
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
 
-; test getline
-
 ;	.DW do_INPUT
-;	.DW do_CRLF
 loop1:	.DW do_WORD
+;	.DW do_OVER, do_OVER ; 2DUP (keep the WORD addr & Len)
 	.DW do_FIND
-	;.DW do_DUP, do_PRINT, do_CRLF
+	.DW do_DUP, do_0BR, error
 	.DW do_CFA
-	;.DW do_DUP, do_PRINT, do_CRLF
 	.DW do_EXEC
-	;.DW do_DUP, do_PRINT, do_CRLF
 	.DW do_JUMP, loop1
 
-
+error:	
+	.DW do_DROP, do_LIT, WHAT_STR, do_DOTS, do_CRLF
+	.DW do_JUMP, loop1
 
 	.DW do_LIT, TEST_STR 	; Addr of "TEST_STR" string
 	.DW do_DUP
@@ -499,9 +497,33 @@ do_AT_R:
 	STA 1,X
 	JMP DEX2_NEXT
 
+; Branch to Label if 0 on stack
+h_0BR:
+	.DW h_AT_R
+	.STR "0BR"
+do_0BR:
+	LDA 2,X
+	ORA 3,X
+
+	BNE .not0
+	INX
+	INX
+	BRA do_JUMP	; 0?
+.not0:	
+
+; Now advance IP
+; IP+2 --> IP
+	LDA IP
+	ADC #2
+	STA IP
+	BCC .skip
+	INC IP+1
+.skip:
+
+	JMP do_DROP
 
 h_JUMP:
-	.DW h_AT_R
+	.DW h_0BR
 	.STR "JUMP"
 do_JUMP:
 ; (IP) points to literal address to jump to
@@ -722,7 +744,7 @@ do_DP:
 ; Print a WORD
 h_PRINT:
 	.DW h_DP
-	.STR "PRINT"
+	.STR "."
 do_PRINT:
 	LDA 3,X
 	JSR print_byte
@@ -730,8 +752,32 @@ do_PRINT:
 	JSR print_byte
 	JMP do_DROP
 
-h_SPACE:
+; Print a STRING
+h_DOTS:
 	.DW h_PRINT
+	.STR ".S"
+do_DOTS:
+	LDA 2,X
+	STA W
+	LDA 3,X
+	STA W+1
+	LDA (W)		; Length
+	BEQ .exit	; len = 0, exit
+	
+	STA G1		; we save length in G1
+	LDY #0
+	
+.loop:	INY
+	LDA (W),y
+	JSR putc
+
+	CPY G1		; end of string?
+	BNE .loop
+
+.exit:	JMP do_DROP
+
+h_SPACE:
+	.DW h_DOTS
 	.STR "SPACE"
 do_SPACE:
 	LDA #' '
@@ -1063,6 +1109,7 @@ NMI_vec:
 	RTI
 
 TEST_STR: .STR " >R  DUP OVER ROT -ROT "
+WHAT_STR: .STR "WHAT?", $0D
 
 	*= $0200
 
