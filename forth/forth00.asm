@@ -674,9 +674,9 @@ advance_w:
 	LDA W+1
 	BNE nxt_word
 	; here: not found :(, we put 00 on stack and exit
-	INX
-	INX
-	JMP do_PUSH0 ; this will also exit (NEXT)
+	STZ 4,x
+	STZ 5,x
+	JMP do_DROP
 	
 found:	; ADDR is W -> TOS
 	LDA W
@@ -702,7 +702,6 @@ STRCMP:
 	BNE .next_char
 .strcmp_exit:
 	RTS
-
 
 h_DP:
 	.DW h_FIND
