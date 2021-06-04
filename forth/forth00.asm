@@ -982,7 +982,7 @@ h_LATEST .= h_INPUT
 
 getc:
   LDA IO_AREA+4
-swap  BEQ getc
+  BEQ getc
   RTS
 
 putc:
