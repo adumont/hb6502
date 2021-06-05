@@ -594,7 +594,7 @@ do_STORE:
 	LDY #1
 	LDA 5,X
 	STA (W),y
-end_do_STORE:	
+end_do_STORE:		; used by CSTORE (below)
 	INX
 	INX
 	;INX       ; INX INX NEXT is do_DROP
@@ -657,7 +657,7 @@ do_FIND:
 	STA W
 	LDA LATEST+1
 	STA W+1
-nxt_word:
+.nxt_word:
 ; store W+2 in G1 (G1 points to the counted str)
 	CLC
 	LDA W
@@ -671,7 +671,7 @@ nxt_word:
 	LDA (G1)	; load current dictionay word's length
 	AND #$1F		; remove flags (3 MSB)
 	CMP 2,X		; compare to len on stack (1byte)
-	BNE advance_w	; not same length, advance to next word
+	BNE .advance_w	; not same length, advance to next word
 ; same length: compare str
 	; G1+1 --> G1 (now points to STR, not length)
 	CLC
@@ -681,12 +681,12 @@ nxt_word:
 .skip:	
 	TAY		; we previously loaded LEN in A --> Y
 	JSR STRCMP
-	BEQ found
+	BEQ .found
 
 ; not found: look for next word in
 ; dictionnary
 
-advance_w:
+.advance_w:
 	; W points to the previous entry
 	; (W) -> W
 	LDA (W)
@@ -696,15 +696,15 @@ advance_w:
 	STA W+1
 	LDA 0,X
 	STA W
-	BNE nxt_word
+	BNE .nxt_word
 	LDA W+1
-	BNE nxt_word
+	BNE .nxt_word
 	; here: not found :(, we put 00 on stack and exit
 	STZ 4,x
 	STZ 5,x
 	JMP do_DROP
 	
-found:	; ADDR is W -> TOS
+.found:	; ADDR is W -> TOS
 	LDA W
 	STA 4,X
 	LDA W+1
