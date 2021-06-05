@@ -810,7 +810,9 @@ do_TYPE:
 	CPY G1		; Y ?= Length --> end
 	BNE .loop
 
-.exit:	JMP do_DROP
+.exit:	INX
+	INX
+	JMP do_DROP
 
 
 ; Print a space		( -- )
