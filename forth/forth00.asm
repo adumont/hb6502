@@ -198,7 +198,7 @@ loop:	.DW do_WORD
 	.DW do_PUSH1
 	.DW do_GETC
 	.DW do_PLUS
-	.DW do_PUTC
+	.DW do_EMIT
 	; repeat
 	.DW do_JUMP
 	.DW forth_prog ; arg for JUMP
@@ -435,17 +435,17 @@ do_1PLUS:
 	INC 3,X
 .skip:	JMP NEXT
 
-h_PUTC:
+h_EMIT:
 	.DW h_1PLUS
-	.STR "PUTC"
-do_PUTC: ; "c," emit a single char
+	.STR "EMIT"
+do_EMIT: ; EMIT emit a single char
 	; char is on stack
 	LDA 2,X
 	JSR putc
 	JMP do_DROP
 
 h_GETC:
-	.DW h_PUTC
+	.DW h_EMIT
 	.STR "GETC"
 do_GETC:
 ; get a single char from IO, leave on stack
