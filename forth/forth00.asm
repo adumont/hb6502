@@ -57,7 +57,6 @@ RES_vec
 	LDA #>forth_prog
 	STA IP+1
 
-
 ; Start FORTH
 	BRA NEXT
 
@@ -112,7 +111,10 @@ forth_prog:
 
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
-
+	; Print version string
+;	.DW do_LIT, VERS_STR
+;	.DW do_COUNT, do_TYPE
+	
 ;	.DW do_INPUT
 loop1:	.DW do_WORD
 ;	.DW do_OVER, do_OVER ; 2DUP (keep the WORD addr & Len)
@@ -123,7 +125,9 @@ loop1:	.DW do_WORD
 	.DW do_JUMP, loop1
 
 error:	
-	.DW do_DROP, do_LIT, WHAT_STR, do_DOTS, do_CRLF
+	.DW do_DROP
+	.DW do_LIT, WHAT_STR
+	.DW do_COUNT, do_TYPE
 	.DW do_JUMP, loop1
 
 	.DW do_LIT, TEST_STR 	; Addr of "TEST_STR" string
@@ -740,8 +744,8 @@ do_DP:
 	STA 1,X
 	JMP DEX2_NEXT
 
-
-; Print a WORD
+; Print data on top of stack (in hex for now)
+; ( n -- )
 h_PRINT:
 	.DW h_DP
 	.STR "."
@@ -750,40 +754,75 @@ do_PRINT:
 	JSR print_byte
 	LDA 2,X
 	JSR print_byte
+	LDA #' '
+	JSR putc
 	JMP do_DROP
 
-; Print a STRING
-h_DOTS:
+; COUNT: ( addr -- addr+1 len )
+; Converts a counted string, whose length is contained in
+; the 1rst byte, into the form appropriate for TYPE, by
+; leaving the address of the first character and the
+; length on the stack.
+
+h_COUNT:
 	.DW h_PRINT
-	.STR ".S"
-do_DOTS:
+	.STR "COUNT"
+do_COUNT:
 	LDA 2,X
 	STA W
 	LDA 3,X
 	STA W+1
-	LDA (W)		; Length
+
+	LDA (W)		; 1rst byte is length
+	STA 0,X		; add on top of stack
+	STZ 1,X
+
+	INC 2,X		; addr++
+	BNE .skip
+	INC 3,X
+.skip:
+	JMP DEX2_NEXT
+
+
+; Print a STRING	( addr len -- )
+; addr --> pointer to 1rst char of string
+; len  --> length of string (1 byte)
+h_TYPE:
+	.DW h_COUNT
+	.STR "TYPE"
+do_TYPE:
+	LDA 2,X		; Length (one byte, max 256)
 	BEQ .exit	; len = 0, exit
 	
 	STA G1		; we save length in G1
 	LDY #0
 	
-.loop:	INY
-	LDA (W),y
+	; save ADDR to STR
+	LDA 4,X
+	STA W
+	LDA 5,X
+	STA W+1
+	
+.loop:	LDA (W),y
 	JSR putc
 
-	CPY G1		; end of string?
+	INY
+	CPY G1		; Y ?= Length --> end
 	BNE .loop
 
 .exit:	JMP do_DROP
 
+
+; Print a space		( -- )
 h_SPACE:
-	.DW h_DOTS
+	.DW h_TYPE
 	.STR "SPACE"
 do_SPACE:
 	LDA #' '
 	JSR putc
 	JMP NEXT
 
+; Print a new line	( -- )
 h_CRLF:
 	.DW h_SPACE
 	.STR "CRLF"
@@ -798,7 +837,7 @@ _crlf:
 	JSR putc
 	RTS
 
-; 0=, it's also equivalent to logical "NOT" (not bitwise NOT)
+; 0=, it's also equivalent to "logical NOT" (not a bitwise NOT)
 ; logical NOT --> use 0=
 ; 0<> --> use 0= 0=  (twice!)
 h_EQZ:
@@ -1108,8 +1147,9 @@ IRQ_vec:
 NMI_vec:
 	RTI
 
+VERS_STR: .STR "ALEX FORTH v0", $0A, $0D
 TEST_STR: .STR " >R  DUP OVER ROT -ROT "
-WHAT_STR: .STR "WHAT?", $0D
+WHAT_STR: .STR "WHAT?", $0A, $0D
 
 	*= $0200
 
