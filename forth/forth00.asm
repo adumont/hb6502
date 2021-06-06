@@ -130,7 +130,7 @@ numscan:
 
 	.DW do_LIT, ERROR  ; ( addr len n Addr )
 	.DW do_CFETCH	; ( addr len n Error )
-	.DW do_0BR, loop1 ; 0 -> no error => loop
+	.DW do_0BR, clean ; 0 -> no error => loop
 
 ; Error: ( addr len n )
 	.DW do_DROP ; ( addr len )
@@ -139,6 +139,10 @@ numscan:
 	.DW do_COUNT, do_TYPE
 	.DW do_JUMP, rsin ; reset input buffer
 
+clean:  ; ( addr len n )
+	.DW do_NROT, do_DROP, do_DROP ; ( n )
+	.DW do_JUMP, loop1 ; reset input buffer
+	
 
 	; below are other old tests...
 
@@ -1233,11 +1237,11 @@ nibble_asc_to_value:
 ; boundary check is it a digit?
 	CMP #'0'
 	BMI .err
-	CMP #'F'
+	CMP #'F'+1
 	BPL .err
 	CMP #'9'+1
 	BMI .conv
-	CMP #'A'-1
+	CMP #'A'
 	BPL .conv
 .err:	; nibble wasn't valid, error
 	SEC
