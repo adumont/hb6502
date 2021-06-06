@@ -43,10 +43,6 @@ RES_vec
 	LDA #>USER_BASE
 	STA DP+1
 	
-	STZ INP_LEN
-	STZ INP_IDX	; initialize INP_IDX to 0
-
-
 ; This is a Direct Threaded Code based FORTH
 	
 ; Load the entry point of our main FORTH
@@ -115,28 +111,45 @@ forth_prog:
 ;	.DW do_LIT, VERS_STR
 ;	.DW do_COUNT, do_TYPE
 	
-;	.DW do_INPUT
-loop1:	.DW do_WORD
-;	.DW do_OVER, do_OVER ; 2DUP (keep the WORD addr & Len)
-	.DW do_FIND
-	.DW do_DUP, do_0BR, error
-	.DW do_CFA
-	.DW do_EXEC
+rsin:	.DW do_RSIN	; Reset Input
+	
+loop1:	.DW do_WORD	; ( addr len )
+	.DW do_OVER, do_OVER	; 2DUP ( addr len addr len )
+	.DW do_FIND ; ( addr len hdr )
+	.DW do_DUP  ; ( addr len hdr hdr )
+	.DW do_0BR, numscan
+	.DW do_NROT, do_DROP, do_DROP ; ( hdr )
+	.DW do_CFA  ; ( cfa )
+	.DW do_EXEC ; ( )
 	.DW do_JUMP, loop1
 
-error:	
-	.DW do_DROP
+numscan:
+	.DW do_DROP ; ( addr len )
+	.DW do_OVER, do_OVER ; 2DUP ( addr len addr len )
+	.DW do_NUMBER ; ( addr len n ) n or garbage if ERROR
+
+	.DW do_LIT, ERROR  ; ( addr len n Addr )
+	.DW do_CFETCH	; ( addr len n Error )
+	.DW do_0BR, loop1 ; 0 -> no error => loop
+
+; Error: ( addr len n )
+	.DW do_DROP ; ( addr len )
+	.DW do_TYPE ; ( -- ) print the unknown word
 	.DW do_LIT, WHAT_STR
 	.DW do_COUNT, do_TYPE
-	.DW do_JUMP, loop1
+	.DW do_JUMP, rsin ; reset input buffer
 
-	.DW do_LIT, TEST_STR 	; Addr of "TEST_STR" string
+
+	; below are other old tests...
+
+
+	.DW do_LIT, TEST_STR ; Addr of "TEST_STR" string
 	.DW do_DUP
-	.DW do_CFETCH		; get length
+	.DW do_CFETCH	     ; get length
 	.DW do_SWAP
-	.DW do_1PLUS		; Add 1 --> point to STR
+	.DW do_1PLUS	     ; Add 1 --> point to STR
 	.DW do_LIT, INPUT
-	.DW do_ROT		; ( src dst len )
+	.DW do_ROT	     ; ( src dst len )
 	.DW do_CMOVE
 loop:	.DW do_WORD
 	.DW do_FIND
@@ -275,8 +288,19 @@ do_SEMI:
 ; JMP NEXT
 	JMP NEXT
 
-h_SWAP:
+; RSIN ( -- )
+; Reset Input buffer
+; called on start-up, and each parse error
+h_RSIN:
 	.DW h_SEMI
+	.STR "RSIN"
+do_RSIN:
+	STZ INP_LEN
+	STZ INP_IDX
+	JMP NEXT
+
+h_SWAP:
+	.DW h_RSIN
 	.STR "SWAP"
 do_SWAP:
 	LDA 2,X
@@ -1048,8 +1072,70 @@ do_EXEC:
 	INX
 	JMP (W)
 
-h_INPUT:
+h_NUMBER:
 	.DW h_EXEC
+	.STR "NUMBER"
+do_NUMBER:
+; ( ADDR LEN -- VALUE )
+; ADDR points to the string representing the value
+; LEN length of the string representing the value
+
+; on error (not a number), we set the ERROR variable
+; VALUE on stack is left random (likely we'll drop it later)
+
+; temp registers used
+; W <- ADDR
+	LDA 4,X
+	STA W
+	LDA 5,X
+	STA W+1
+; G1 <- LEN
+	LDA 2,X
+	STA G1
+; G2 <-- 0000
+	STZ G2
+	STZ G2+1
+; Y <-- 0, index
+	LDY #0
+; Reset error flag (no error by default)
+	STZ ERROR
+
+.next:
+	LDA (W),Y
+	JSR nibble_asc_to_value
+	BCS .err
+	
+	ORA G2
+	STA G2
+	
+	INY
+	CPY G1	; Y = LEN ? --> end
+	BEQ .go
+; <<4
+	ASL G2
+	ROL G2+1
+	ASL G2
+	ROL G2+1
+	ASL G2
+	ROL G2+1
+	ASL G2
+	ROL G2+1
+	BRA .next
+.go:
+; leave results G2 on the stack
+	LDA G2
+	STA 4,X
+	LDA G2+1
+	STA 5,X
+	BRA .drop
+.err:	
+	LDA #1
+	STA ERROR
+.drop:	JMP do_DROP
+
+
+h_INPUT:
+	.DW h_NUMBER
 	.STR "INPUT"
 do_INPUT:
 	JSR getline
@@ -1067,16 +1153,14 @@ h_LATEST .= h_INPUT
 ; Change for SBC
 
 getc:
-  LDA IO_AREA+4
-  BEQ getc
-  RTS
+	LDA IO_AREA+4
+	BEQ getc
+	RTS
 
 putc:
-  STA IO_AREA+1
-  RTS
+	STA IO_AREA+1
+	RTS
 	
-msg	.BYTE "Monitor v0", 0
-
 ; Input Buffer Routines
 
 getline:
@@ -1136,12 +1220,36 @@ print_byte:
 
 nibble_value_to_asc:
 	CMP #$0A
-	BCC skip3
+	BCC .skip
 	ADC #$66
-skip3:
+.skip:
 	EOR #$30
 	RTS
 
+nibble_asc_to_value:
+; converts a char representing a hex-digit (nibble)
+; into the corresponding hex value
+
+; boundary check is it a digit?
+	CMP #'0'
+	BMI .err
+	CMP #'F'
+	BPL .err
+	CMP #'9'+1
+	BMI .conv
+	CMP #'A'-1
+	BPL .conv
+.err:	; nibble wasn't valid, error
+	SEC
+	RTS
+.conv:	; conversion happens here
+	CMP #$41
+	BMI .less
+	SBC #$37
+.less:
+	AND #$0F
+	CLC
+	RTS
 
 ; Interrupts routines
 
@@ -1151,11 +1259,12 @@ NMI_vec:
 
 VERS_STR: .STR "ALEX FORTH v0", $0A, $0D
 TEST_STR: .STR " >R  DUP OVER ROT -ROT "
-WHAT_STR: .STR "WHAT?", $0A, $0D
+WHAT_STR: .STR " ?", $0A, $0D
 
 	*= $0200
 
 LATEST	.DS 2	; Store the latest ADDR of the Dictionary
+ERROR	.DS 1	; Error when converting number
 INP_LEN .DS 1	;
 INPUT	.DS 80	; CMD string (extend as needed, up to 256!)
 INP_IDX .DS 1	; Index into the INPUT Buffer (for reading it with KEY)
