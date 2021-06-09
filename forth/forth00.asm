@@ -457,8 +457,21 @@ do_PLUS:
 	STA 5,X
 	JMP do_DROP
 
-h_1PLUS:
+h_MINUS:
 	.DW h_PLUS
+	.STR "-"
+do_MINUS:
+	SEC
+	LDA 4,X
+	SBC 2,X
+	STA 4,X
+	LDA 5,X
+	SBC 3,X
+	STA 5,X
+	JMP do_DROP
+
+h_1PLUS:
+	.DW h_MINUS
 	.STR "1+"
 do_1PLUS:
 	CLC
