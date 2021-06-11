@@ -16,6 +16,10 @@ DTOP	.= G1-2		; Stack TOP
 BKSPACE .= $08
 MAX_LEN .= 80		; Input Buffer MAX length
 
+BOOTP	.= INP_IDX - 2	; 2 last bytes from the input buffer will 
+			; be used at boot as pointer into the
+			; bootstrap code
+
 ; Offset of the WORD name in the label
 ; 2 bytes after the Header's addr
 HDR_OFFSET_STR .= 2	
@@ -27,7 +31,8 @@ RES_vec
    	CLD             ; clear decimal mode
     	LDX #$FF
     	TXS             ; set the stack pointer
-	STX MODE	; set MODE to not 0
+	STX MODE	; set MODE to FF
+	STX BOOT	; set BOOT to FF
     	LDX #DTOP
     	CLI
 
@@ -44,6 +49,11 @@ RES_vec
 	LDA #>USER_BASE
 	STA DP+1
 
+	; Initialize bootP (pointer into Bootstrap code)
+	LDA #<BOOT_PRG
+	STA BOOTP
+	LDA #>BOOT_PRG
+	STA BOOTP+1
 	
 ; This is a Direct Threaded Code based FORTH
 	
@@ -181,7 +191,7 @@ clean:  ; ( addr len n )
 	; below are other old tests...
 
 
-	.DW do_LIT, TEST_STR ; Addr of "TEST_STR" string
+	.DW do_LIT, BOOT_PRG ; Addr of "TEST_STR" string
 	.DW do_DUP
 	.DW do_CFETCH	     ; get length
 	.DW do_SWAP
@@ -241,7 +251,7 @@ loop:	.DW do_WORD
 	.DW do_STORE               ; !
 
 	.DW do_LIT
-	.DW TEST_STR
+	.DW BOOT_PRG
 
 	.DW do_FIND
 	
@@ -744,9 +754,9 @@ do_FIND:
 	LDA W
 	ADC #HDR_OFFSET_STR
 	STA G1
-	LDA W+1
-	ADC #0
-	STA G1+1
+	LDA W+1		; replace with BCC skip / INC G1+1 ?
+	ADC #0		;
+	STA G1+1	;
 
 ; compare length
 	LDA (G1)	; load current dictionay word's length
@@ -1213,9 +1223,9 @@ do_WORD:
 	CLC
 	ADC W
 	STA 0,X
-	LDA W+1
-	ADC #0
-	STA 1,X
+	LDA W+1		;
+	ADC #0		; replace with BCC skip / INC ?
+	STA 1,X		;
 	DEX
 	DEX
 .next2:
@@ -1345,9 +1355,16 @@ putc:
 	
 ; Input Buffer Routines
 
+; Getline refills the INPUT buffer
+; Bootstrapping mode BOOT<>0 then refill from BOOT_PRG
+; If we are in user mode (BOOT=0) we refill from user input
 getline:
 	STZ INP_IDX	; reset Input index
 	LDY #0
+
+	LDA BOOT
+	BNE boot_refill
+
 .next:	JSR getc
 
 	CMP #BKSPACE
@@ -1381,6 +1398,88 @@ getline:
 .finish:
 	STY INP_LEN
 	JSR _crlf
+	RTS
+
+
+; boot_refill will refill only one token (word) from BOOT_PRG
+; into INPUT buffer. Not super efficient I guess...
+boot_refill:
+	; commented out as we come from getline
+	; STZ INP_IDX	; reset Input index
+	; LDY #0
+
+	; commented out as we come from getline
+	; W already contains INPUT
+	; LDA #<INPUT
+	; STA W
+	; LDA #>INPUT
+	; STA W+1
+
+	LDA BOOTP
+	STA G1
+	LDA BOOTP+1
+	STA G1+1
+
+	DEY
+.next:	INY
+	LDA (G1),Y
+
+	CMP #$20 ; space
+	BEQ .next
+
+	CMP #$0A
+	BEQ .next
+
+	CMP #$0D
+	BEQ .next
+
+; if we get here we've found a new WORD
+	; add Y to G1
+	TYA
+	CLC
+	ADC G1
+	STA G1
+	BCC .skip1
+	INC G1+1
+.skip1:
+	LDY #0
+
+.next2:
+	LDA (G1),Y
+
+	BEQ .eobc	; $00, end of boostrap code
+
+	CMP #$20 ; space
+	BEQ .endW
+
+	CMP #$0A
+	BEQ .endW
+
+	CMP #$0D
+	BEQ .endW
+
+	; Add letter to INPUT
+	STA (W),Y
+	INY
+	BRA .next2
+.eobc:
+	STZ BOOT	; clear BootStrap mode
+.endW:
+	; save word's length
+	STY INP_LEN
+	STZ INP_IDX
+
+	; Advance W by Y -> BOOTP
+	CLC
+	TYA
+	ADC G1
+	STA BOOTP
+	BCC .skip2
+	INC G1+1
+.skip2:
+	LDA G1+1
+	STA BOOTP+1
+
 	RTS
 
 ; Print routines
@@ -1440,18 +1539,30 @@ NMI_vec:
 	RTI
 
 VERS_STR: .STR "ALEX FORTH v0", $0A, $0D
-TEST_STR: .STR " >R  DUP OVER ROT -ROT "
 WHAT_STR: .STR " ?", $0A, $0D
+
+; Bootstrap code:
+; At this point we can extend our forth in forth
+; Must end with $00. That will exit BOOTstrap mode and
+; enter the interpreter
+BOOT_PRG:
+	.DB " : ? @ . ; "
+	.DB $00
+
+
 
 	*= $0200
 
 LATEST	.DS 2	; Store the latest ADDR of the Dictionary
-MODE	.DS 1	; 1 Execute, 0 compile
+MODE	.DS 1	; <>0 Execute, 0 compile
+BOOT	.DS 1	; <>0 Boot, 0 not boot anymore
 ERROR	.DS 1	; Error when converting number
 INP_LEN .DS 1	;
 INPUT	.DS 80	; CMD string (extend as needed, up to 256!)
 INP_IDX .DS 1	; Index into the INPUT Buffer (for reading it with KEY)
 DP	.DS 2	; Data Pointer: Store the latest ADDR of next free space in RAM (HERE)
+
+
 ; Base of user memory area.
 USER_BASE:
 
