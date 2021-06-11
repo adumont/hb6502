@@ -27,21 +27,23 @@ RES_vec
    	CLD             ; clear decimal mode
     	LDX #$FF
     	TXS             ; set the stack pointer
+	STX MODE	; set MODE to not 0
     	LDX #DTOP
     	CLI
 
 ; store the ADDR of the latest word to
 ; LATEST variable:
 
-	LDA #<h_LATEST
+	LDA #<p_LATEST
 	STA LATEST
-	LDA #>h_LATEST
+	LDA #>p_LATEST
 	STA LATEST+1
 
 	LDA #<USER_BASE
 	STA DP
 	LDA #>USER_BASE
 	STA DP+1
+
 	
 ; This is a Direct Threaded Code based FORTH
 	
@@ -102,25 +104,57 @@ NEXT:
 	;*= $4000
 forth_prog:
 
-; this is just a bunch of FORTH instructions
-; hand compiled here, just for testing them...
+; set all IMMEDIATE flags in dictionnary
+	.DW do_LIT, h_SEMICOLON, do_SETIMM
 
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
-	; Print version string
+; Print version string
 ;	.DW do_LIT, VERS_STR
 ;	.DW do_COUNT, do_TYPE
 	
+; Restart Intepreter loop:
 rsin:	.DW do_RSIN	; Reset Input
 	
 loop1:	.DW do_WORD	; ( addr len )
 	.DW do_OVER, do_OVER	; 2DUP ( addr len addr len )
+
+;	.DW do_OVER, do_OVER, do_TYPE	; DEBUG: Show TOKEN
+
 	.DW do_FIND ; ( addr len hdr )
 	.DW do_DUP  ; ( addr len hdr hdr )
-	.DW do_0BR, numscan
-	.DW do_NROT, do_DROP, do_DROP ; ( hdr )
+	.DW do_0BR, numscan ; Not a word? Goto numscan
+
+; Found a word! ( addr len hdr )
+	.DW do_NROT, do_DROP, do_DROP ; ( hdr ) header of the word
+
+	.DW do_LIT, MODE, do_CFETCH   ; ( hdr MODE ) 0: compile, 1 execute
+
+	.DW do_0BR, compile ; Mode = 0 --> Compile
+	; if not 0, Execute!
+
+execute:
+	; ( hdr )
 	.DW do_CFA  ; ( cfa )
 	.DW do_EXEC ; ( )
+	.DW do_JUMP, loop1
+
+immediate:
+	.DW do_BREAK	; force BREAK
+	.DW do_JUMP, execute
+
+compile:
+	; ( hdr )
+	.DW do_DUP	; ( hdr hdr )
+	.DW do_GETIMM	; ( hdr imm_flag )
+	
+	.DW do_0BR, execute ; imm_flag=0 --> Immediate! (Execute)
+	
+	; otherwise, let's add to dictionary
+	; ( hdr )
+	.DW do_CFA  ; ( cfa )
+	.DW do_COMMA ; ( )	; commit cfa to header
+	
 	.DW do_JUMP, loop1
 
 numscan:
@@ -258,7 +292,7 @@ word2:
 
 h_COLON:
 	.DW $0000
-	.STR ":"
+	.STR "DOCOL"
 do_COLON: ; COLON aka ENTER
 ; push IP to Return Stack
 	LDA IP+1	; HI
@@ -282,7 +316,7 @@ skip:
 ; SEMICOLON aka EXIT
 h_SEMI:
 	.DW h_COLON
-	.STR ";"
+	.STR "SEMI"
 do_SEMI:
 ; POP IP from Return Stack
 	PLA
@@ -390,10 +424,17 @@ do_DROP:
 	INX
 	JMP NEXT
 
-; FORTH Primitive words
-
-h_PUSH0:
+; Convenience BREAK word we can add in the code
+; to force a BREAK
+h_BREAK:
 	.DW h_DROP
+	.STR "BREAK"
+do_BREAK:
+	JMP NEXT	; set Breakpoint here!
+
+		
+h_PUSH0:
+	.DW h_BREAK
 	.STR "0"
 do_PUSH0:
 	STZ 0,x
@@ -408,7 +449,6 @@ do_PUSH1:
 	STA 0,x
 	STZ 1,x
 	JMP DEX2_NEXT
-
 
 ; Push a literal word (2 bytes)
 h_LIT:
@@ -645,7 +685,7 @@ end_do_STORE:		; used by CSTORE (below)
 
 h_CFETCH:
 	.DW h_STORE
-	.STR "c@"
+	.STR "C@"
 do_CFETCH:
 ; c@ ( ADDR -- byte ) 
 ; We read the data at the address on the 
@@ -919,7 +959,7 @@ h_OR:
 	.DW h_AND
 	.STR "OR"
 do_OR:
-; ( a b -- a|b ) bitwise AND
+; ( a b -- a|b ) bitwise OR
 	LDA 2,X
 	ORA 4,X
 	STA 4,X
@@ -941,16 +981,139 @@ do_NOT:
 	STA 3,X
 	JMP NEXT
 
-h_HERE:
+h_GETIMM:
 	.DW h_NOT
+	.STR "GETIMM"
+do_GETIMM:
+; ( hdr -- imm_flag )
+; BEWARE: Returns 0 if word IS indeed immediate
+; Immediate flag is kept in MSB of str len
+	JSR _getWordLen
+
+	STZ 3,X		; clear HI
+
+	BMI .isImm	; branch if IMMEDIATE flag set
+; not set
+	STA 2,X		; set LO to LEN (not 0 ie not immediate)
+	JMP NEXT
+.isImm:	
+	STZ 2,X		; clear LO, and exit
+	JMP NEXT
+
+h_SETIMM:
+	.DW h_GETIMM
+	.STR "SETIMM"
+do_SETIMM:
+; ( hdr -- )
+; takes a header to a word in dictionary
+; and sets its Immediate flag
+	JSR _getWordLen
+
+	ORA #$80	; MSB set
+	STA (W),Y	; LEN
+		
+	JMP do_DROP
+
+_getWordLen:
+; ( hdr -- hdr )
+; store's WORD header's addr in W
+; set Y to 2. 
+; (W),Y point to LEN
+; returns LEN in A
+	LDA 2,X
+	STA W
+	LDA 3,X
+	STA W+1
+	
+	LDY #2
+	LDA (W),Y	; LEN
+	RTS
+
+h_HERE:
+	.DW h_SETIMM
 	.STR "HERE"
 do_HERE:
 ; : HERE	DP @ ;
 	JMP do_COLON
 	.DW do_DP, do_FETCH, do_SEMI
 
-h_ALLOT:
+h_COMMA:
 	.DW h_HERE
+	.STR ","
+do_COMMA:
+; ( XX -- ) save a word XX to HERE and advance
+; HERE by 2
+; : , HERE ! HERE 2 + DP ! ;
+	JMP do_COLON
+	.DW do_HERE, do_STORE
+	.DW do_HERE, do_1PLUS, do_1PLUS
+	.DW do_DP, do_STORE
+	.DW do_SEMI
+
+h_CCOMMA:
+	.DW h_COMMA
+	.STR "C,"
+do_CCOMMA:
+; ( C -- ) save a byte C to HERE and advance
+; HERE by 1
+; : , HERE ! HERE 2 + DP ! ;
+	JMP do_COLON
+	.DW do_HERE, do_CSTORE
+	.DW do_HERE, do_1PLUS
+	.DW do_DP, do_STORE
+	.DW do_SEMI
+	
+h_CREATE:
+	.DW h_CCOMMA
+	.STR ":"
+do_CREATE:
+; get next TOKEN in INPUT and creates 
+; a Header for a new word
+	JMP do_COLON
+	.DW do_HERE		; keep current HERE on stack
+	.DW do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
+	.DW do_LATEST, do_STORE ; store "old HERE" in LATEST
+
+	.DW do_WORD		; get next TOKEN in INPUT (new word's name)
+	.DW do_DUP, do_CCOMMA	; store LEN in Header
+	.DW do_DUP, do_NROT	; ( len addr len )
+	.DW do_HERE, do_SWAP, do_CMOVE ; store name
+	.DW do_ALLOT		; advance HERE by LEN
+	
+	.DW do_LIT, $004C, do_CCOMMA	; store a 4C (JMP)
+	.DW do_LIT, do_COLON, do_COMMA	; store do_COLON's addr
+	
+	.DW do_PUSH0, do_LIT, MODE, do_CSTORE ; Enter Compilation mode
+	
+	.DW do_SEMI
+
+
+h_SEMICOLON:		; IMMEDIATE
+	.DW h_CREATE
+	.STR ";"
+do_SEMICOLON:
+; Add's do_SEMI to header of word being defined
+; and exits COMPILATION mode (1->MODE)
+	JMP do_COLON
+	.DW do_LIT, do_SEMI, do_COMMA	; commits do_SEMI addr
+	
+	.DW do_PUSH1, do_LIT, MODE, do_CSTORE ; Exits Compilation mode
+	
+	.DW do_SEMI
+
+h_LATEST:
+	.DW h_SEMICOLON
+	.STR "LATEST"
+do_LATEST:
+; ( -- LATEST )
+	LDA #<LATEST
+	STA 0,X
+	LDA #>LATEST
+	STA 1,X
+	JMP DEX2_NEXT
+
+h_ALLOT:
+	.DW h_LATEST
 	.STR "ALLOT"
 do_ALLOT:
 ; : ALLOT	HERE + DP ! ;
@@ -967,7 +1130,9 @@ do_CFA:
 	; takes the dictionary pointer to a word
 	; returns the codeword pointer
 	.DW do_1PLUS, do_1PLUS  ; 1+ 1+	; skip prev. word link
-	.DW do_DUP, do_CFETCH, do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
+	.DW do_DUP, do_CFETCH 	; ( LEN ) with FLAG
+	.DW do_LIT, $001F, do_AND ; ( LEN ) w/o FLAGs
+	.DW do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
 	.DW do_SEMI
 
 ; Put Data Stack Pointer on the stack
@@ -1161,7 +1326,7 @@ do_INPUT:
 ;-----------------------------------------------------------------
 ; ALWAYS update the latest word's 
 ; header address h_*
-h_LATEST .= h_INPUT
+p_LATEST .= h_INPUT
 
 
 
@@ -1281,6 +1446,7 @@ WHAT_STR: .STR " ?", $0A, $0D
 	*= $0200
 
 LATEST	.DS 2	; Store the latest ADDR of the Dictionary
+MODE	.DS 1	; 1 Execute, 0 compile
 ERROR	.DS 1	; Error when converting number
 INP_LEN .DS 1	;
 INPUT	.DS 80	; CMD string (extend as needed, up to 256!)
