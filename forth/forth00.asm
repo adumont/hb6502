@@ -176,7 +176,6 @@ numscan:
 	; if we were in compilation mode, we have to cancel the last word
 	; that was started (but is unfinished). we have to restore LATEST to its
 	; previous value (which is in LATEST @ )
-	.DW do_BREAK
 	.DW do_LIT, MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
 	.DW do_0BR, removeW ; Mode = 0 --> remove unfinished word
 
@@ -1124,9 +1123,25 @@ do_CREATE:
 	
 	.DW do_SEMI
 
+h_VARIABLE:
+	.DW h_CREATE
+	.STR "VARIABLE"
+do_VARIABLE:
+; get next TOKEN in INPUT and creates
+; a Header for a new word
+	JMP do_COLON
+	.DW do_CREATE	; creates new header
+	.DW do_LIT, do_LIT, do_COMMA
+	.DW do_HERE		; put HERE on the stack
+	.DW do_PUSH0, do_COMMA	; store 00 as
+	.DW do_LIT, do_SEMI, do_COMMA	; word is complete
+	.DW do_HERE, do_SWAP, do_STORE	; store the address right after the word into the address slot of the word
+	.DW do_PUSH1, do_1PLUS, do_ALLOT
+	.DW do_PUSH1, do_LIT, MODE, do_CSTORE ; Exits Compilation mode
+	.DW do_SEMI
 
 h_SEMICOLON:		; IMMEDIATE
-	.DW h_CREATE
+	.DW h_VARIABLE
 	.STR ";"
 do_SEMICOLON:
 ; Add's do_SEMI to header of word being defined
@@ -1574,6 +1589,12 @@ WHAT_STR: .STR " ?", $0A, $0D
 ; enter the interpreter
 BOOT_PRG:
 	.DB " : ? @ . ; "
+	.DB " : TRUE  FFFF ; "
+	.DB " : FALSE 0 ; "
+	.DB " : FALSE 0 ; "
+	.DB " : NOT 0= ; "
+	.DB " : ?= - 0= ; "
+	.DB " : 2* DUP + ; "
 	.DB $00
 
 
