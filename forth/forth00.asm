@@ -171,7 +171,24 @@ numscan:
 	.DW do_TYPE ; ( -- ) print the unknown word
 	.DW do_LIT, WHAT_STR
 	.DW do_COUNT, do_TYPE
+
+
+	; if we were in compilation mode, we have to cancel the last word
+	; that was started (but is unfinished). we have to restore LATEST to its
+	; previous value (which is in LATEST @ )
+	.DW do_BREAK
+	.DW do_LIT, MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
+	.DW do_0BR, removeW ; Mode = 0 --> remove unfinished word
+
+executeMode:
+	; 1->MODE (back to Execute mode, cancel compilation mode)
+	.DW do_PUSH1, do_LIT, MODE, do_CSTORE
 	.DW do_JUMP, rsin ; reset input buffer
+
+removeW:
+	.DW do_LATEST, do_FETCH, do_FETCH ; LATEST @ @
+	.DW do_LATEST, do_STORE           ; LATEST !
+	.DW do_JUMP, executeMode ; back to execute mode and reset input buffer
 
 cleanStack:  ; ( addr len n )
 	.DW do_NROT, do_DROP, do_DROP ; ( n )
