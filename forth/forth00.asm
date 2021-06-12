@@ -212,120 +212,6 @@ commitN:
 
 ;------------------------------------------------------
 
-	; below are other old tests...
-
-
-	.DW do_LIT, BOOT_PRG ; Addr of "TEST_STR" string
-	.DW do_DUP
-	.DW do_CFETCH	     ; get length
-	.DW do_SWAP
-	.DW do_1PLUS	     ; Add 1 --> point to STR
-	.DW do_LIT, INPUT
-	.DW do_ROT	     ; ( src dst len )
-	.DW do_CMOVE
-loop:	.DW do_WORD
-	.DW do_FIND
-	.DW do_DUP, do_PRINT, do_CRLF
-	.DW do_CFA
-	.DW do_DUP, do_PRINT, do_CRLF
-
-	; wait a key!
-	.DW do_GETC, do_JUMP, loop
-	
-
-
-
-;	.DW word1
-
-;	.DW do_DUP, do_PRINT, do_CRLF
-
-	.DW do_PUSH1, do_EQZ
-	.DW do_DUP, do_PRINT, do_CRLF	; print
-	
-	; Put Addr of a string
-	.DW do_LIT
-	.DW h_PRINT+3
-		
-	; Put LENGTH of the string
-	.DW do_LIT, $0005
-	
-	.DW do_FIND
-	
-
-
-	.DW do_DUP,do_PRINT, do_CRLF	; print
-	
-	.DW do_DUP
-
-	.DW do_EXEC
-
-	.DW do_DP
-	.DW do_1PLUS, do_1PLUS     ; 1+ 1+
-	.DW do_DP, do_STORE 	   ; DP !
-
-	; Print 1234 5678 on output
-	.DW do_LIT, $1234, do_PRINT   ; $1234
-	.DW do_SPACE
-	.DW do_LIT, $5678, do_PRINT
-	.DW do_CRLF
-	.DW do_LIT, $ABCD, do_PRINT
-
-	.DW do_LIT, $1234	   ; $1234
-	.DW do_DP, do_FETCH 	   ; DP @ (HERE)
-	.DW do_STORE               ; !
-
-	.DW do_LIT
-	.DW BOOT_PRG
-
-	.DW do_FIND
-	
-	.DW do_LIT
-	.DW $2FF4
-
-	.DW do_STORE
-
-	.DW do_PUSH1
-	.DW do_GETC
-	.DW do_PLUS
-	.DW do_EMIT
-	; repeat
-	.DW do_JUMP
-	.DW forth_prog ; arg for JUMP
-	
-; Example of some COLON definitions:
-; add to the program using:
-;	.DW word1
-
-; A word COLON definition
-; MUST start with a LABEL followed
-; by JMP do_COLON:
-;
-; do_LABEL:
-;	JMP do_COLON
-; and MUST end with:
-;	.DW do_SEMI
-
-word1:
-	JMP do_COLON
-	.DW do_PUSH1
-	.DW do_DUP
-	.DW do_DROP
-	.DW word2
-	.DW do_DROP
-	.DW do_SEMI
-
-word2:
-	JMP do_COLON
-	.DW do_LIT
-	.DW $0002
-	.DW do_LIT
-	.DW $0103
-	.DW do_PLUS
-	.DW do_SWAP
-	.DW do_SEMI
-
-;------------------------------------------------------
-
 h_COLON:
 	.DW $0000
 	.STR "DOCOL"
@@ -1589,12 +1475,13 @@ WHAT_STR: .STR " ?", $0A, $0D
 ; enter the interpreter
 BOOT_PRG:
 	.DB " : ? @ . ; "
-	.DB " : TRUE  FFFF ; "
-	.DB " : FALSE 0 ; "
+	.DB " : TRUE FFFF ; "
 	.DB " : FALSE 0 ; "
 	.DB " : NOT 0= ; "
 	.DB " : ?= - 0= ; "
 	.DB " : 2* DUP + ; "
+	.DB " : ' WORD FIND >CFA ; "
+	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.DB $00
 
 
