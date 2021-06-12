@@ -102,16 +102,10 @@ NEXT:
 .skip:
 	JMP (W)
 
-; Implemented words:
-; 1PLUS ALLOT AND AT_R CFA CFETCH CMOVE COLON CRLF CSTORE
-; DP DROP DUP EQZ EXEC FETCH FIND FROM_R GETC HERE JUMP
-; LIT NOT NROT OR OVER PLUS PRINT PUSH0 PUSH1 PUTC ROT SEMI
-; SP SPACE STORE SWAP TO_R
-
+;------------------------------------------------------
 ; For now, this is the Entry POint of our
 ; FORTH program.
 	
-	;*= $4000
 forth_prog:
 
 ; set all IMMEDIATE flags in dictionnary
@@ -143,22 +137,18 @@ loop1:	.DW do_WORD	; ( addr len )
 	.DW do_0BR, compile ; Mode = 0 --> Compile
 	; if not 0, Execute!
 
-execute:
+executeW:
 	; ( hdr )
 	.DW do_CFA  ; ( cfa )
 	.DW do_EXEC ; ( )
 	.DW do_JUMP, loop1
-
-immediate:
-	.DW do_BREAK	; force BREAK
-	.DW do_JUMP, execute
 
 compile:
 	; ( hdr )
 	.DW do_DUP	; ( hdr hdr )
 	.DW do_GETIMM	; ( hdr imm_flag )
 	
-	.DW do_0BR, execute ; imm_flag=0 --> Immediate! (Execute)
+	.DW do_0BR, executeW ; imm_flag=0 --> Immediate! (Execute)
 	
 	; otherwise, let's add to dictionary
 	; ( hdr )
@@ -174,7 +164,7 @@ numscan:
 
 	.DW do_LIT, ERROR  ; ( addr len n Addr )
 	.DW do_CFETCH	; ( addr len n Error )
-	.DW do_0BR, clean ; 0 -> no error => loop
+	.DW do_0BR, cleanStack ; 0 -> no error => clean stack & loop
 
 ; Error: ( addr len n )
 	.DW do_DROP ; ( addr len )
@@ -183,10 +173,28 @@ numscan:
 	.DW do_COUNT, do_TYPE
 	.DW do_JUMP, rsin ; reset input buffer
 
-clean:  ; ( addr len n )
+cleanStack:  ; ( addr len n )
 	.DW do_NROT, do_DROP, do_DROP ; ( n )
-	.DW do_JUMP, loop1 ; reset input buffer
 	
+	; here we have the number N on the stack.
+	; are we in compilation mode?
+
+	.DW do_LIT, MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
+
+	.DW do_0BR, commitN ; Mode = 0 --> CommitN to new word
+	; if not 0, continue loop (N already on the stack)
+	
+	.DW do_JUMP, loop1
+
+commitN:
+	; ( n )
+	; Add number to the word we are defining
+	.DW do_LIT, do_LIT, do_COMMA	; first add "LIT" ( n )
+	.DW do_COMMA			; add n to word (  )
+
+	.DW do_JUMP, loop1
+
+;------------------------------------------------------
 
 	; below are other old tests...
 
@@ -299,6 +307,8 @@ word2:
 	.DW do_PLUS
 	.DW do_SWAP
 	.DW do_SEMI
+
+;------------------------------------------------------
 
 h_COLON:
 	.DW $0000
