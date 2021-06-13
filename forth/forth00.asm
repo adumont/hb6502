@@ -104,7 +104,7 @@ NEXT:
 	
 forth_prog:
 
-; set all IMMEDIATE flags in dictionnary
+; set all IMMEDIATE flags in dictionary
 	.DW do_LIT, h_SEMICOLON, do_SETIMM
 
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
@@ -1512,10 +1512,15 @@ BOOT_PRG:
 	.DB " : TRUE FFFF ; "
 	.DB " : FALSE 0 ; "
 	.DB " : NOT 0= ; "
-	.DB " : ?= - 0= ; "
+	.DB " : = - 0= ; "
 	.DB " : 2* DUP + ; "
-	.DB " : ' WORD FIND >CFA ; "
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
+	.DB " : ' WORD FIND >CFA ; "
+;	.DB " : ', WORD FIND >CFA , ; IMMEDIATE "
+	.DB " : ', ' , ; IMMEDIATE "
+	.DB " : STOP BREAK ; IMMEDIATE "
+	.DB " : IF ', LIT ', 0BR ', , HERE ', LIT ', 0 ', , ; IMMEDIATE "
+	.DB " : THEN HERE SWAP ! ; IMMEDIATE "
 	.DB $00
 
 
