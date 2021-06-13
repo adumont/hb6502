@@ -16,10 +16,6 @@ DTOP	.= G1-2		; Stack TOP
 BKSPACE .= $08
 MAX_LEN .= 80		; Input Buffer MAX length
 
-BOOTP	.= INP_IDX - 2	; 2 last bytes from the input buffer will 
-			; be used at boot as pointer into the
-			; bootstrap code
-
 ; Offset of the WORD name in the label
 ; 2 bytes after the Header's addr
 HDR_OFFSET_STR .= 2	
@@ -940,7 +936,7 @@ _getWordLen:
 ; ( hdr -- hdr )
 ; store's WORD header's addr in W
 ; set Y to 2. 
-; (W),Y point to LEN
+; (W),Y point to LEN field (including Immediate flag)
 ; returns LEN in A
 	LDA 2,X
 	STA W
@@ -1121,33 +1117,33 @@ h_WORD:
 do_WORD:
 ; Find next word in input buffer (and advance INP_IDX)
 ; ( -- ADDR LEN )
-	; INPUT --> W
-	LDA #<INPUT
-	STA W
-	LDA #>INPUT
-	STA W+1
-	; INP_IDX --> Y
-	LDY INP_IDX
-.next1:
-	CPY INP_LEN	; reached end of input string?
-	BEQ .eos
 
-	LDA (W),Y	; load char at (W)+Y in A
+	; INPUT --> W
+;	LDA #<INPUT
+;	STA W
+;	LDA #>INPUT
+;	STA W+1
+
+.next1:
+	JSR _KEY
 	
 	CMP #' '
-	BNE .startW
-	INY
-	BRA .next1
+	BEQ .next1
 
-.eos:	; refill input string
-	JSR getline	
-	BRA do_WORD	; and try again
+	CMP #$0A
+	BEQ .next1
+
+	CMP #$0D
+	BEQ .next1
+	
+	; otherwise --> start of a word (.startW)
 
 ; start of word
 .startW:
 	; First we store the ADDR on stack
-	TYA
+	LDA INP_IDX
 	STA G1	; we save Y in G1, temporarily
+	DEA
 	CLC
 	ADC W
 	STA 0,X
@@ -1157,31 +1153,66 @@ do_WORD:
 	DEX
 	DEX
 .next2:
-	INY
+	JSR _KEY
 
-	CPY INP_LEN	; reached end of input string?
-	BEQ .endW
-
-	LDA (W),Y	; load char at (W)+Y in A
-	
 	CMP #' '
 	BEQ .endW
+
+	CMP #$0A
+	BEQ .endW
+
+	CMP #$0D
+	BEQ .endW
+
 	BRA .next2
 .endW:
 	; compute length
+	LDA INP_IDX
 	SEC
-	TYA
-	SBC G1	; earlier we saved Y in G1 ;)
+	SBC G1	; earlier we saved INP_IDX in G1 ;)
 	STA 0,X
 	STZ 1,X
-	; Save Y in INP_IDX
-	STY INP_IDX
-	;
 	JMP DEX2_NEXT
+
+h_KEY:
+	.DW h_WORD
+	.STR "KEY"
+do_KEY:
+; Give next char in Input buffer
+; ( -- char )
+	JSR _KEY
+	STA 0,X
+	STZ 1,X
+	JMP DEX2_NEXT
+
+; internal routine that get a char from the input buffer
+; leaves it in A
+; advance INP_IDX. when reached end of buffer, we refill
+_KEY:
+	; INPUT --> W
+	LDA #<INPUT
+	STA W
+	LDA #>INPUT
+	STA W+1
+.retry:
+	; INP_IDX --> Y
+	LDY INP_IDX
+
+	CPY INP_LEN	; reached end of input string?
+	BEQ .eos
+
+	LDA (W),Y	; load char at (W)+Y in A
+	INC INP_IDX	; ALEX: do we need this?
+	RTS
+	
+.eos:	; refill input string
+	JSR getline	
+	BRA .retry	; and try again
+	RTS
 
 ; Put Data Stack Pointer on the stack
 h_EXEC:
-	.DW h_WORD
+	.DW h_KEY
 	.STR "EXEC"
 do_EXEC:
 	LDA 2,X
@@ -1298,15 +1329,16 @@ getline:
 	CMP #BKSPACE
 	BEQ .bkspace
 
-	CMP #$0D ; \n
-	BEQ .finish
-
 	CPY #MAX_LEN
 	BEQ .maxlen
 
 	STA INPUT,y	; save char to INPUT
-	JSR putc	; echo char
 	INY
+
+	CMP #$0D ; \n
+	BEQ .finish
+
+	JSR putc	; echo char
 
 	BRA .next
 .maxlen:
@@ -1377,6 +1409,10 @@ boot_refill:
 
 	BEQ .eobc	; $00, end of boostrap code
 
+	; save char to INPUT (even if it's a separator)
+	STA (W),Y
+	INY
+
 	CMP #$20 ; space
 	BEQ .endW
 
@@ -1387,8 +1423,6 @@ boot_refill:
 	BEQ .endW
 
 	; Add letter to INPUT
-	STA (W),Y
-	INY
 	BRA .next2
 .eobc:
 	STZ BOOT	; clear BootStrap mode
@@ -1491,8 +1525,9 @@ BOOT_PRG:
 LATEST	.DS 2	; Store the latest ADDR of the Dictionary
 MODE	.DS 1	; <>0 Execute, 0 compile
 BOOT	.DS 1	; <>0 Boot, 0 not boot anymore
+BOOTP	.DS 2	; pointer to BOOTstrap code
 ERROR	.DS 1	; Error when converting number
-INP_LEN .DS 1	;
+INP_LEN .DS 1	; Length of the text in the input buffer
 INPUT	.DS 80	; CMD string (extend as needed, up to 256!)
 INP_IDX .DS 1	; Index into the INPUT Buffer (for reading it with KEY)
 DP	.DS 2	; Data Pointer: Store the latest ADDR of next free space in RAM (HERE)
