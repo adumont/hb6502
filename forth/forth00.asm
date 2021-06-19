@@ -1537,12 +1537,30 @@ BOOT_PRG:
 	.DB " : 2* DUP + ; "
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.DB " : ' WORD FIND >CFA ; "
-	.DB " : ', WORD FIND >CFA , ; IMMEDIATE "
+;	.DB " : ', WORD FIND >CFA , ; IMMEDIATE "
 ;	.DB " : ', ' , ; IMMEDIATE " ; this doesn't work? why not?
 	.DB " : STOP BREAK ; IMMEDIATE "
-	.DB " : IF ', LIT ', 0BR  ', , HERE ', LIT ', 0 ', , ; IMMEDIATE "
+
+	.DB " : IF LIT 0BR , HERE LIT 0 , ; IMMEDIATE "
 	.DB " : THEN HERE SWAP ! ; IMMEDIATE "
-	.DB " : ELSE ', LIT ', JUMP ', , HERE ', LIT ', 0 ', , SWAP HERE SWAP ! ; IMMEDIATE "
+	.DB " : ELSE LIT JUMP , HERE LIT 0 , SWAP HERE SWAP ! ; IMMEDIATE "
+
+; TEST IF
+;	.DB " : T IF AAAA ELSE BBBB THEN ; "
+;	.DB " 1 T . " ; should output AAAA
+;	.DB " 0 T . " ; should output BBBB
+
+	.DB " : BEGIN HERE ; IMMEDIATE "
+	.DB " : AGAIN LIT JUMP , , ; IMMEDIATE "
+
+; TEST BEGIN AGAIN
+;	.DB " : TestLoop BEGIN 1 . AGAIN ; TestLoop "
+
+	.DB " : UNTIL LIT 0BR  , , ; IMMEDIATE "
+ 
+; TEST BEGIN UNTIL
+;	.DB " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
+	
 	.DB $00
 
 
