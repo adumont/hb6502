@@ -105,7 +105,9 @@ NEXT:
 forth_prog:
 
 ; set all IMMEDIATE flags in dictionary
+; we won't be able to do that in ROM, but Kowalski doesn't matter
 	.DW do_LIT, h_SEMICOLON, do_SETIMM
+	.DW do_LIT, h_LBRAC, do_SETIMM
 
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
@@ -177,7 +179,7 @@ numscan:
 
 executeMode:
 	; 1->MODE (back to Execute mode, cancel compilation mode)
-	.DW do_PUSH1, do_LIT, MODE, do_CSTORE
+	.DW do_LBRAC
 	.DW do_JUMP, rsin ; reset input buffer
 
 removeW:
@@ -980,9 +982,26 @@ do_CCOMMA:
 	.DW do_HERE, do_1PLUS
 	.DW do_DP, do_STORE
 	.DW do_SEMI
-	
-h_CREATE:
+
+h_LBRAC:	; IMMEDIATE
 	.DW h_CCOMMA
+	.STR "["
+do_LBRAC:
+; ( -- ) switch to EXECUTE/IMMEDIATE mode
+	LDA #1
+	STA MODE
+	JMP NEXT
+
+h_RBRAC:
+	.DW h_LBRAC
+	.STR "]"
+do_RBRAC:
+; ( -- ) switch to COMPILE mode
+	STZ MODE
+	JMP NEXT
+
+h_CREATE:
+	.DW h_RBRAC
 	.STR ":"
 do_CREATE:
 ; get next TOKEN in INPUT and creates 
@@ -1001,7 +1020,8 @@ do_CREATE:
 	.DW do_LIT, $004C, do_CCOMMA	; store a 4C (JMP)
 	.DW do_LIT, do_COLON, do_COMMA	; store do_COLON's addr
 	
-	.DW do_PUSH0, do_LIT, MODE, do_CSTORE ; Enter Compilation mode
+	;.DW do_PUSH0, do_LIT, MODE, do_CSTORE ; Enter Compilation mode
+	.DW do_RBRAC ; Enter Compilation mode
 	
 	.DW do_SEMI
 
@@ -1019,7 +1039,7 @@ do_VARIABLE:
 	.DW do_LIT, do_SEMI, do_COMMA	; word is complete
 	.DW do_HERE, do_SWAP, do_STORE	; store the address right after the word into the address slot of the word
 	.DW do_PUSH1, do_1PLUS, do_ALLOT
-	.DW do_PUSH1, do_LIT, MODE, do_CSTORE ; Exits Compilation mode
+	.DW do_LBRAC ; Exits Compilation mode
 	.DW do_SEMI
 
 h_SEMICOLON:		; IMMEDIATE
@@ -1031,7 +1051,8 @@ do_SEMICOLON:
 	JMP do_COLON
 	.DW do_LIT, do_SEMI, do_COMMA	; commits do_SEMI addr
 	
-	.DW do_PUSH1, do_LIT, MODE, do_CSTORE ; Exits Compilation mode
+	;.DW do_PUSH1, do_LIT, MODE, do_CSTORE ; Exits Compilation mode
+	.DW do_LBRAC ; Exits Compilation mode
 	
 	.DW do_SEMI
 
@@ -1516,13 +1537,13 @@ BOOT_PRG:
 	.DB " : 2* DUP + ; "
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.DB " : ' WORD FIND >CFA ; "
-;	.DB " : ', WORD FIND >CFA , ; IMMEDIATE "
-	.DB " : ', ' , ; IMMEDIATE "
+	.DB " : ', WORD FIND >CFA , ; IMMEDIATE "
+;	.DB " : ', ' , ; IMMEDIATE " ; this doesn't work? why not?
 	.DB " : STOP BREAK ; IMMEDIATE "
-	.DB " : IF ', LIT ', 0BR ', , HERE ', LIT ', 0 ', , ; IMMEDIATE "
+	.DB " : IF ', LIT ', 0BR  ', , HERE ', LIT ', 0 ', , ; IMMEDIATE "
 	.DB " : THEN HERE SWAP ! ; IMMEDIATE "
+	.DB " : ELSE ', LIT ', JUMP ', , HERE ', LIT ', 0 ', , SWAP HERE SWAP ! ; IMMEDIATE "
 	.DB $00
-
 
 
 	*= $0200
