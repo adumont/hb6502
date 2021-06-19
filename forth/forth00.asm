@@ -108,11 +108,19 @@ forth_prog:
 ; we won't be able to do that in ROM, but Kowalski doesn't matter
 	.DW do_LIT, h_SEMICOLON, do_SETIMM
 	.DW do_LIT, h_LBRAC, do_SETIMM
+	.DW do_LIT, h_SQUOT, do_SETIMM
 
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
 ; Print version string
 ;	.DW do_LIT, VERS_STR
+;	.DW do_COUNT, do_TYPE
+
+
+; test LITSTR
+
+;	.DW do_LITSTR
+;	.STR "FORTH"
 ;	.DW do_COUNT, do_TYPE
 	
 ; Restart Intepreter loop:
@@ -1016,8 +1024,11 @@ do_CREATE:
 	.DW do_DUP, do_NROT	; ( len addr len )
 	.DW do_HERE, do_SWAP, do_CMOVE ; store name
 	.DW do_ALLOT		; advance HERE by LEN
+
+	.DW do_CLIT	;
+	.DB $4C		; store a 4C (JMP)
+	.DW do_CCOMMA	;
 	
-	.DW do_LIT, $004C, do_CCOMMA	; store a 4C (JMP)
 	.DW do_LIT, do_COLON, do_COMMA	; store do_COLON's addr
 	
 	;.DW do_PUSH0, do_LIT, MODE, do_CSTORE ; Enter Compilation mode
@@ -1086,7 +1097,11 @@ do_CFA:
 	; returns the codeword pointer
 	.DW do_1PLUS, do_1PLUS  ; 1+ 1+	; skip prev. word link
 	.DW do_DUP, do_CFETCH 	; ( LEN ) with FLAG
-	.DW do_LIT, $001F, do_AND ; ( LEN ) w/o FLAGs
+
+	.DW do_CLIT	;
+	.DB $1F		; ( LEN ) w/o FLAGs
+	.DW do_AND	;
+
 	.DW do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
 	.DW do_SEMI
 
@@ -1313,10 +1328,85 @@ do_INPUT:
 	JSR getline
 	JMP NEXT
 
+; Push a literal Char (1 byte)
+h_CLIT:
+	.DW h_INPUT
+	.STR "CLIT"
+do_CLIT:
+; (IP) points to literal char
+; instead of next instruction ;)
+	LDA (IP)
+	STA 0,X
+	STZ 1,X
+; Now advance IP
+; IP+2 --> IP
+	INC IP
+	BNE .skip
+	INC IP+1
+.skip:
+	JMP DEX2_NEXT
+
+h_LITSTR:
+	.DW h_CLIT
+	.STR "LITSTR"
+do_LITSTR:
+; W points to this word LITSTR in the definition
+	; put (W) on the stack and add 2
+	LDA IP
+	STA 0,X
+	LDY #1
+	LDA IP+1
+	STA 1,X
+	; load str LEN into A and add 1 (the length byte)
+	LDA (IP)
+	INA
+; Now advance IP by STR len (which is at IP!)
+; IP+2 --> IP
+	ADC IP
+	STA IP
+	BCC .skip
+	INC IP+1
+.skip:
+	JMP DEX2_NEXT
+
+h_SQUOT:
+	.DW h_LITSTR
+	.STR "S("
+do_SQUOT:
+; ( -- ADDR )
+;	LDA MODE
+;	BEQ .CompilationMode
+;.ExecutionMode:
+;	JMP do_COLON
+;	.DW do_SEMI
+;.CompilationMode:
+	JMP do_COLON
+	.DW do_LIT, do_LITSTR, do_COMMA ; adds LITSTR to the definition
+
+	; get HERE on the stack for later
+	.DW do_HERE
+	; push a 00 length
+	.DW do_PUSH0, do_CCOMMA
+.next:	; loop over each char in input
+	.DW do_KEY
+	.DW do_DUP, do_CLIT
+	.DB ')'
+	.DW do_MINUS, do_0BR, .endStr
+	.DW do_CCOMMA
+	.DW do_JUMP, .next
+.endStr:
+	.DW do_DROP
+	.DW do_BREAK
+	.DW do_HERE, do_OVER, do_MINUS	; compute str length
+	.DW do_PUSH1, do_MINUS		;
+	.DW do_SWAP, do_CSTORE
+;	.DW do_DUP, do_DP, do_STORE	; restore "old" HERE in DP
+	.DW do_SEMI
+	
 ;-----------------------------------------------------------------
 ; ALWAYS update the latest word's 
 ; header address h_*
-p_LATEST .= h_INPUT
+p_LATEST .= h_SQUOT
 
 
 
@@ -1326,6 +1416,7 @@ p_LATEST .= h_INPUT
 
 getc:
 	LDA IO_AREA+4
+
 	BEQ getc
 	RTS
 
@@ -1537,8 +1628,6 @@ BOOT_PRG:
 	.DB " : 2* DUP + ; "
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.DB " : ' WORD FIND >CFA ; "
-;	.DB " : ', WORD FIND >CFA , ; IMMEDIATE "
-;	.DB " : ', ' , ; IMMEDIATE " ; this doesn't work? why not?
 	.DB " : STOP BREAK ; IMMEDIATE "
 
 	.DB " : IF LIT 0BR , HERE LIT 0 , ; IMMEDIATE "
