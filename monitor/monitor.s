@@ -19,6 +19,8 @@
 ; help: https://cc65.github.io/doc/ca65.html
 
 .pc02 ; 65C02 mode
+.debuginfo      +       ; Generate debug info
+
 
 .segment  "CODE"
 
