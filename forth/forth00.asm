@@ -138,7 +138,7 @@ loop1:	.DW do_WORD	; ( addr len )
 ; Found a word! ( addr len hdr )
 	.DW do_NROT, do_DROP, do_DROP ; ( hdr ) header of the word
 
-	.DW do_LIT, MODE, do_CFETCH   ; ( hdr MODE ) 0: compile, 1 execute
+	.DW do_MODE, do_CFETCH   ; ( hdr MODE ) 0: compile, 1 execute
 
 	.DW do_0BR, compile ; Mode = 0 --> Compile
 	; if not 0, Execute!
@@ -182,7 +182,7 @@ numscan:
 	; if we were in compilation mode, we have to cancel the last word
 	; that was started (but is unfinished). we have to restore LATEST to its
 	; previous value (which is in LATEST @ )
-	.DW do_LIT, MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
+	.DW do_MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
 	.DW do_0BR, removeW ; Mode = 0 --> remove unfinished word
 
 executeMode:
@@ -201,7 +201,7 @@ cleanStack:  ; ( addr len n )
 	; here we have the number N on the stack.
 	; are we in compilation mode?
 
-	.DW do_LIT, MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
+	.DW do_MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
 
 	.DW do_0BR, commitN ; Mode = 0 --> CommitN to new word
 	; if not 0, continue loop (N already on the stack)
@@ -1078,8 +1078,19 @@ do_LATEST:
 	STA 1,X
 	JMP DEX2_NEXT
 
-h_ALLOT:
+h_MODE:
 	.DW h_LATEST
+	.STR "MODE"
+do_MODE:
+; ( -- MODE ) MODE is the addr, not the value!
+	LDA #<MODE
+	STA 0,X
+	LDA #>MODE
+	STA 1,X
+	JMP DEX2_NEXT
+
+h_ALLOT:
+	.DW h_MODE
 	.STR "ALLOT"
 do_ALLOT:
 ; : ALLOT	HERE + DP ! ;
@@ -1646,6 +1657,9 @@ BOOT_PRG:
 ;	.DB " : TestLoop BEGIN 1 . AGAIN ; TestLoop "
 
 	.DB " : UNTIL LIT 0BR  , , ; IMMEDIATE "
+
+	.DB " : PAD HERE 64 + ; " ; $64 = d100, PAD is 100 byte above HERE
+	.DB " : IMM? MODE C@ ; " ; 0: COMPILATION mode, 1 EXEC/IMMEDIATE mode
  
 ; TEST BEGIN UNTIL
 ;	.DB " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
