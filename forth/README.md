@@ -2,11 +2,16 @@
 
 - [Homebrew 6502 SBC - FORTH](#homebrew-6502-sbc---forth)
 - [Introduction](#introduction)
+- [Try it!](#try-it)
 - [References](#references)
 
 # Introduction
 
 This page is about my own implementation of FORTH for my Homebrew 6502 SBC.
+
+# Try it!
+
+You can use my Forth here [Alex Forth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).
 
 # References
 
