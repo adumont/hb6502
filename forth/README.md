@@ -9,9 +9,11 @@
 
 This page is about my own implementation of FORTH for my Homebrew 6502 SBC.
 
+![](./imgs/Forth.png)
+
 # Try it!
 
-You can use my Forth here [Alex Forth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).
+You can use my Forth here [Alex Forth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).  
 
 # References
 
