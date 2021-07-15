@@ -46,7 +46,7 @@ IP	= W -2
 G2	= IP-2		; general purpose register
 G1	= G2-2		; general purpose register
 DTOP	= G1-2		; Stack TOP
-BKSPACE = $08
+BKSPACE = $08 ; BACKSPACE = CTRL+BCKSPACE in LINUX (Python)
 MAX_LEN = 80		; Input Buffer MAX length
 
 ; Offset of the WORD name in the label
@@ -146,9 +146,8 @@ forth_prog:
 ;	.ADDR do_DUP, do_PRINT, do_CRLF	; print
 
 ; Print version string
-;	.ADDR do_LIT, VERS_STR
-;	.ADDR do_COUNT, do_TYPE
-
+	.ADDR do_LIT, VERS_STR
+	.ADDR do_COUNT, do_TYPE
 
 ; test LITSTR
 
@@ -1701,7 +1700,7 @@ BOOT_PRG:
 
 
 ;	*= $0200
-.segment  "DATA"
+.segment  "BSS"
 
 LATEST:	.res 2	; Store the latest ADDR of the Dictionary
 MODE:	.res 1	; <>0 Execute, 0 compile
