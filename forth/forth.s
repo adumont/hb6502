@@ -149,13 +149,6 @@ NEXT:
 ; FORTH program.
 	
 forth_prog:
-
-; set all IMMEDIATE flags in dictionary
-; we won't be able to do that in ROM, but Kowalski doesn't matter
-	;.ADDR do_LIT, h_SEMICOLON, do_SETIMM
-	;.ADDR do_LIT, h_LBRAC, do_SETIMM
-	;.ADDR do_LIT, h_SQUOT, do_SETIMM
-
 ;	.ADDR do_DUP, do_PRINT, do_CRLF	; print
 
 ; Print version string
