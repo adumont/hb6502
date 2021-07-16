@@ -32,7 +32,20 @@ __word_0 = 0
 	.ident (.sprintf("__word_%u", __word_last + 1)):
 
 	.addr .ident(.sprintf("__word_%u", __word_last))
-	CString strname, immflag
+	; this ifblank cascading can probably be enhanced...
+	.ifnblank strname
+		.ifnblank immflag
+			CString strname, immflag
+		.else
+			CString strname
+		.endif
+	.else
+		.ifnblank immflag
+			CString label, immflag
+		.else
+			CString label
+		.endif
+	.endif
 
 	__word_last .set __word_last + 1
 
@@ -139,9 +152,9 @@ forth_prog:
 
 ; set all IMMEDIATE flags in dictionary
 ; we won't be able to do that in ROM, but Kowalski doesn't matter
-	.ADDR do_LIT, h_SEMICOLON, do_SETIMM
-	.ADDR do_LIT, h_LBRAC, do_SETIMM
-	.ADDR do_LIT, h_SQUOT, do_SETIMM
+	;.ADDR do_LIT, h_SEMICOLON, do_SETIMM
+	;.ADDR do_LIT, h_LBRAC, do_SETIMM
+	;.ADDR do_LIT, h_SQUOT, do_SETIMM
 
 ;	.ADDR do_DUP, do_PRINT, do_CRLF	; print
 
@@ -250,10 +263,7 @@ commitN:
 
 ;------------------------------------------------------
 
-h_COLON:
-	.ADDR $0000
-	CString "DOCOL"
-do_COLON: ; COLON aka ENTER
+defword "COLON",,
 ; push IP to Return Stack
 	LDA IP+1	; HI
 	PHA
@@ -274,10 +284,7 @@ skip:
 
 
 ; SEMICOLON aka EXIT
-h_SEMI:
-	.ADDR h_COLON
-	CString "SEMI"
-do_SEMI:
+defword "SEMI",,
 ; POP IP from Return Stack
 	PLA
 	STA IP
@@ -289,18 +296,12 @@ do_SEMI:
 ; RSIN ( -- )
 ; Reset Input buffer
 ; called on start-up, and each parse error
-h_RSIN:
-	.ADDR h_SEMI
-	CString "RSIN"
-do_RSIN:
+defword "RSIN",,
 	STZ INP_LEN
 	STZ INP_IDX
 	JMP NEXT
 
-h_SWAP:
-	.ADDR h_RSIN
-	CString "SWAP"
-do_SWAP:
+defword "SWAP",,
 	LDA 2,X
 	LDY 4,X
 	STY 2,X
@@ -311,10 +312,7 @@ do_SWAP:
 	STA 5,X
 	JMP NEXT
 
-h_ROT:
-	.ADDR h_SWAP
-	CString "ROT"
-do_ROT:
+defword "ROT",,
 ; ( x y z -- y z x )
 ; X, stack 2 -> W
 	LDA 6,X
@@ -338,10 +336,7 @@ do_ROT:
 	STA 3,X
 	JMP NEXT
 
-h_NROT:
-	.ADDR h_ROT
-	CString "-ROT"
-do_NROT:
+defword "NROT", "-ROT",
 ; ( x y z -- z x y )
 ; Stack 0 --> W
 	LDA 2,X
@@ -365,10 +360,7 @@ do_NROT:
 	STA 7,X
 	JMP NEXT
 
-h_OVER:
-	.ADDR h_NROT
-	CString "OVER"
-do_OVER:
+defword "OVER",,
 ; ( x y -- x y x )
 	LDA 4,X
 	STA 0,X
@@ -376,45 +368,29 @@ do_OVER:
 	STA 1,X
 	JMP DEX2_NEXT
 
-h_DROP:
-	.ADDR h_OVER
-	CString "DROP"
-do_DROP:
+defword "DROP",,
 	INX
 	INX
 	JMP NEXT
 
 ; Convenience BREAK word we can add in the code
 ; to force a BREAK
-h_BREAK:
-	.ADDR h_DROP
-	CString "BREAK"
-do_BREAK:
+defword "BREAK",,
 	JMP NEXT	; set Breakpoint here!
 
-		
-h_PUSH0:
-	.ADDR h_BREAK
-	CString "0"
-do_PUSH0:
+defword "PUSH0","0",
 	STZ 0,x
 	STZ 1,x
 	JMP DEX2_NEXT
 
-h_PUSH1:
-	.ADDR h_PUSH0
-	CString "1"
-do_PUSH1:
+defword "PUSH1","1",
 	LDA #1
 	STA 0,x
 	STZ 1,x
 	JMP DEX2_NEXT
 
+defword "LIT",,
 ; Push a literal word (2 bytes)
-h_LIT:
-	.ADDR h_PUSH1
-	CString "LIT"
-do_LIT:
 ; (IP) points to literal
 ; instead of next instruction ;)
 	LDA (IP)
@@ -434,20 +410,14 @@ do_LIT:
 @skip:
 	JMP DEX2_NEXT
 
-h_DUP:
-	.ADDR h_LIT
-	CString "DUP"
-do_DUP:
+defword "DUP",,
 	LDA 2,X
 	STA 0,X
 	LDA 3,X
 	STA 1,X
 	JMP DEX2_NEXT
 	
-h_PLUS:
-	.ADDR h_DUP
-	CString "+"
-do_PLUS:
+defword "PLUS","+",
 	CLC
 	LDA 2,X
 	ADC 4,X
@@ -457,10 +427,7 @@ do_PLUS:
 	STA 5,X
 	JMP do_DROP
 
-h_MINUS:
-	.ADDR h_PLUS
-	CString "-"
-do_MINUS:
+defword "MINUS","-",
 	SEC
 	LDA 4,X
 	SBC 2,X
@@ -470,40 +437,28 @@ do_MINUS:
 	STA 5,X
 	JMP do_DROP
 
-h_1PLUS:
-	.ADDR h_MINUS
-	CString "1+"
-do_1PLUS:
+defword "1PLUS","1+",
 	CLC
 	INC 2,X
 	BNE @skip
 	INC 3,X
 @skip:	JMP NEXT
 
-h_EMIT:
-	.ADDR h_1PLUS
-	CString "EMIT"
-do_EMIT: ; EMIT emit a single char
+defword "EMIT",,
+; EMIT emit a single char
 	; char is on stack
 	LDA 2,X
 	JSR putc
 	JMP do_DROP
 
-h_GETC:
-	.ADDR h_EMIT
-	CString "GETC"
-do_GETC:
+defword "GETC",,
 ; get a single char from IO, leave on stack
 	JSR getc ; leaves the char in A
 	STA 0,X
 	STZ 1,X
 	JMP DEX2_NEXT
 
-
-h_TO_R:
-	.ADDR h_GETC
-	CString ">R"
-do_TO_R:
+defword "TO_R",">R",
 ; >R: pop a cell (possibly an ADDR) from
 ; the stack and pushes it to the Return Stack
 	LDA 3,X
@@ -512,10 +467,7 @@ do_TO_R:
 	PHA
 	JMP do_DROP
 
-h_FROM_R:
-	.ADDR h_TO_R
-	CString "<R"
-do_FROM_R:
+defword "FROM_R","<R",
 ; <R: pop a cell from the Return Stack
 ; and pushes it to the Stack
 	PLA
@@ -524,11 +476,7 @@ do_FROM_R:
 	STA 1,X
 	JMP DEX2_NEXT
 
-
-h_AT_R:
-	.ADDR h_FROM_R
-	CString "@R"
-do_AT_R:
+defword "AT_R","@R",
 ; @R : copy the cell from the Return Stack
 ; to the Stack
 	PHX 	;\
@@ -542,11 +490,8 @@ do_AT_R:
 	STA 1,X
 	JMP DEX2_NEXT
 
+defword "0BR",,
 ; Branch to Label if 0 on stack
-h_0BR:
-	.ADDR h_AT_R
-	CString "0BR"
-do_0BR:
 	LDA 2,X
 	ORA 3,X
 
@@ -567,10 +512,7 @@ do_0BR:
 
 	JMP do_DROP
 
-h_JUMP:
-	.ADDR h_0BR
-	CString "JUMP"
-do_JUMP:
+defword "JUMP",,
 ; (IP) points to literal address to jump to
 ; instead of next instruction ;)
 	; we push the addr to the Return Stack
@@ -595,11 +537,7 @@ do_JUMP_OLD: ; alternative way of jumping, no Return Stack
 	STA IP
 	JMP NEXT
 
-
-h_FETCH:
-	.ADDR h_JUMP
-	CString "@"
-do_FETCH:
+defword "FETCH","@",
 ; @ ( ADDR -- value ) 
 ; We read the data at the address on the 
 ; stack and put the value on the stack
@@ -617,10 +555,7 @@ do_FETCH:
 	STA 3,X
 	JMP NEXT
 
-h_STORE:
-	.ADDR h_FETCH
-	CString "!"
-do_STORE:
+defword "STORE","!",
 ; ! ( value ADDR -- )
 	; copy the address to W
 	LDA 2,X	; LO
@@ -643,10 +578,7 @@ end_do_STORE:		; used by CSTORE (below)
 	;JMP NEXT 	
 	JMP do_DROP
 
-h_CFETCH:
-	.ADDR h_STORE
-	CString "C@"
-do_CFETCH:
+defword "CFETCH","C@",
 ; c@ ( ADDR -- byte ) 
 ; We read the data at the address on the 
 ; stack and put the value on the stack
@@ -662,10 +594,7 @@ do_CFETCH:
 	STz 3,X
 	JMP NEXT
 
-h_CSTORE:
-	.ADDR h_CFETCH
-	CString "C!"
-do_CSTORE:
+defword "CSTORE","C!",
 ; C! ( value ADDR -- )
 	; copy the address to W
 	LDA 2,X	; LO
@@ -678,10 +607,7 @@ do_CSTORE:
 	STA (W)
 	BRA end_do_STORE
 
-h_FIND:
-	.ADDR h_CSTORE
-	CString "FIND"
-do_FIND:
+defword "FIND",,
 ; ( ADDRi LEN -- ADDRo )
 ; ADDRi: Address of a string
 ; LEN: Length of the string (LO byte only)
@@ -770,10 +696,7 @@ STRCMP:
 @strcmp_exit:
 	RTS
 
-h_DP:
-	.ADDR h_FIND
-	CString "DP"
-do_DP:
+defword "DP",,
 ; DP ( -- addr )
 
 ; Alternative, as word definition:
@@ -785,12 +708,9 @@ do_DP:
 	STA 1,X
 	JMP DEX2_NEXT
 
+defword "PRINT",".",
 ; Print data on top of stack (in hex for now)
 ; ( n -- )
-h_PRINT:
-	.ADDR h_DP
-	CString "."
-do_PRINT:
 	LDA 3,X
 	JSR print_byte
 	LDA 2,X
@@ -805,10 +725,7 @@ do_PRINT:
 ; leaving the address of the first character and the
 ; length on the stack.
 
-h_COUNT:
-	.ADDR h_PRINT
-	CString "COUNT"
-do_COUNT:
+defword "COUNT",,
 	LDA 2,X
 	STA W
 	LDA 3,X
@@ -825,13 +742,10 @@ do_COUNT:
 	JMP DEX2_NEXT
 
 
+defword "TYPE",,
 ; Print a STRING	( addr len -- )
 ; addr --> pointer to 1rst char of string
 ; len  --> length of string (1 byte)
-h_TYPE:
-	.ADDR h_COUNT
-	CString "TYPE"
-do_TYPE:
 	LDA 2,X		; Length (one byte, max 256)
 	BEQ @exit	; len = 0, exit
 	
@@ -855,21 +769,14 @@ do_TYPE:
 	INX
 	JMP do_DROP
 
-
+defword "SPACE",,
 ; Print a space		( -- )
-h_SPACE:
-	.ADDR h_TYPE
-	CString "SPACE"
-do_SPACE:
 	LDA #' '
 	JSR putc
 	JMP NEXT
 
+defword "CRLF",,
 ; Print a new line	( -- )
-h_CRLF:
-	.ADDR h_SPACE
-	CString "CRLF"
-do_CRLF:
 	JSR _crlf
 	JMP NEXT
 
@@ -880,13 +787,11 @@ _crlf:
 	JSR putc
 	RTS
 
+defword "EQZ","0=",
 ; 0=, it's also equivalent to "logical NOT" (not a bitwise NOT)
 ; logical NOT --> use 0=
 ; 0<> --> use 0= 0=  (twice!)
-h_EQZ:
-	.ADDR h_CRLF
-	CString "0="
-do_EQZ:
+
 ; ( n -- bool )
 ; TRUE  (FFFF) if n is 0000
 ; FALSE (0000) otherwise
@@ -902,10 +807,7 @@ do_EQZ:
 	STA 3,X
 	JMP NEXT
 
-h_AND:
-	.ADDR h_EQZ
-	CString "AND"
-do_AND:
+defword "AND",,
 ; ( a b -- a&b ) bitwise AND
 	LDA 2,X
 	AND 4,X
@@ -915,10 +817,7 @@ do_AND:
 	STA 5,X
 	JMP do_DROP
 
-h_OR:
-	.ADDR h_AND
-	CString "OR"
-do_OR:
+defword "OR",,
 ; ( a b -- a|b ) bitwise OR
 	LDA 2,X
 	ORA 4,X
@@ -928,10 +827,7 @@ do_OR:
 	STA 5,X
 	JMP do_DROP
 
-h_NOT:
-	.ADDR h_OR
-	CString "NOT"
-do_NOT:
+defword "NOT",,
 ; ( a -- not(a) ) bitwise NOT
 	LDA 2,X
 	EOR #$FF
@@ -941,10 +837,7 @@ do_NOT:
 	STA 3,X
 	JMP NEXT
 
-h_GETIMM:
-	.ADDR h_NOT
-	CString "GETIMM"
-do_GETIMM:
+defword "GETIMM",,
 ; ( hdr -- imm_flag )
 ; BEWARE: Returns 0 if word IS indeed immediate
 ; Immediate flag is kept in MSB of str len
@@ -960,10 +853,7 @@ do_GETIMM:
 	STZ 2,X		; clear LO, and exit
 	JMP NEXT
 
-h_SETIMM:
-	.ADDR h_GETIMM
-	CString "SETIMM"
-do_SETIMM:
+defword "SETIMM",,
 ; ( hdr -- )
 ; takes a header to a word in dictionary
 ; and sets its Immediate flag
@@ -989,18 +879,12 @@ _getWordLen:
 	LDA (W),Y	; LEN
 	RTS
 
-h_HERE:
-	.ADDR h_SETIMM
-	CString "HERE"
-do_HERE:
+defword "HERE",,
 ; : HERE	DP @ ;
 	JMP do_COLON
 	.ADDR do_DP, do_FETCH, do_SEMI
 
-h_COMMA:
-	.ADDR h_HERE
-	CString ","
-do_COMMA:
+defword "COMMA",",",
 ; ( XX -- ) save a word XX to HERE and advance
 ; HERE by 2
 ; : , HERE ! HERE 2 + DP ! ;
@@ -1010,10 +894,7 @@ do_COMMA:
 	.ADDR do_DP, do_STORE
 	.ADDR do_SEMI
 
-h_CCOMMA:
-	.ADDR h_COMMA
-	CString "C,"
-do_CCOMMA:
+defword "CCOMMA","C,",
 ; ( C -- ) save a byte C to HERE and advance
 ; HERE by 1
 ; : , HERE ! HERE 2 + DP ! ;
@@ -1023,27 +904,18 @@ do_CCOMMA:
 	.ADDR do_DP, do_STORE
 	.ADDR do_SEMI
 
-h_LBRAC:	; IMMEDIATE
-	.ADDR h_CCOMMA
-	CString "["
-do_LBRAC:
+defword "LBRAC","[",1
 ; ( -- ) switch to EXECUTE/IMMEDIATE mode
 	LDA #1
 	STA MODE
 	JMP NEXT
 
-h_RBRAC:
-	.ADDR h_LBRAC
-	CString "]"
-do_RBRAC:
+defword "RBRAC","]",
 ; ( -- ) switch to COMPILE mode
 	STZ MODE
 	JMP NEXT
 
-h_CREATE:
-	.ADDR h_RBRAC
-	CString ":"
-do_CREATE:
+defword "CREATE",":",
 ; get next TOKEN in INPUT and creates 
 ; a Header for a new word
 	JMP do_COLON
@@ -1068,10 +940,7 @@ do_CREATE:
 	
 	.ADDR do_SEMI
 
-h_VARIABLE:
-	.ADDR h_CREATE
-	CString "VARIABLE"
-do_VARIABLE:
+defword "VARIABLE",,
 ; get next TOKEN in INPUT and creates
 ; a Header for a new word
 	JMP do_COLON
@@ -1085,10 +954,7 @@ do_VARIABLE:
 	.ADDR do_LBRAC ; Exits Compilation mode
 	.ADDR do_SEMI
 
-h_SEMICOLON:		; IMMEDIATE
-	.ADDR h_VARIABLE
-	CString ";"
-do_SEMICOLON:
+defword "SEMICOLON",";",1
 ; Add's do_SEMI to header of word being defined
 ; and exits COMPILATION mode (1->MODE)
 	JMP do_COLON
@@ -1099,10 +965,7 @@ do_SEMICOLON:
 	
 	.ADDR do_SEMI
 
-h_LATEST:
-	.ADDR h_SEMICOLON
-	CString "LATEST"
-do_LATEST:
+defword "LATEST",,
 ; ( -- LATEST )
 	LDA #<LATEST
 	STA 0,X
@@ -1110,10 +973,7 @@ do_LATEST:
 	STA 1,X
 	JMP DEX2_NEXT
 
-h_MODE:
-	.ADDR h_LATEST
-	CString "MODE"
-do_MODE:
+defword "MODE",,
 ; ( -- MODE ) MODE is the addr, not the value!
 	LDA #<MODE
 	STA 0,X
@@ -1121,19 +981,13 @@ do_MODE:
 	STA 1,X
 	JMP DEX2_NEXT
 
-h_ALLOT:
-	.ADDR h_MODE
-	CString "ALLOT"
-do_ALLOT:
+defword "ALLOT",,
 ; : ALLOT	HERE + DP ! ;
 	JMP do_COLON
 	.ADDR do_HERE, do_PLUS, do_DP, do_STORE
 	.ADDR do_SEMI
 
-h_CFA:
-	.ADDR h_ALLOT
-	CString ">CFA"
-do_CFA:
+defword "CFA",">CFA",
 	JMP do_COLON
 	; ( ADDR -- ADDR )
 	; takes the dictionary pointer to a word
@@ -1148,20 +1002,14 @@ do_CFA:
 	.ADDR do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
 	.ADDR do_SEMI
 
+defword "SP",,
 ; Put Data Stack Pointer on the stack
-h_SP:
-	.ADDR h_CFA
-	CString "SP"
-do_SP:
 	TXA
 	STA 0,X
 	STZ 1,X
 	JMP DEX2_NEXT
 
-h_CMOVE:
-	.ADDR h_SP
-	CString "CMOVE"
-do_CMOVE:
+defword "CMOVE",,
 ; (src dst len -- )
 ; copy len bytes from src to dst
 	; LEN --> Y
@@ -1190,10 +1038,7 @@ do_CMOVE:
 
 	JMP NEXT
 
-h_WORD:
-	.ADDR h_CMOVE
-	CString "WORD"
-do_WORD:
+defword "WORD",,
 ; Find next word in input buffer (and advance INP_IDX)
 ; ( -- ADDR LEN )
 
@@ -1253,10 +1098,7 @@ do_WORD:
 	STZ 1,X
 	JMP DEX2_NEXT
 
-h_KEY:
-	.ADDR h_WORD
-	CString "KEY"
-do_KEY:
+defword "KEY",,
 ; Give next char in Input buffer
 ; ( -- char )
 	JSR _KEY
@@ -1289,11 +1131,9 @@ _KEY:
 	BRA @retry	; and try again
 	RTS
 
-; Put Data Stack Pointer on the stack
-h_EXEC:
-	.ADDR h_KEY
-	CString "EXEC"
-do_EXEC:
+defword "EXEC",,
+; ( ADDR -- )
+; JUMP to addr on the stack
 	LDA 2,X
 	STA W
 	LDA 3,X
@@ -1302,10 +1142,7 @@ do_EXEC:
 	INX
 	JMP (W)
 
-h_NUMBER:
-	.ADDR h_EXEC
-	CString "NUMBER"
-do_NUMBER:
+defword "NUMBER",,
 ; ( ADDR LEN -- VALUE )
 ; ADDR points to the string representing the value
 ; LEN length of the string representing the value
@@ -1363,19 +1200,12 @@ do_NUMBER:
 	STA ERROR
 @drop:	JMP do_DROP
 
-
-h_INPUT:
-	.ADDR h_NUMBER
-	CString "INPUT"
-do_INPUT:
+defword "INPUT",,
 	JSR getline
 	JMP NEXT
 
+defword "CLIT",,
 ; Push a literal Char (1 byte)
-h_CLIT:
-	.ADDR h_INPUT
-	CString "CLIT"
-do_CLIT:
 ; (IP) points to literal char
 ; instead of next instruction ;)
 	LDA (IP)
@@ -1389,10 +1219,7 @@ do_CLIT:
 @skip:
 	JMP DEX2_NEXT
 
-h_LITSTR:
-	.ADDR h_CLIT
-	CString "LITSTR"
-do_LITSTR:
+defword "LITSTR",,
 ; W points to this word LITSTR in the definition
 	; put (W) on the stack and add 2
 	LDA IP
@@ -1412,10 +1239,7 @@ do_LITSTR:
 @skip:
 	JMP DEX2_NEXT
 
-h_SQUOT:
-	.ADDR h_LITSTR
-	CString "S("
-do_SQUOT:
+defword "SQUOT","S(",1
 ; ( -- ADDR )
 ;	LDA MODE
 ;	BEQ .CompilationMode
@@ -1447,9 +1271,8 @@ do_SQUOT:
 	.ADDR do_SEMI
 	
 ;-----------------------------------------------------------------
-; ALWAYS update the latest word's 
-; header address h_*
-p_LATEST = h_SQUOT
+; p_LATEST point to the latest defined word (using defword macro)
+p_LATEST = .ident(.sprintf("__word_%u", __word_last))
 
 ;-----------------------------------------------------------------
 ; I/O routines for Kowalkski simulator 
