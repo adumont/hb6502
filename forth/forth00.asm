@@ -492,9 +492,15 @@ do_FROM_R:
 	STA 1,X
 	JMP DEX2_NEXT
 
+h_I:
+	.DW h_FROM_R
+	.STR "I"
+do_I:
+; I is same code as @R
+	BRA do_AT_R
 
 h_AT_R:
-	.DW h_FROM_R
+	.DW h_I
 	.STR "@R"
 do_AT_R:
 ; @R : copy the cell from the Return Stack
@@ -1380,8 +1386,70 @@ do_LITSTR:
 .skip:
 	JMP DEX2_NEXT
 
-h_SQUOT:
+h_STAR_DO:
 	.DW h_LITSTR
+	.STR "*DO"
+do_STAR_DO:
+; ( end start -- )
+; Used by DO
+; We don't use >R as it would mean being a colon word, and that would
+; mess with the return stack (colon world pushes next IP onto the rs)
+
+	; pushes 'end' on the Return Stack
+	LDA 5,X
+	PHA
+	LDA 4,X
+	PHA
+	; pushes 'start' on the Return Stack
+	LDA 3,X
+	PHA
+	LDA 2,X
+	PHA
+	; drop start
+	INX
+	INX
+	; drop end
+	JMP do_DROP
+
+h_STAR_LOOP:
+	.DW h_STAR_DO
+	.STR "*LOOP"
+do_STAR_LOOP:
+; ( INC -- )
+; Used by LOOP, +LOOP, takes the increment on the stack
+
+; *LOOP should be followed by JUMP, ADDR
+; where ADDR is the instruction after DO
+; *LOOP will with run it or bypass it
+
+	JMP do_COLON
+	.DW do_FROM_R	; get ADDR (NextIP). Right after LOOP is the JUMP back to DO, that we can bypass with *LOOP
+	.DW do_FROM_R	;           ( INC ADDR I )
+	.DW do_ROT	;           ( ADDR I INC )
+	.DW do_PLUS	; I=I+INC   ( ADDR I )
+	.DW do_FROM_R	; End
+	.DW do_OVER, do_OVER	; 2DUP	( ADDR I END I END )
+	.DW do_MINUS
+	.DW do_LIT, $1000
+	.DW do_AND	; 0 iif END>=I, $1000 iif I>END
+	.DW do_EQZ	; invert
+	.DW do_0BR, .loop
+; exit loop:
+	; ( ADDR I END )
+	.DW do_DROP, do_DROP ; ( )
+	.DW do_CLIT, $04
+	.DW do_PLUS ; Add 4 to Next IP ( bypass jump do -> Exit DO-LOOP)
+	.DW do_TO_R ; push NextIP back to R
+	.DW do_SEMI ; jump over
+
+.loop:	; ( ADDR I END )
+	.DW do_TO_R	; push END back to R
+	.DW do_TO_R	; push I back to R
+	.DW do_TO_R	; push NextIP back to R
+	.DW do_SEMI
+
+h_SQUOT:
+	.DW h_STAR_LOOP
 	.STR "S("
 do_SQUOT:
 ; ( -- ADDR )
@@ -1653,6 +1721,11 @@ BOOT_PRG:
 	.DB " : BEGIN HERE ; IMMEDIATE "
 	.DB " : AGAIN LIT JUMP , , ; IMMEDIATE "
 
+; : AGAIN
+;     LIT JUMP ,	( compiles "JUMP" )
+;     ,                 ( compiles HERE left on the stack by BEGIN )
+; ; IMMEDIATE
+
 ; TEST BEGIN AGAIN
 ;	.DB " : TestLoop BEGIN 1 . AGAIN ; TestLoop "
 
@@ -1661,11 +1734,19 @@ BOOT_PRG:
 	.DB " : PAD HERE 64 + ; " ; $64 = d100, PAD is 100 byte above HERE
 	.DB " : IMM? MODE C@ ; " ; 0: COMPILATION mode, 1 EXEC/IMMEDIATE mode
  
-; TEST BEGIN UNTIL
+; Test BEGIN UNTIL
 ;	.DB " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
 	
-	.DB $00
+; DO LOOP
+	.DB " : DO LIT *DO , HERE ; IMMEDIATE " ;
+	.DB " : LOOP LIT 1 , LIT *LOOP , LIT JUMP , , ; IMMEDIATE " ;
+	.DB " : +LOOP LIT *LOOP , LIT JUMP , , ; IMMEDIATE " ;
 
+; Test DO-LOOP
+;	.DB " : TEST1 6 1 DO I . LOOP ; " ; Count from 1 to 5
+;	.DB " : TEST2 A 0 DO I . 2 +LOOP ; " ; Count from 0 to 8, 2 by 2
+
+	.DB $00
 
 	*= $0200
 
