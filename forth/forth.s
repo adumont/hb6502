@@ -1289,6 +1289,17 @@ defword "STAR_LOOP","*LOOP",
 	.ADDR do_TO_R	; push NextIP back to R
 	.ADDR do_SEMI
 
+defword "LEAVE",,
+	JMP do_COLON
+	.ADDR do_FROM_R	; ( ADDR ) Next IP
+	.ADDR do_FROM_R	; ( ADDR I )
+	.ADDR do_DROP	; ( ADDR )			; we drop I
+	.ADDR do_FROM_R	; ( ADDR END )
+	.ADDR do_DUP	; ( ADDR END END )	; we used END as I
+	.ADDR do_TO_R	; push END back to R
+	.ADDR do_TO_R	; push I (=END) back to R
+	.ADDR do_TO_R	; push Next IP back to R
+	.ADDR do_SEMI
 
 defword "SQUOT","S(",1
 ; ( -- ADDR )
@@ -1579,7 +1590,10 @@ BOOT_PRG:
 ;	.BYTE " : TEST1 6 1 DO I . LOOP ; TEST1 " ; Count from 1 to 5
 ;	.BYTE " : TEST2 A 0 DO I . 2 +LOOP ; TEST2 " ; Count from 0 to 8, 2 by 2
 
+; temporarily define a word with a string, print it, and forget the word
+	.BYTE " LATEST @ HERE "	; put addr of latest word, and HERE on the stack
 	.BYTE " : z S( Ready ) ; z COUNT TYPE CRLF "
+	.BYTE " DP ! LATEST ! "	; restore HERE and LATEST values
 
 	.BYTE $00
 
