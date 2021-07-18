@@ -1,10 +1,6 @@
 ; FORTH 
 ; Alex Dumont
 
-; Help & Reference:
-; [Bitwise, Day 35: Implementing Forth](https://www.youtube.com/watch?v=rlayTh3sjiw)
-; [Moving Forth: Part 1](https://www.bradrodriguez.com/papers/moving1.htm)
-
 .pc02 ; 65C02 mode
 .debuginfo      +       ; Generate debug info
 .feature string_escapes
@@ -468,6 +464,10 @@ defword "FROM_R","<R",
 	PLA
 	STA 1,X
 	JMP DEX2_NEXT
+
+defword "I",,
+; I is same code as @R
+	BRA do_AT_R
 
 defword "AT_R","@R",
 ; @R : copy the cell from the Return Stack
@@ -1232,6 +1232,64 @@ defword "LITSTR",,
 @skip:
 	JMP DEX2_NEXT
 
+defword "STAR_DO","*DO",
+; ( end start -- )
+; Used by DO
+; We don't use >R as it would mean being a colon word, and that would
+; mess with the return stack (colon world pushes next IP onto the rs)
+
+	; pushes 'end' on the Return Stack
+	LDA 5,X
+	PHA
+	LDA 4,X
+	PHA
+	; pushes 'start' on the Return Stack
+	LDA 3,X
+	PHA
+	LDA 2,X
+	PHA
+	; drop start
+	INX
+	INX
+	; drop end
+	JMP do_DROP
+
+defword "STAR_LOOP","*LOOP",
+; ( INC -- )
+; Used by LOOP, +LOOP, takes the increment on the stack
+
+; *LOOP should be followed by JUMP, ADDR
+; where ADDR is the instruction after DO
+; *LOOP will with run it or bypass it
+
+	JMP do_COLON
+	.ADDR do_FROM_R	; get ADDR (NextIP). Right after LOOP is the JUMP back to DO, that we can bypass with *LOOP
+	.ADDR do_FROM_R	;           ( INC ADDR I )
+	.ADDR do_ROT	;           ( ADDR I INC )
+	.ADDR do_PLUS	; I=I+INC   ( ADDR I )
+	.ADDR do_FROM_R	; End
+	.ADDR do_OVER, do_OVER	; 2DUP	( ADDR I END I END )
+	.ADDR do_MINUS
+	.ADDR do_LIT, $1000
+	.ADDR do_AND	; 0 iif END>=I, $1000 iif I>END
+	.ADDR do_EQZ	; invert
+	.ADDR do_0BR, @loop
+; exit loop:
+	; ( ADDR I END )
+	.ADDR do_DROP, do_DROP ; ( )
+	.ADDR do_CLIT
+	.BYTE $04
+	.ADDR do_PLUS ; Add 4 to Next IP ( bypass jump do -> Exit DO-LOOP)
+	.ADDR do_TO_R ; push NextIP back to R
+	.ADDR do_SEMI ; jump over
+
+@loop:	; ( ADDR I END )
+	.ADDR do_TO_R	; push END back to R
+	.ADDR do_TO_R	; push I back to R
+	.ADDR do_TO_R	; push NextIP back to R
+	.ADDR do_SEMI
+
+
 defword "SQUOT","S(",1
 ; ( -- ADDR )
 ;	LDA MODE
@@ -1511,9 +1569,19 @@ BOOT_PRG:
  
 ; TEST BEGIN UNTIL
 ;	.BYTE " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
-	
-	.BYTE $00
 
+; DO LOOP
+	.BYTE " : DO LIT *DO , HERE ; IMMEDIATE " ;
+	.BYTE " : LOOP LIT 1 , LIT *LOOP , LIT JUMP , , ; IMMEDIATE " ;
+	.BYTE " : +LOOP LIT *LOOP , LIT JUMP , , ; IMMEDIATE " ;
+
+; Test DO-LOOP
+;	.BYTE " : TEST1 6 1 DO I . LOOP ; TEST1 " ; Count from 1 to 5
+;	.BYTE " : TEST2 A 0 DO I . 2 +LOOP ; TEST2 " ; Count from 0 to 8, 2 by 2
+
+	.BYTE " : z S( Ready ) ; z COUNT TYPE CRLF "
+
+	.BYTE $00
 
 ;	*= $0200
 .segment  "BSS"
