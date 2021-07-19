@@ -1,11 +1,6 @@
 ; FORTH 
 ; Alex Dumont
 
-; Help & Reference:
-; [Bitwise, Day 35: Implementing Forth](https://www.youtube.com/watch?v=rlayTh3sjiw)
-; [Moving Forth: Part 1](https://www.bradrodriguez.com/papers/moving1.htm)
-
-
 ; IP: Next Instruction Pointer (IP)-->W
 ; W : Address of the code to run
 W	.= $FE		; 2 bytes, an address
@@ -1440,7 +1435,7 @@ do_STAR_LOOP:
 	.DW do_CLIT, $04
 	.DW do_PLUS ; Add 4 to Next IP ( bypass jump do -> Exit DO-LOOP)
 	.DW do_TO_R ; push NextIP back to R
-	.DW do_SEMI ; jump over
+	.DW do_SEMI
 
 .loop:	; ( ADDR I END )
 	.DW do_TO_R	; push END back to R
@@ -1448,18 +1443,60 @@ do_STAR_LOOP:
 	.DW do_TO_R	; push NextIP back to R
 	.DW do_SEMI
 
-h_SQUOT:
+h_IS_IMM:
 	.DW h_STAR_LOOP
+	.STR "IMM?"
+do_IS_IMM:
+       JMP do_COLON
+       .DW do_MODE, do_CFETCH
+       .DW do_SEMI
+
+h_SQUOT:
+	.DW h_IS_IMM
 	.STR "S("
 do_SQUOT:
 ; ( -- ADDR )
 ;	LDA MODE
 ;	BEQ .CompilationMode
 ;.ExecutionMode:
-;	JMP do_COLON
-;	.DW do_SEMI
-;.CompilationMode:
 	JMP do_COLON
+	.DW do_IS_IMM         ; MODE: 0 Compile, >0 Execute
+	.DW do_0BR, .CompilationMode
+.ExecuteMode:
+	; Save HERE on the stack.
+	; In the execution mode, will save the STR at HERE + FF
+	.DW do_HERE		; ( oldHERE )
+	.DW do_DUP		; ( oldHERE oldHERE )
+	.DW do_CLIT
+	.DB $FF
+	.DW do_PLUS, do_DUP	; ( oldHERE oldHERE+FF oldHERE+FF )
+	.DW do_DP, do_STORE	; we update HERE
+
+	; here we have (oldHERE newHERE) newHERE=oldHERE+FF)
+	; we'll restore oldHERE at the end. we store the STR at newHERE:
+
+	; push a 00 length
+	.DW do_PUSH0, do_CCOMMA
+.Xnext:	; loop over each char in input
+	.DW do_KEY
+	.DW do_DUP, do_CLIT
+	.DB ')'
+	.DW do_MINUS, do_0BR, .XendStr
+	.DW do_CCOMMA
+	.DW do_JUMP, .Xnext
+.XendStr:
+	.DW do_DROP
+	.DW do_HERE, do_OVER, do_MINUS	; compute str length
+	.DW do_PUSH1, do_MINUS		;
+	.DW do_OVER, do_CSTORE		; update len in length byte
+	; (oldHERE newHERE )
+
+; restore old HERE and leave newHERE as str addr!
+	.DW do_SWAP, do_DP, do_STORE
+
+	.DW do_SEMI
+	
+.CompilationMode:
 	.DW do_LIT, do_LITSTR, do_COMMA ; adds LITSTR to the definition
 
 	; get HERE on the stack for later
@@ -1475,11 +1512,9 @@ do_SQUOT:
 	.DW do_JUMP, .next
 .endStr:
 	.DW do_DROP
-	.DW do_BREAK
 	.DW do_HERE, do_OVER, do_MINUS	; compute str length
 	.DW do_PUSH1, do_MINUS		;
 	.DW do_SWAP, do_CSTORE
-;	.DW do_DUP, do_DP, do_STORE	; restore "old" HERE in DP
 	.DW do_SEMI
 	
 ;-----------------------------------------------------------------
@@ -1732,7 +1767,7 @@ BOOT_PRG:
 	.DB " : UNTIL LIT 0BR  , , ; IMMEDIATE "
 
 	.DB " : PAD HERE 64 + ; " ; $64 = d100, PAD is 100 byte above HERE
-	.DB " : IMM? MODE C@ ; " ; 0: COMPILATION mode, 1 EXEC/IMMEDIATE mode
+;	.DB " : IMM? MODE C@ ; " ; 0: COMPILATION mode, 1 EXEC/IMMEDIATE mode
  
 ; Test BEGIN UNTIL
 ;	.DB " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
