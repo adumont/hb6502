@@ -1368,10 +1368,12 @@ defword "SQUOT","S(",1
 	; (oldHERE newHERE )
 	; restore old HERE and leave newHERE as str addr!
 	.ADDR do_SWAP, do_DP, do_STORE
+	.ADDR do_COUNT
 	.ADDR do_SEMI
 
 @CmodeEnd:
 	.ADDR do_SWAP, do_CSTORE
+	.ADDR do_LIT, do_COUNT, do_COMMA ; add COUNT to the definition
 	.ADDR do_SEMI
 	
 ;-----------------------------------------------------------------
@@ -1633,11 +1635,13 @@ BOOT_PRG:
 ;	.BYTE " : TEST2 A 0 DO I . 2 +LOOP ; TEST2 " ; Count from 0 to 8, 2 by 2
 
 ; temporarily define a word with a string, print it, and forget the word
-	.BYTE " LATEST @ HERE "	; put addr of latest word, and HERE on the stack
-	.BYTE " : z S( Ready ) ; z COUNT TYPE CRLF "
-	.BYTE " DP ! LATEST ! "	; restore HERE and LATEST values
+;	.BYTE " LATEST @ HERE "	; put addr of latest word, and HERE on the stack
+;	.BYTE " : z S( Ready ) ; z TYPE CRLF "
+;	.BYTE " DP ! LATEST ! "	; restore HERE and LATEST values
 
-	.BYTE $00
+	.BYTE " S( READY) TYPE CRLF"
+
+	.BYTE " ", $00
 
 ;	*= $0200
 .segment  "BSS"
