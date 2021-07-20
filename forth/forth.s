@@ -1315,10 +1315,22 @@ defword "IS_IMM","IMM?",1
 
 defword "SQUOT","S(",1
 ; ( -- ADDR )
+; This S( word is to enter a string. It will return the address of a
+; counted string, suitable to follow with COUNT TYPE
+; TODO: make more FORTH compliant, it should not require COUNT , only TYPE
+; It's an immediate word.
+; At the beginning we chek if we are in Immediate/Execute mode, or Compilation mode
+; and we do different things in each case. Then there is the same loop (@commitStr)
+; At the end, again we do different things depending on the MODE.
+
+; In Execution mode, S( will store the string at HERE+$FF
+; which eventually will be overwritten. Hence it's temporary.
+; In Compilation mode, S( will store the String as LITSTR in the defined word.
+
 	JMP do_COLON
 	.ADDR do_IS_IMM         ; MODE: 0 Compile, >0 Execute
-	.ADDR do_0BR, @CompilationMode
-@ExecuteMode:
+	.ADDR do_0BR, @CModeStart
+@XModeStart:
 	; Save HERE on the stack.
 	; In the execution mode, will save the STR at HERE + FF
 	.ADDR do_HERE		; ( oldHERE )
@@ -1327,37 +1339,16 @@ defword "SQUOT","S(",1
 	.BYTE $FF
 	.ADDR do_PLUS, do_DUP	; ( oldHERE oldHERE+FF oldHERE+FF )
 	.ADDR do_DP, do_STORE	; we update HERE
-
+	.ADDR do_JUMP, @commitStr
 	; here we have (oldHERE newHERE) newHERE=oldHERE+FF)
 	; we'll restore oldHERE at the end. we store the STR at newHERE:
-
-	; push a 00 length
-	.ADDR do_PUSH0, do_CCOMMA
-@Xnext:	; loop over each char in input
-	.ADDR do_KEY
-	.ADDR do_DUP, do_CLIT
-	.BYTE ')'
-	.ADDR do_MINUS, do_0BR, @XendStr
-	.ADDR do_CCOMMA
-	.ADDR do_JUMP, @Xnext
-@XendStr:
-	.ADDR do_DROP
-	.ADDR do_HERE, do_OVER, do_MINUS	; compute str length
-	.ADDR do_PUSH1, do_MINUS		;
-	.ADDR do_OVER, do_CSTORE		; update len in length byte
-	; (oldHERE newHERE )
-
-; restore old HERE and leave newHERE as str addr!
-	.ADDR do_SWAP, do_DP, do_STORE
-	.ADDR do_SEMI
-	
-@CompilationMode:
+@CModeStart:
 	.ADDR do_LIT, do_LITSTR, do_COMMA ; adds LITSTR to the definition
-
 	; get HERE on the stack for later
 	.ADDR do_HERE
+@commitStr:
 	; push a 00 length
-	.ADDR do_PUSH0, do_CCOMMA
+	.ADDR do_PUSH0, do_CCOMMA		; **
 @next:	; loop over each char in input
 	.ADDR do_KEY
 	.ADDR do_DUP, do_CLIT
@@ -1368,7 +1359,18 @@ defword "SQUOT","S(",1
 @endStr:
 	.ADDR do_DROP
 	.ADDR do_HERE, do_OVER, do_MINUS	; compute str length
-	.ADDR do_PUSH1, do_MINUS		;
+	.ADDR do_PUSH1, do_MINUS
+; End of @commitStr loop
+	.ADDR do_IS_IMM         ; MODE: 0 Compile, >0 Execute
+	.ADDR do_0BR, @CmodeEnd
+@XmodeEnd:
+	.ADDR do_OVER, do_CSTORE		; update len in length byte
+	; (oldHERE newHERE )
+	; restore old HERE and leave newHERE as str addr!
+	.ADDR do_SWAP, do_DP, do_STORE
+	.ADDR do_SEMI
+
+@CmodeEnd:
 	.ADDR do_SWAP, do_CSTORE
 	.ADDR do_SEMI
 	
