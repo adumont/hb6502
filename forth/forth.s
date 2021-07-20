@@ -1290,6 +1290,10 @@ defword "STAR_LOOP","*LOOP",
 	.ADDR do_SEMI
 
 defword "LEAVE",,
+; ( -- )
+; Leaves out of a DO-LOOP on the next *LOOP
+; it works by setting I to END, so on  the next check in *LOOP
+; it will exit ;)
 	JMP do_COLON
 	.ADDR do_FROM_R	; ( ADDR ) Next IP
 	.ADDR do_FROM_R	; ( ADDR I )
@@ -1301,15 +1305,53 @@ defword "LEAVE",,
 	.ADDR do_TO_R	; push Next IP back to R
 	.ADDR do_SEMI
 
+defword "IS_IMM","IMM?",1
+; Is it immediate/execution mode? 
+; returns the value of variable MODE
+; 0 : Compilation mode, <>0 : Execution mode
+	JMP do_COLON
+	.ADDR do_MODE, do_CFETCH
+	.ADDR do_SEMI
+
 defword "SQUOT","S(",1
 ; ( -- ADDR )
-;	LDA MODE
-;	BEQ .CompilationMode
-;.ExecutionMode:
-;	JMP do_COLON
-;	.ADDR do_SEMI
-;.CompilationMode:
 	JMP do_COLON
+	.ADDR do_IS_IMM         ; MODE: 0 Compile, >0 Execute
+	.ADDR do_0BR, @CompilationMode
+@ExecuteMode:
+	; Save HERE on the stack.
+	; In the execution mode, will save the STR at HERE + FF
+	.ADDR do_HERE		; ( oldHERE )
+	.ADDR do_DUP		; ( oldHERE oldHERE )
+	.ADDR do_CLIT
+	.BYTE $FF
+	.ADDR do_PLUS, do_DUP	; ( oldHERE oldHERE+FF oldHERE+FF )
+	.ADDR do_DP, do_STORE	; we update HERE
+
+	; here we have (oldHERE newHERE) newHERE=oldHERE+FF)
+	; we'll restore oldHERE at the end. we store the STR at newHERE:
+
+	; push a 00 length
+	.ADDR do_PUSH0, do_CCOMMA
+@Xnext:	; loop over each char in input
+	.ADDR do_KEY
+	.ADDR do_DUP, do_CLIT
+	.BYTE ')'
+	.ADDR do_MINUS, do_0BR, @XendStr
+	.ADDR do_CCOMMA
+	.ADDR do_JUMP, @Xnext
+@XendStr:
+	.ADDR do_DROP
+	.ADDR do_HERE, do_OVER, do_MINUS	; compute str length
+	.ADDR do_PUSH1, do_MINUS		;
+	.ADDR do_OVER, do_CSTORE		; update len in length byte
+	; (oldHERE newHERE )
+
+; restore old HERE and leave newHERE as str addr!
+	.ADDR do_SWAP, do_DP, do_STORE
+	.ADDR do_SEMI
+	
+@CompilationMode:
 	.ADDR do_LIT, do_LITSTR, do_COMMA ; adds LITSTR to the definition
 
 	; get HERE on the stack for later
@@ -1325,11 +1367,9 @@ defword "SQUOT","S(",1
 	.ADDR do_JUMP, @next
 @endStr:
 	.ADDR do_DROP
-	.ADDR do_BREAK
 	.ADDR do_HERE, do_OVER, do_MINUS	; compute str length
 	.ADDR do_PUSH1, do_MINUS		;
 	.ADDR do_SWAP, do_CSTORE
-;	.ADDR do_DUP, do_DP, do_STORE	; restore "old" HERE in DP
 	.ADDR do_SEMI
 	
 ;-----------------------------------------------------------------
