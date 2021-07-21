@@ -1456,13 +1456,22 @@ h_SQUOT:
 	.STR "S("
 do_SQUOT:
 ; ( -- ADDR )
-;	LDA MODE
-;	BEQ .CompilationMode
-;.ExecutionMode:
+; This S( word is to enter a string. It will return the address of a
+; counted string, suitable to follow with COUNT TYPE
+; TODO: make more FORTH compliant, it should not require COUNT , only TYPE
+; It's an immediate word.
+; At the beginning we chek if we are in Immediate/Execute mode, or Compilation mode
+; and we do different things in each case. Then there is the same loop (@commitStr)
+; At the end, again we do different things depending on the MODE.
+
+; In Execution mode, S( will store the string at HERE+$FF
+; which eventually will be overwritten. Hence it's temporary.
+; In Compilation mode, S( will store the String as LITSTR in the defined word.
+
 	JMP do_COLON
 	.DW do_IS_IMM         ; MODE: 0 Compile, >0 Execute
-	.DW do_0BR, .CompilationMode
-.ExecuteMode:
+	.DW do_0BR, .CModeStart
+.XModeStart:
 	; Save HERE on the stack.
 	; In the execution mode, will save the STR at HERE + FF
 	.DW do_HERE		; ( oldHERE )
@@ -1471,38 +1480,16 @@ do_SQUOT:
 	.DB $FF
 	.DW do_PLUS, do_DUP	; ( oldHERE oldHERE+FF oldHERE+FF )
 	.DW do_DP, do_STORE	; we update HERE
-
+	.DW do_JUMP, .commitStr
 	; here we have (oldHERE newHERE) newHERE=oldHERE+FF)
 	; we'll restore oldHERE at the end. we store the STR at newHERE:
-
-	; push a 00 length
-	.DW do_PUSH0, do_CCOMMA
-.Xnext:	; loop over each char in input
-	.DW do_KEY
-	.DW do_DUP, do_CLIT
-	.DB ')'
-	.DW do_MINUS, do_0BR, .XendStr
-	.DW do_CCOMMA
-	.DW do_JUMP, .Xnext
-.XendStr:
-	.DW do_DROP
-	.DW do_HERE, do_OVER, do_MINUS	; compute str length
-	.DW do_PUSH1, do_MINUS		;
-	.DW do_OVER, do_CSTORE		; update len in length byte
-	; (oldHERE newHERE )
-
-; restore old HERE and leave newHERE as str addr!
-	.DW do_SWAP, do_DP, do_STORE
-
-	.DW do_SEMI
-	
-.CompilationMode:
+.CModeStart:
 	.DW do_LIT, do_LITSTR, do_COMMA ; adds LITSTR to the definition
-
 	; get HERE on the stack for later
 	.DW do_HERE
+.commitStr:
 	; push a 00 length
-	.DW do_PUSH0, do_CCOMMA
+	.DW do_PUSH0, do_CCOMMA		; **
 .next:	; loop over each char in input
 	.DW do_KEY
 	.DW do_DUP, do_CLIT
@@ -1513,10 +1500,24 @@ do_SQUOT:
 .endStr:
 	.DW do_DROP
 	.DW do_HERE, do_OVER, do_MINUS	; compute str length
-	.DW do_PUSH1, do_MINUS		;
+	.DW do_PUSH1, do_MINUS
+; End of @commitStr loop
+	.DW do_IS_IMM         ; MODE: 0 Compile, >0 Execute
+	.DW do_0BR, .CmodeEnd
+.XmodeEnd:
+	.DW do_OVER, do_CSTORE		; update len in length byte
+	; (oldHERE newHERE )
+	; restore old HERE and leave newHERE as str addr!
+	.DW do_SWAP, do_DP, do_STORE
+	.DW do_COUNT
+	.DW do_SEMI
+
+.CmodeEnd:
 	.DW do_SWAP, do_CSTORE
+	.DW do_LIT, do_COUNT, do_COMMA ; add COUNT to the definition
 	.DW do_SEMI
 	
+
 ;-----------------------------------------------------------------
 ; ALWAYS update the latest word's 
 ; header address h_*
