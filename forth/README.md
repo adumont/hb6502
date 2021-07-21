@@ -3,6 +3,7 @@
 - [Homebrew 6502 SBC - FORTH](#homebrew-6502-sbc---forth)
 - [Introduction](#introduction)
 - [Try it!](#try-it)
+  - [Examples](#examples)
 - [References](#references)
 
 # Introduction
@@ -14,6 +15,96 @@ This page is about my own implementation of FORTH for my Homebrew 6502 SBC.
 # Try it!
 
 You can use my Forth here [Alex Forth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).  
+
+Notice:
+- It doesn't print {OK}
+- It's not ANS Forth, but my own incomplete and free implementation.
+- At this moment, it only supports 16 bit unsigned integers
+- The base for all numbers is hexadecimal
+- Words are case sensitive!
+
+## Examples
+
+### Hello world
+
+```
+S( Hello World!) TYPE CRLF
+```
+
+This should output this on a new line:
+
+```
+Hello world!
+```
+
+### Simple Arithmetics
+
+```
+1 2 +
+```
+
+This should output:
+
+```
+0003
+```
+
+### Variables
+
+- Create variable Z:
+
+```
+VARIABLE Z
+```
+
+- Store value `AA01` into variable Z:
+
+```
+AA01
+Z ! 
+```
+
+- Get value of variable Z and print it:
+
+```
+Z @ .
+AA01 
+```
+
+### Memory Manipulation
+
+Example 1: Read the reset vector:
+
+```
+FFFC @ .
+```
+
+This should output:
+
+```
+8000
+```
+
+### Define new words
+
+Let's define the word `+!`. It takes a value and a variable name, and adds the value to the variable's value (and stores it back into the variable).
+
+Let's enter:
+```
+: +! DUP @ ROT + SWAP ! ;
+```
+Now our FORTH knows this new word `+!`, so let's try it:
+
+```
+1 Z +!
+Z @ .
+```
+
+Assuming `Z` was still at the value `AA01`, this should output:
+
+```
+AA02
+```
 
 # References
 

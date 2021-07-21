@@ -68,23 +68,11 @@ Early demo of the Monitor in Kowalksi 6502 simulator:
 
 ## FORTH
 
-I'm trying to develop a FORTH kernel for my Homebrew 6502. Read more here [hb6502/forth](https://github.com/adumont/hb6502/tree/main/forth#homebrew-6502-sbc---forth).
+I have implemented my own FORTH kernel this Homebrew 6502. 
 
-It's very early, but for now it seems to work in Kowalksi 6502 simulator.
+![](forth/imgs/Forth.png)
 
-### NEXT routine (the interpreter)
-
-![](forth/imgs/NEXT.png)
-
-### ENTER/EXIT routines
-
-![](forth/imgs/DOCOL-DOSEMI.png)
-
-### A sample FORTH program
-
-This is a sample (and somewhat absurd) FORTH program, at the moment it is hardcoded (no compiler). It is made of two colon definitions which several primitive words as well as another colon defined word.
-
-![](forth/imgs/PROG.png)
+Read more here [hb6502/forth](https://github.com/adumont/hb6502/tree/main/forth#homebrew-6502-sbc---forth).
 
 # Datasheets
 
