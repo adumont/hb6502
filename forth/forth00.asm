@@ -1009,8 +1009,29 @@ do_RBRAC:
 	STZ MODE
 	JMP NEXT
 
-h_MARKER:
+h_STAR_HEADER:
 	.DW h_RBRAC
+	.STR "*HEADER"
+do_STAR_HEADER:
+	JMP do_COLON
+	.DW do_HERE		; keep current HERE on stack
+	.DW do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
+	.DW do_LATEST, do_STORE ; store "old HERE" in LATEST
+
+	.DW do_DUP, do_CCOMMA	; store LEN in Header
+	.DW do_DUP, do_NROT	; ( len addr len )
+	.DW do_HERE, do_SWAP, do_CMOVE ; store name
+	.DW do_ALLOT		; advance HERE by LEN
+
+	.DW do_CLIT	;
+	.DB $4C		; store a 4C (JMP)
+	.DW do_CCOMMA	;
+
+	.DW do_SEMI
+
+
+h_MARKER:
+	.DW h_STAR_HEADER
 	.STR "MARKER"
 do_MARKER:
 ; MARKER creates a new word on the dictionary called FORGET
@@ -1021,23 +1042,12 @@ do_MARKER:
 	.DW do_HERE		; keep current HERE on stack
 	.DW do_LATEST, do_FETCH ;
 
-	.DW do_HERE		; keep current HERE on stack
-	.DW do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
-	.DW do_LATEST, do_STORE ; store "old HERE" in LATEST
-
 	.DW do_LITSTR
 	.STR "FORGET"	; commits counted string
 	.DW do_COUNT
 
-	.DW do_DUP, do_CCOMMA	; store LEN in Header
-	.DW do_DUP, do_NROT	; ( len addr len )
-	.DW do_HERE, do_SWAP, do_CMOVE ; store name
-	.DW do_ALLOT		; advance HERE by LEN
+	.DW do_STAR_HEADER
 
-	.DW do_CLIT	;
-	.DB $4C		; store a 4C (JMP)
-	.DW do_CCOMMA	;
-	
 	.DW do_LIT, do_COLON, do_COMMA	; do_COLON
 
 	.DW do_LIT, do_LIT, do_COMMA	; LIT
@@ -1063,20 +1073,11 @@ do_CREATE:
 ; get next TOKEN in INPUT and creates 
 ; a Header for a new word
 	JMP do_COLON
-	.DW do_HERE		; keep current HERE on stack
-	.DW do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
-	.DW do_LATEST, do_STORE ; store "old HERE" in LATEST
 
 	.DW do_WORD		; get next TOKEN in INPUT (new word's name)
-	.DW do_DUP, do_CCOMMA	; store LEN in Header
-	.DW do_DUP, do_NROT	; ( len addr len )
-	.DW do_HERE, do_SWAP, do_CMOVE ; store name
-	.DW do_ALLOT		; advance HERE by LEN
 
-	.DW do_CLIT	;
-	.DB $4C		; store a 4C (JMP)
-	.DW do_CCOMMA	;
-	
+	.DW do_STAR_HEADER
+
 	.DW do_LIT, do_COLON, do_COMMA	; store do_COLON's addr
 	
 	;.DW do_PUSH0, do_LIT, MODE, do_CSTORE ; Enter Compilation mode
