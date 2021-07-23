@@ -105,6 +105,21 @@ Assuming `Z` was still at the value `AA01`, this should output:
 ```
 AA02
 ```
+### Fibonacci sequence
+
+```
+: next-fib   DUP ROT + ;
+
+: fib DUP IF  0 1 ROT 1 DO next-fib LOOP SWAP  ELSE 0 THEN DROP ;
+
+9 fib .
+22
+```
+
+Remember the base is 16, so all numbers are hexadecimal. Indeed Fib(9)=$22=34.
+
+Notice how we do not need to use recursion!
+
 
 # References
 
