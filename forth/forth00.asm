@@ -1009,8 +1009,55 @@ do_RBRAC:
 	STZ MODE
 	JMP NEXT
 
-h_CREATE:
+h_MARKER:
 	.DW h_RBRAC
+	.STR "MARKER"
+do_MARKER:
+; MARKER creates a new word on the dictionary called FORGET
+; in its definition, it encodes the FORTH code to restore LATEST and HERE
+; at the values they had when running MARKER.
+; we encode the values of LATEST and HERE using LIT in the FORGET definition
+	JMP do_COLON
+	.DW do_HERE		; keep current HERE on stack
+	.DW do_LATEST, do_FETCH ;
+
+	.DW do_HERE		; keep current HERE on stack
+	.DW do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
+	.DW do_LATEST, do_STORE ; store "old HERE" in LATEST
+
+	.DW do_LITSTR
+	.STR "FORGET"	; commits counted string
+	.DW do_COUNT
+
+	.DW do_DUP, do_CCOMMA	; store LEN in Header
+	.DW do_DUP, do_NROT	; ( len addr len )
+	.DW do_HERE, do_SWAP, do_CMOVE ; store name
+	.DW do_ALLOT		; advance HERE by LEN
+
+	.DW do_CLIT	;
+	.DB $4C		; store a 4C (JMP)
+	.DW do_CCOMMA	;
+	
+	.DW do_LIT, do_COLON, do_COMMA	; do_COLON
+
+	.DW do_LIT, do_LIT, do_COMMA	; LIT
+	.DW do_COMMA	; stores old LATEST
+
+	.DW do_LIT, do_LATEST, do_COMMA	; LATEST
+	.DW do_LIT, do_STORE, do_COMMA	; !
+
+	.DW do_LIT, do_LIT, do_COMMA	; LIT
+	.DW do_COMMA	; stores old HERE
+
+	.DW do_LIT, do_DP, do_COMMA	; DP
+	.DW do_LIT, do_STORE, do_COMMA	; !
+	
+	.DW do_LIT, do_SEMI, do_COMMA	; ;
+
+	.DW do_SEMI
+
+h_CREATE:
+	.DW h_MARKER
 	.STR ":"
 do_CREATE:
 ; get next TOKEN in INPUT and creates 
