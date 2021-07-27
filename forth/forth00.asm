@@ -477,9 +477,9 @@ do_TO_R:
 
 h_FROM_R:
 	.DW h_TO_R
-	.STR "<R"
+	.STR "R>"
 do_FROM_R:
-; <R: pop a cell from the Return Stack
+; R>: pop a cell from the Return Stack
 ; and pushes it to the Stack
 	PLA
 	STA 0,X
@@ -1480,6 +1480,7 @@ do_STAR_LOOP:
 ; exit loop:
 	; ( ADDR I END )
 	.DW do_DROP, do_DROP ; ( )
+	.DW do_CLIT
 	.DB $04
 	.DW do_PLUS ; Add 4 to Next IP ( bypass jump do -> Exit DO-LOOP)
 	.DW do_TO_R ; push NextIP back to R
@@ -1789,13 +1790,14 @@ BOOT_PRG:
 	.DB " : NOT 0= ; "
 	.DB " : = - 0= ; "
 	.DB " : 2* DUP + ; "
+	.DB " : LIT, R> DUP @ , 2 + >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.DB " : ' WORD FIND >CFA ; "
 	.DB " : STOP BREAK ; IMMEDIATE "
 
-	.DB " : IF LIT 0BR , HERE LIT 0 , ; IMMEDIATE "
+	.DB " : IF LIT, 0BR HERE LIT, 0 ; IMMEDIATE "
 	.DB " : THEN HERE SWAP ! ; IMMEDIATE "
-	.DB " : ELSE LIT JUMP , HERE LIT 0 , SWAP HERE SWAP ! ; IMMEDIATE "
+	.DB " : ELSE LIT, JUMP HERE LIT, 0 SWAP HERE SWAP ! ; IMMEDIATE "
 
 ; TEST IF
 ;	.DB " : T IF AAAA ELSE BBBB THEN ; "
@@ -1803,7 +1805,7 @@ BOOT_PRG:
 ;	.DB " 0 T . " ; should output BBBB
 
 	.DB " : BEGIN HERE ; IMMEDIATE "
-	.DB " : AGAIN LIT JUMP , , ; IMMEDIATE "
+	.DB " : AGAIN LIT, JUMP , ; IMMEDIATE "
 
 ; : AGAIN
 ;     LIT JUMP ,	( compiles "JUMP" )
@@ -1813,7 +1815,7 @@ BOOT_PRG:
 ; TEST BEGIN AGAIN
 ;	.DB " : TestLoop BEGIN 1 . AGAIN ; TestLoop "
 
-	.DB " : UNTIL LIT 0BR  , , ; IMMEDIATE "
+	.DB " : UNTIL LIT, 0BR , ; IMMEDIATE "
 
 	.DB " : PAD HERE 64 + ; " ; $64 = d100, PAD is 100 byte above HERE
 ;	.DB " : IMM? MODE C@ ; " ; 0: COMPILATION mode, 1 EXEC/IMMEDIATE mode
@@ -1822,13 +1824,13 @@ BOOT_PRG:
 ;	.DB " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
 	
 ; DO LOOP
-	.DB " : DO LIT *DO , HERE ; IMMEDIATE " ;
-	.DB " : LOOP LIT 1 , LIT *LOOP , LIT JUMP , , ; IMMEDIATE " ;
-	.DB " : +LOOP LIT *LOOP , LIT JUMP , , ; IMMEDIATE " ;
+	.DB " : DO LIT, *DO HERE ; IMMEDIATE " ;
+	.DB " : LOOP LIT, 1  LIT, *LOOP  LIT, JUMP , ; IMMEDIATE " ;
+	.DB " : +LOOP LIT, *LOOP LIT, JUMP , ; IMMEDIATE " ;
 
 ; Test DO-LOOP
-;	.DB " : TEST1 6 1 DO I . LOOP ; " ; Count from 1 to 5
-;	.DB " : TEST2 A 0 DO I . 2 +LOOP ; " ; Count from 0 to 8, 2 by 2
+	.DB " : TEST1 4 1 DO I . LOOP ; " ; Count from 1 to 5
+	.DB " : TEST2 A 0 DO I . 2 +LOOP ; " ; Count from 0 to 8, 2 by 2
 
 	.DB $00
 
