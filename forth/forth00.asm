@@ -1480,7 +1480,7 @@ do_STAR_LOOP:
 ; exit loop:
 	; ( ADDR I END )
 	.DW do_DROP, do_DROP ; ( )
-	.DW do_CLIT, $04
+	.DB $04
 	.DW do_PLUS ; Add 4 to Next IP ( bypass jump do -> Exit DO-LOOP)
 	.DW do_TO_R ; push NextIP back to R
 	.DW do_SEMI
