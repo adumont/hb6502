@@ -908,15 +908,12 @@ defword "RBRAC","]",
 	STZ MODE
 	JMP NEXT
 
-defword "CREATE",":",
-; get next TOKEN in INPUT and creates 
-; a Header for a new word
+defword "STAR_HEADER","*HEADER",
 	JMP do_COLON
 	.ADDR do_HERE		; keep current HERE on stack
 	.ADDR do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
 	.ADDR do_LATEST, do_STORE ; store "old HERE" in LATEST
 
-	.ADDR do_WORD		; get next TOKEN in INPUT (new word's name)
 	.ADDR do_DUP, do_CCOMMA	; store LEN in Header
 	.ADDR do_DUP, do_NROT	; ( len addr len )
 	.ADDR do_HERE, do_SWAP, do_CMOVE ; store name
@@ -925,12 +922,50 @@ defword "CREATE",":",
 	.ADDR do_CLIT	;
 	.BYTE $4C		; store a 4C (JMP)
 	.ADDR do_CCOMMA	;
+
+	.ADDR do_SEMI
+
+defword "MARKER",,
+; When called, MARKER creates a new word on the dictionary called FORGET
+; in its definition, it encodes the FORTH code to restore LATEST and HERE
+; at the values they had when running MARKER.
+; we encode the values of LATEST and HERE using LIT in the FORGET definition
+	JMP do_COLON
+	.ADDR do_HERE		; keep current HERE on stack
+	.ADDR do_LATEST, do_FETCH ;
+
+	.ADDR do_LITSTR
+	CString "FORGET"	; commits counted string
+	.ADDR do_COUNT
+
+	.ADDR do_STAR_HEADER
+
+	.ADDR do_LIT, do_COLON, do_COMMA	; do_COLON
+
+	.ADDR do_LIT, do_LIT, do_COMMA	; LIT
+	.ADDR do_COMMA	; stores old LATEST
+
+	.ADDR do_LIT, do_LATEST, do_COMMA	; LATEST
+	.ADDR do_LIT, do_STORE, do_COMMA	; !
+
+	.ADDR do_LIT, do_LIT, do_COMMA	; LIT
+	.ADDR do_COMMA	; stores old HERE
+
+	.ADDR do_LIT, do_DP, do_COMMA	; DP
+	.ADDR do_LIT, do_STORE, do_COMMA	; !
 	
-	.ADDR do_LIT, do_COLON, do_COMMA	; store do_COLON's addr
-	
-	;.ADDR do_PUSH0, do_LIT, MODE, do_CSTORE ; Enter Compilation mode
-	.ADDR do_RBRAC ; Enter Compilation mode
-	
+	.ADDR do_LIT, do_SEMI, do_COMMA	; ;
+
+	.ADDR do_SEMI
+
+defword "CREATE",":",
+; get next TOKEN in INPUT and creates 
+; a Header for a new word
+	JMP do_COLON
+	.ADDR do_WORD		; get next TOKEN in INPUT (new word's name)
+	.ADDR  do_STAR_HEADER
+	.ADDR  do_LIT, do_COLON, do_COMMA	; store do_COLON's addr
+	.ADDR  do_RBRAC ; Enter Compilation mode
 	.ADDR do_SEMI
 
 defword "VARIABLE",,
