@@ -456,8 +456,8 @@ defword "TO_R",">R",
 	PHA
 	JMP do_DROP
 
-defword "FROM_R","<R",
-; <R: pop a cell from the Return Stack
+defword "FROM_R","R>",
+; R>: pop a cell from the Return Stack
 ; and pushes it to the Stack
 	PLA
 	STA 0,X
@@ -1598,13 +1598,14 @@ BOOT_PRG:
 	.BYTE " : NOT 0= ; "
 	.BYTE " : = - 0= ; "
 	.BYTE " : 2* DUP + ; "
+	.BYTE " : LIT, R> DUP @ , 2 + >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.BYTE " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.BYTE " : ' WORD FIND >CFA ; " ; is this ever used?
 	.BYTE " : STOP BREAK ; IMMEDIATE "
 
-	.BYTE " : IF LIT 0BR , HERE LIT 0 , ; IMMEDIATE "
+	.BYTE " : IF LIT, 0BR HERE LIT, 0 ; IMMEDIATE "
 	.BYTE " : THEN HERE SWAP ! ; IMMEDIATE "
-	.BYTE " : ELSE LIT JUMP , HERE LIT 0 , SWAP HERE SWAP ! ; IMMEDIATE "
+	.BYTE " : ELSE LIT, JUMP HERE LIT, 0 SWAP HERE SWAP ! ; IMMEDIATE "
 
 ; TEST IF
 ;	.BYTE " : T IF AAAA ELSE BBBB THEN ; "
@@ -1612,12 +1613,12 @@ BOOT_PRG:
 ;	.BYTE " 0 T . " ; should output BBBB
 
 	.BYTE " : BEGIN HERE ; IMMEDIATE "
-	.BYTE " : AGAIN LIT JUMP , , ; IMMEDIATE "
+	.BYTE " : AGAIN LIT, JUMP , ; IMMEDIATE "
 
 ; TEST BEGIN AGAIN
 ;	.BYTE " : TestLoop BEGIN 1 . AGAIN ; TestLoop "
 
-	.BYTE " : UNTIL LIT 0BR  , , ; IMMEDIATE "
+	.BYTE " : UNTIL LIT, 0BR , ; IMMEDIATE "
 
 	.BYTE " : PAD HERE 64 + ; " ; $64 = d100, PAD is 100 byte above HERE
 	.BYTE " : IMM? MODE C@ ; " ; 0: COMPILATION mode, 1 EXEC/IMMEDIATE mode
@@ -1626,9 +1627,9 @@ BOOT_PRG:
 ;	.BYTE " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
 
 ; DO LOOP
-	.BYTE " : DO LIT *DO , HERE ; IMMEDIATE " ;
-	.BYTE " : LOOP LIT 1 , LIT *LOOP , LIT JUMP , , ; IMMEDIATE " ;
-	.BYTE " : +LOOP LIT *LOOP , LIT JUMP , , ; IMMEDIATE " ;
+	.BYTE " : DO LIT, *DO HERE ; IMMEDIATE " ;
+	.BYTE " : LOOP LIT, 1  LIT, *LOOP  LIT, JUMP , ; IMMEDIATE " ;
+	.BYTE " : +LOOP LIT, *LOOP LIT, JUMP , ; IMMEDIATE " ;
 
 ; Test DO-LOOP
 ;	.BYTE " : TEST1 6 1 DO I . LOOP ; TEST1 " ; Count from 1 to 5
