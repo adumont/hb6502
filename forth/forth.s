@@ -261,16 +261,13 @@ defword "COLON",,
 
 ; W+3 --> IP 
 ; (Code at W was a JMP, so 3 bytes)
-	LDA W+1
-	STA IP+1
 	LDA W
 	ADC #3
 	STA IP
-	BCC skip
-	INC IP+1
-skip:
-	JMP NEXT	
-
+	LDA W+1
+	ADC #0
+	STA IP+1
+	JMP NEXT
 
 ; SEMICOLON aka EXIT
 defword "SEMI",,
