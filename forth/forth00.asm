@@ -225,14 +225,15 @@ do_COLON: ; COLON aka ENTER
 
 ; W+3 --> IP 
 ; (Code at W was a JMP, so 3 bytes)
+	CLC
 	LDA W
 	ADC #3
 	STA IP
 	LDA W+1
 	ADC #0
 	STA IP+1
-	JMP NEXT	
-
+	JMP NEXT
+	
 ; SEMICOLON aka EXIT
 h_SEMI:
 	.DW h_COLON
@@ -386,6 +387,7 @@ do_LIT:
 ;	DEX
 ; Now advance IP
 ; IP+2 --> IP
+	CLC
 	LDA IP
 	ADC #2
 	STA IP
@@ -524,6 +526,7 @@ do_0BR:
 
 ; Now advance IP
 ; IP+2 --> IP
+	CLC
 	LDA IP
 	ADC #2
 	STA IP
@@ -1419,6 +1422,7 @@ do_LITSTR:
 	INA
 ; Now advance IP by STR len (which is at IP!)
 ; IP+2 --> IP
+	CLC
 	ADC IP
 	STA IP
 	BCC .skip
