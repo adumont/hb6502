@@ -415,6 +415,32 @@ defword "PLUS","+",
 	STA 5,X
 	JMP do_DROP
 
+defword "DPLUS","D+",
+; Double cells sum
+; ( d1 d2 -- sum ) where really it's ( lo1 hi1 lo2 hi2 -- losum hisum )
+; Stack   HI    LO
+; cells   byte  byte
+; LO1     9,X   8,X
+; HI1     7,X   6,X
+; LO2     5,X   4,X
+; HI2     3,X	2,X
+	CLC
+	LDA 4,X
+	ADC 8,X
+	STA 8,X
+	LDA 5,X
+	ADC 9,X
+	STA 9,X
+	LDA 2,X
+	ADC 6,X
+	STA 6,X
+	LDA 3,X
+	ADC 7,X
+	STA 7,X
+	INX
+	INX
+	JMP do_DROP
+
 defword "MINUS","-",
 	SEC
 	LDA 4,X
@@ -423,6 +449,32 @@ defword "MINUS","-",
 	LDA 5,X
 	SBC 3,X
 	STA 5,X
+	JMP do_DROP
+
+defword "DMINUS","D-",
+; Double cells diff
+; ( d1 d2 -- diff ) where really it's ( lo1 hi1 lo2 hi2 -- lodiff hidiff )
+; Stack   HI    LO
+; cells   byte  byte
+; LO1     9,X   8,X
+; HI1     7,X   6,X
+; LO2     5,X   4,X
+; HI2     3,X	2,X
+	SEC
+	LDA 8,X
+	SBC 4,X
+	STA 8,X
+	LDA 9,X
+	SBC 5,X
+	STA 9,X
+	LDA 6,X
+	SBC 2,X
+	STA 6,X
+	LDA 7,X
+	SBC 3,X
+	STA 7,X
+	INX
+	INX
 	JMP do_DROP
 
 defword "1PLUS","1+",
@@ -700,6 +752,17 @@ defword "DP",,
 	LDA #>DP
 	STA 1,X
 	JMP DEX2_NEXT
+
+defword "DPRINT","D.",
+; Print a double cell number (in hex for now)
+; ( lo hi -- )
+	LDA 3,X
+	JSR print_byte
+	LDA 2,X
+	JSR print_byte
+	INX
+	INX
+	BRA do_PRINT	; fallback to "."
 
 defword "PRINT",".",
 ; Print data on top of stack (in hex for now)
