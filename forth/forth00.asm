@@ -1908,8 +1908,20 @@ BOOT_PRG:
 	.DB " : +LOOP LIT, *LOOP LIT, JUMP , ; IMMEDIATE " ;
 
 ; Test DO-LOOP
-	.DB " : TEST1 4 1 DO I . LOOP ; " ; Count from 1 to 5
-	.DB " : TEST2 A 0 DO I . 2 +LOOP ; " ; Count from 0 to 8, 2 by 2
+;	.DB " : TEST1 4 1 DO I . LOOP ; " ; Count from 1 to 5
+;	.DB " : TEST2 A 0 DO I . 2 +LOOP ; " ; Count from 0 to 8, 2 by 2
+
+	; UM+     ( un1 un2 -- ud )
+	;  Add two unsigned single numbers and return a double sum
+	.DB " : UM+ 0 SWAP 0 D+ ; "
+
+	; UM*     ( un1 un2 -- ud )
+	;   UM* multiplies the unsigned 16-bit integer un1 by the
+	;   unsigned 16-bit integer un2 and returns the unsigned
+	;   32-bit product ud.
+	;   Notice: the 10 before the DO-LOOP is hexadecimal for 16 bits
+	.DB " : UM* 0 SWAP 10 0 DO DUP UM+ >R >R DUP UM+ R> + R> IF >R OVER UM+ R> + THEN LOOP ROT DROP ; "
+	.DB " : * UM* DROP ; "
 
 	.DB $00
 

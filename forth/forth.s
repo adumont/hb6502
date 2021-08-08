@@ -1745,6 +1745,18 @@ BOOT_PRG:
 ;	.BYTE " : z S( Ready ) ; z TYPE CRLF "
 ;	.BYTE " DP ! LATEST ! "	; restore HERE and LATEST values
 
+	; UM+     ( un1 un2 -- ud )
+	;  Add two unsigned single numbers and return a double sum
+	.BYTE " : UM+ 0 SWAP 0 D+ ; "
+
+	; UM*     ( un1 un2 -- ud )
+	;   UM* multiplies the unsigned 16-bit integer un1 by the
+	;   unsigned 16-bit integer un2 and returns the unsigned
+	;   32-bit product ud.
+	;   Notice: the 10 before the DO-LOOP is hexadecimal for 16 bits
+	.BYTE " : UM* 0 SWAP 10 0 DO DUP UM+ >R >R DUP UM+ R> + R> IF >R OVER UM+ R> + THEN LOOP ROT DROP ; "
+	.BYTE " : * UM* DROP ; "
+
 	.BYTE " S( READY) TYPE CRLF"
 
 	.BYTE " ", $00
