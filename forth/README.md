@@ -133,4 +133,9 @@ This are the books, articles, papers or videos I've read/watched and that have h
   - Days 35 to 39 are about Implementing Forth: [Day 35 - Part 1](https://www.youtube.com/watch?v=rlayTh3sjiw), [Day 36 - Part 2](https://www.youtube.com/watch?v=SPErnyotJrk), [Day 37 - Part 3](https://www.youtube.com/watch?v=TA8blMaNqxY), [Day 38 - Part 4.1](https://www.youtube.com/watch?v=asW2hkGnsyM&t=6977s), [Day 38 - Part 4.2](https://www.youtube.com/watch?v=ceTRcHsXRzQ), [Day 39 - Part 5.1](https://www.youtube.com/watch?v=4Uy1Mq8p72w), [Day 39 - Part 5.2](https://www.youtube.com/watch?v=O6t14AGPO50)
 - [JonesForth](https://github.com/nornagon/jonesforth/): A tutorial-like implementation of FORTH for the x86 with a lot of inline documentation.
 - [Systems Guide to figForth](http://forth.org/OffeteStore/1010_SystemsGuideToFigForth.pdf)
+
+Some more articles, routines or listings that have also been useful:
 - [fig-FORTH 6502 assembly source listing](https://ksquiggle.neocities.org/ff6502.htm)
+- [forthkit/eforth.forth](https://github.com/tehologist/forthkit/blob/master/eforth.forth)
+- [6502.org: Source: Division (32-bit)](http://www.6502.org/source/integers/ummodfix/ummodfix.htm)
+- [6502.org: Source: Multiply & Divide](http://www.6502.org/source/integers/32muldiv.htm)

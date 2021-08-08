@@ -68,7 +68,7 @@ Early demo of the Monitor in Kowalksi 6502 simulator:
 
 ## FORTH
 
-I have implemented my own FORTH kernel this Homebrew 6502. 
+I have implemented my own FORTH kernel for this Homebrew 6502.
 
 ![](forth/imgs/Forth.png)
 
@@ -88,10 +88,8 @@ Read more here [hb6502/forth](https://github.com/adumont/hb6502/tree/main/forth#
 
 # References
 
+- [Build a 6502 computer | Ben Eater](https://eater.net/6502)
 - [6502 PRIMER: Building your own 6502 computer](https://wilsonminesco.com/6502primer/)
   - [Address Decoding](https://wilsonminesco.com/6502primer/addr_decoding.html)
 - [ca65 Users Guide](https://cc65.github.io/doc/ca65.html)
 - [6502 Instruction Set](https://www.masswerk.at/6502/6502_instruction_set.html)
-- FORTH:
-  - [Moving Forth: Part 1](https://www.bradrodriguez.com/papers/moving1.htm)
-  - [Bitwise, Day 35: Implementing Forth - YouTube](https://www.youtube.com/watch?v=rlayTh3sjiw)
