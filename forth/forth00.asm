@@ -548,13 +548,13 @@ h_I:
 	.DW h_FROM_R
 	.STR "I"
 do_I:
-; I is same code as @R
-	BRA do_AT_R
+; I is same code as R@
+	BRA do_R_AT
 
-h_AT_R:
+h_R_AT:
 	.DW h_I
-	.STR "@R"
-do_AT_R:
+	.STR "R@"
+do_R_AT:
 ; @R : copy the cell from the Return Stack
 ; to the Stack
 	PHX 	;\
@@ -570,7 +570,7 @@ do_AT_R:
 
 ; Branch to Label if 0 on stack
 h_0BR:
-	.DW h_AT_R
+	.DW h_R_AT
 	.STR "0BR"
 do_0BR:
 	LDA 2,X

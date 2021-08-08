@@ -517,11 +517,11 @@ defword "FROM_R","R>",
 	JMP DEX2_NEXT
 
 defword "I",,
-; I is same code as @R
-	BRA do_AT_R
+; I is same code as R@
+	BRA do_R_AT
 
-defword "AT_R","@R",
-; @R : copy the cell from the Return Stack
+defword "R_AT","R@",
+; R@ : copy the cell from the Return Stack
 ; to the Stack
 	PHX 	;\
 	TSX	; \ 
@@ -1729,7 +1729,7 @@ BOOT_PRG:
 	.BYTE " : REPEAT LIT, JUMP SWAP , HERE SWAP ! ; IMMEDIATE "
 	
 ; Test BEGIN WHILE REPEAT
-;	.BYTE " : TBWR 6 BEGIN DUP 1 - DUP WHILE DUP . CRLF REPEAT ; TBWR "
+;	.BYTE " : TBWR 6 BEGIN 1 - DUP WHILE DUP . REPEAT DROP ; TBWR "
 
 ; DO LOOP
 	.BYTE " : DO LIT, *DO HERE ; IMMEDIATE " ;
