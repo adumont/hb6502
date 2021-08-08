@@ -1,0 +1,1 @@
+ca65 -v --cpu 65c02 -t none forth.s && ld65 -v -m forth.map -Ln forth.lbl -o forth.bin -C lib/sbc.cfg forth.o none.lib
