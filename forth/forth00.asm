@@ -1064,8 +1064,76 @@ do_CCOMMA:
 	.DW do_DP, do_STORE
 	.DW do_SEMI
 
+h_UM_DIV_MOD:
+	.DW h_COMMA
+	.STR "UM/MOD"
+do_UM_DIV_MOD:
+; Takes a Double (32bit/2 cells) dividend and
+; a 1 cell (16bit) divisor
+; and returns remainder and quotient (1 cell each)
+; ( UDdividend Udivisor -- Remainder Quotient )
+; we just call the assembler routine STAR_UM_DIV_MOD and
+; swap the results on the stack
+	JMP do_COLON
+	.DW do_STAR_UM_DIV_MOD, do_SWAP
+	.DW do_SEMI
+
+h_STAR_UM_DIV_MOD:
+	.DW h_UM_DIV_MOD
+	.STR "*UM/MOD"
+do_STAR_UM_DIV_MOD:
+; Takes a Double (32bit/2 cells) dividend and
+; a 1 cell (16bit) divisor
+; and returns quotient and remainder (1 cell each)
+; ( UDdividend Udivisor -- Quotient Remainder )
+; From: How to divide a 32-bit dividend by a 16-bit divisor.
+; By Garth Wilson (wilsonmines@dslextreme.com), 9 Sep 2002.    
+; SRC: http://www.6502.org/source/integers/ummodfix/ummodfix.htm
+        SEC
+        LDA     4,X     ; Subtract hi cell of dividend by
+        SBC     2,X     ; divisor to see if there's an overflow condition.
+        LDA     5,X
+        SBC     3,X
+        BCS     .oflo   ; Branch if /0 or overflow.
+
+        LDA     #$11    ; Loop 17 times
+        STA     0,X     ; Use 0,X as loop counter
+.loop:  ROL     6,X     ; Rotate dividend lo cell left one bit.
+        ROL     7,X
+        DEC     0,X     ; Decrement loop counter.
+        BEQ     .fin    ; If we're done, then branch to .fin
+        ROL     4,X     ; Otherwise rotate dividend hi cell left one bit.
+        ROL     5,X
+        STZ     G1
+        ROL     G1      ; Rotate the bit carried out of above into G1.
+
+        SEC
+        LDA     4,X     ; Subtract dividend hi cell minus divisor.
+        SBC     2,X
+        STA     G1+1    ; Put result temporarily in G1+1 (lo byte)
+        LDA     5,X
+        SBC     3,X
+        TAY             ; and Y (hi byte).
+        LDA     G1      ; Remember now to bring in the bit carried out above.
+        SBC     #0
+        BCC     .loop
+
+        LDA     G1+1    ; If that didn't cause a borrow,
+        STA     4,X     ; make the result from above to
+        STY     5,X     ; be the new dividend hi cell
+        BRA     .loop   ; and then brach up
+
+.oflo:  LDA     #$FF    ; If overflow or /0 condition found,
+        STA     4,X     ; just put FFFF in both the remainder
+        STA     5,X
+        STA     6,X     ; and the quotient.
+        STA     7,X
+
+.fin:   JMP     do_DROP  ; When you're done, show one less cell on data stack
+
+
 h_LBRAC:	; IMMEDIATE
-	.DW h_CCOMMA
+	.DW h_STAR_UM_DIV_MOD
 	.STR "["
 do_LBRAC:
 ; ( -- ) switch to EXECUTE/IMMEDIATE mode
