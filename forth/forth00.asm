@@ -109,8 +109,7 @@ forth_prog:
 
 ; Print version string
 ;	.DW do_LIT, VERS_STR
-;	.DW do_COUNT, do_TYPE
-
+;	.DW do_COUNT, do_TYPE	
 
 ; test LITSTR
 
@@ -1064,8 +1063,76 @@ do_CCOMMA:
 	.DW do_DP, do_STORE
 	.DW do_SEMI
 
+h_UM_STAR:
+	.DW h_CCOMMA
+	.STR "UM*"
+do_UM_STAR:
+; UM*     ( un1 un2 -- ud )
+;   UM* multiplies the unsigned 16-bit integer un1 by the
+;   unsigned 16-bit integer un2 and returns the unsigned
+;   32-bit product ud.
+; calls the do_STAR_MUL word in assembler
+	JMP do_COLON
+	.DW do_STAR_UM_STAR
+	.DW do_ROT, do_DROP
+	.DW do_SEMI
+
+h_STAR_UM_STAR:
+	.DW h_UM_STAR
+	.STR "*UM*"
+do_STAR_UM_STAR:
+; ( n1 n2 0 -- n1 Dproduct )
+	; we copy N2 to G1, clear G2
+	; we will use G2G1 as HILO tmp register to shift-left n2
+	; and we will add it to the partial product
+	LDA 2,X
+	STA G1
+	LDA 3,X
+	STA G1+1
+	STZ G2
+	STZ G2+1
+	; clear the place for the partial product (4 bytes = 32 bits):
+	STZ 2,X		
+	STZ 3,X
+	STZ 0,X
+	STZ 1,X
+	
+	LDY #$10	; counter 16 bits
+	
+	; Shift N1 to the right.
+.shift_right_n1:
+	LSR 5,X
+	ROR 4,X		; rightmost bit falls into carry
+	
+	BCC .shift_left_n2	; c=0, go to shift-left N2
+; c=1 --> Add N2 to the partial product
+	CLC
+	LDA G1
+	ADC 2,X
+	STA 2,X
+	LDA G1+1	
+	ADC 3,X
+	STA 3,X
+	LDA G2
+	ADC 0,X
+	STA 0,X
+	LDA G2+1	
+	ADC 1,X
+	STA 1,X
+	
+.shift_left_n2:
+	ASL G1
+	ROL G1+1
+	ROL G2
+	ROL G2+1
+	
+	DEY
+	BNE .shift_right_n1
+
+	JMP DEX2_NEXT	
+
 h_UM_DIV_MOD:
-	.DW h_COMMA
+	.DW h_STAR_UM_STAR
 	.STR "UM/MOD"
 do_UM_DIV_MOD:
 ; Takes a Double (32bit/2 cells) dividend and
@@ -1983,12 +2050,6 @@ BOOT_PRG:
 	;  Add two unsigned single numbers and return a double sum
 	.DB " : UM+ 0 SWAP 0 D+ ; "
 
-	; UM*     ( un1 un2 -- ud )
-	;   UM* multiplies the unsigned 16-bit integer un1 by the
-	;   unsigned 16-bit integer un2 and returns the unsigned
-	;   32-bit product ud.
-	;   Notice: the 10 before the DO-LOOP is hexadecimal for 16 bits
-	.DB " : UM* 0 SWAP 10 0 DO DUP UM+ >R >R DUP UM+ R> + R> IF >R OVER UM+ R> + THEN LOOP ROT DROP ; "
 	.DB " : * UM* DROP ; "
 
 	.DB $00
