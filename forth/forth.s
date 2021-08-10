@@ -1817,8 +1817,9 @@ BOOT_PRG:
 	.BYTE " : ? @ . ; "
 	.BYTE " : TRUE FFFF ; "
 	.BYTE " : FALSE 0 ; "
-	.BYTE " : NOT 0= ; "
 	.BYTE " : = - 0= ; "
+	.BYTE " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
+	.BYTE " : <0 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 	.BYTE " : 2* DUP + ; "
 	.BYTE " : LIT, R> DUP @ , 2 + >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.BYTE " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
@@ -1863,10 +1864,9 @@ BOOT_PRG:
 ;	.BYTE " : TEST1 6 1 DO I . LOOP ; TEST1 " ; Count from 1 to 5
 ;	.BYTE " : TEST2 A 0 DO I . 2 +LOOP ; TEST2 " ; Count from 0 to 8, 2 by 2
 
-; temporarily define a word with a string, print it, and forget the word
-;	.BYTE " LATEST @ HERE "	; put addr of latest word, and HERE on the stack
-;	.BYTE " : z S( Ready ) ; z TYPE CRLF "
-;	.BYTE " DP ! LATEST ! "	; restore HERE and LATEST values
+	.BYTE " : >D DUP <0 IF FFFF ELSE 0 THEN ; " ; Extends signed cell into signed double
+
+	.BYTE " : DNEG SWAP NOT SWAP NOT 1 0 D+ ; " ; ( D -- -D ) Negate double-signed D (returns -D)
 
 	; UM+     ( un1 un2 -- ud )
 	;  Add two unsigned single numbers and return a double sum

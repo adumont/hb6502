@@ -1995,8 +1995,9 @@ BOOT_PRG:
 	.DB " : ? @ . ; "
 	.DB " : TRUE FFFF ; "
 	.DB " : FALSE 0 ; "
-	.DB " : NOT 0= ; "
 	.DB " : = - 0= ; "
+	.DB " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
+	.DB " : <0 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 	.DB " : 2* DUP + ; "
 	.DB " : LIT, R> DUP @ , 2 + >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
@@ -2045,6 +2046,10 @@ BOOT_PRG:
 ; Test DO-LOOP
 ;	.DB " : TEST1 4 1 DO I . LOOP ; " ; Count from 1 to 5
 ;	.DB " : TEST2 A 0 DO I . 2 +LOOP ; " ; Count from 0 to 8, 2 by 2
+
+	.DB " : >D DUP <0 IF FFFF ELSE 0 THEN ; " ; Extends signed cell into signed double
+
+	.DB " : DNEG SWAP NOT SWAP NOT 1 0 D+ ; " ; ( D -- -D ) Negate double-signed D (returns -D)
 
 	; UM+     ( un1 un2 -- ud )
 	;  Add two unsigned single numbers and return a double sum
