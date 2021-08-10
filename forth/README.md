@@ -19,8 +19,9 @@ You can use my Forth here [Alex Forth in Replit](https://replit.com/@AlexandreDu
 Notice:
 - It doesn't print {OK}
 - It's not ANS Forth, but my own incomplete and free implementation.
-- At this moment, it only supports 16 bit unsigned integers
+- At this moment, it only supports integers
 - The base for all numbers is hexadecimal
+- Comments \ and ( ) are not supported
 - Words are case sensitive! (all default words defined in CAPS, for example SWAP, DUP, DROP... )
 - There is NO stack underflow/overflow checking at all. So you can easily mess everything :). Don't worry. Just reset and start again!
 - Android user, on mobile I find some keyboard mess with Repl.it. Try disabling all keyboard predictions and auto-typing features.
