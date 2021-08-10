@@ -4,6 +4,7 @@
 - [Introduction](#introduction)
 - [Try it!](#try-it)
   - [Examples](#examples)
+- [Implementation notes](#implementation-notes)
 - [References](#references)
 
 # Introduction
@@ -123,6 +124,17 @@ Remember the base is 16, so all numbers are hexadecimal. Indeed Fib(9)=$22=34.
 
 Notice how we do not need to use recursion!
 
+# Implementation notes
+
+![](./imgs/code_HERE_COMMA.png)
+
+![](./imgs/compiledHERE.png)
+
+![](./imgs/compiledCOMMA.png)
+
+![](./imgs/extractSymbols.png)
+
+![](./imgs/COMMA.png)
 
 # References
 
