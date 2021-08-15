@@ -126,7 +126,7 @@ Remember the base is 16, so all numbers are hexadecimal. Indeed Fib(9)=$22=34.
 
 Notice how we do not need to use recursion!
 
-### Fibonacci Sequence (Double version)
+### Fibonacci Sequence (Unsigned Double Version)
 
 This version will compute Fib(N) using Doubles (2 cells integers). It is capable of computing Fib(N) for N up to 46 ($2E). After that it will overflow. 
 
@@ -135,17 +135,17 @@ This version will compute Fib(N) using Doubles (2 cells integers). It is capable
 : 2DUP OVER OVER ;
 : 2ROT >R >R 2SWAP R> R> 2SWAP ;
 
-: SPACE 20 EMIT ;
-
 : Dnext-fib 2DUP 2ROT D+ ;
 
 : fib-seq 1+ 0 DUP DUP . SPACE D. CRLF
   DUP IF 0 0 0 1 0 2ROT DROP 1 DO 
-  Dnext-fib 2DUP I . SPACE D. CRLF LOOP 2SWAP ELSE 
+  Dnext-fib 2DUP I . D. CRLF LOOP 2SWAP ELSE 
   0 0 THEN DROP DROP ;
 ```
 
 This version will print all the Fibonacci numbers from 0 to N. Remember the Unsigned Double integers are in hexadecimal.
+
+Now run for example `2E fib-seq`, to print the Fibonacci numbers from Fib(0) up to Fib(46):
 
 ```
 2E fib-seq
