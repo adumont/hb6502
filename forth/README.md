@@ -109,7 +109,9 @@ Assuming `Z` was still at the value `AA01`, this should output:
 ```
 AA02
 ```
-### Fibonacci sequence
+### Fibonacci Numbers
+
+This will compute Fib(n) where n is a single cell integer.
 
 ```
 : next-fib   DUP ROT + ;
@@ -123,6 +125,43 @@ AA02
 Remember the base is 16, so all numbers are hexadecimal. Indeed Fib(9)=$22=34.
 
 Notice how we do not need to use recursion!
+
+### Fibonacci Sequence (Double version)
+
+This version will compute Fib(N) using Doubles (2 cells integers). It is capable of computing Fib(N) for N up to 46 ($2E). After that it will overflow. 
+
+```
+: 2SWAP >R -ROT R> -ROT ;
+: 2DUP OVER OVER ;
+: 2ROT >R >R 2SWAP R> R> 2SWAP ;
+
+: SPACE 20 EMIT ;
+
+: Dnext-fib 2DUP 2ROT D+ ;
+
+: fib-seq 1+ 0 DUP DUP . SPACE D. CRLF
+  DUP IF 0 0 0 1 0 2ROT DROP 1 DO 
+  Dnext-fib 2DUP I . SPACE D. CRLF LOOP 2SWAP ELSE 
+  0 0 THEN DROP DROP ;
+```
+
+This version will print all the Fibonacci numbers from 0 to N. Remember the Unsigned Double integers are in hexadecimal.
+
+```
+2E fib-seq
+0000  00000000
+0001  00000001
+0002  00000002
+0003  00000003
+0004  00000005
+0005  00000008
+0006  0000000D
+0007  00000015
+...
+002C  43A53F82
+002D  6D73E55F
+002E  B11924E1
+```
 
 # Implementation notes
 
