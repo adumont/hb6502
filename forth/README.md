@@ -126,7 +126,7 @@ Remember the base is 16, so all numbers are hexadecimal. Indeed Fib(9)=$22=34.
 
 Notice how we do not need to use recursion!
 
-### Fibonacci Sequence (Unsigned Double Version)
+### Fibonacci Sequence (Double Version)
 
 This version will compute Fib(N) using Doubles (2 cells integers). It is capable of computing Fib(N) for N up to 46 ($2E). After that it will overflow. 
 
@@ -137,7 +137,7 @@ This version will compute Fib(N) using Doubles (2 cells integers). It is capable
 
 : Dnext-fib 2DUP 2ROT D+ ;
 
-: fib-seq 1+ 0 DUP DUP . SPACE D. CRLF
+: fib-seq 1+ 0 DUP DUP . D. CRLF
   DUP IF 0 0 0 1 0 2ROT DROP 1 DO 
   Dnext-fib 2DUP I . D. CRLF LOOP 2SWAP ELSE 
   0 0 THEN DROP DROP ;
@@ -149,18 +149,18 @@ Now run for example `2E fib-seq`, to print the Fibonacci numbers from Fib(0) up 
 
 ```
 2E fib-seq
-0000  00000000
-0001  00000001
-0002  00000002
-0003  00000003
-0004  00000005
-0005  00000008
-0006  0000000D
-0007  00000015
+0000 00000000
+0001 00000001
+0002 00000002
+0003 00000003
+0004 00000005
+0005 00000008
+0006 0000000D
+0007 00000015
 ...
-002C  43A53F82
-002D  6D73E55F
-002E  B11924E1
+002C 43A53F82
+002D 6D73E55F
+002E B11924E1
 ```
 
 # Implementation notes
@@ -183,10 +183,11 @@ This are the books, articles, papers or videos I've read/watched and that have h
 - [Threaded Interpretive Languages Their Design And Implementation](https://archive.org/details/R.G.LoeligerThreadedInterpretiveLanguagesTheirDesignAndImplementationByteBooks1981), R. G. Loeliger, Byte Books (1981)
 - [Bitwise](https://github.com/pervognsen/bitwise): an educational project where we create the software/hardware stack for a computer from scratch
   - Days 35 to 39 are about Implementing Forth: [Day 35 - Part 1](https://www.youtube.com/watch?v=rlayTh3sjiw), [Day 36 - Part 2](https://www.youtube.com/watch?v=SPErnyotJrk), [Day 37 - Part 3](https://www.youtube.com/watch?v=TA8blMaNqxY), [Day 38 - Part 4.1](https://www.youtube.com/watch?v=asW2hkGnsyM&t=6977s), [Day 38 - Part 4.2](https://www.youtube.com/watch?v=ceTRcHsXRzQ), [Day 39 - Part 5.1](https://www.youtube.com/watch?v=4Uy1Mq8p72w), [Day 39 - Part 5.2](https://www.youtube.com/watch?v=O6t14AGPO50)
-- [JonesForth](https://github.com/nornagon/jonesforth/): A tutorial-like implementation of FORTH for the x86 with a lot of inline documentation.
+- [6502 stacks treatise index](https://wilsonminesco.com/stacks/index.html)
 - [Systems Guide to figForth](http://forth.org/OffeteStore/1010_SystemsGuideToFigForth.pdf)
 
 Some more articles, routines or listings that have also been useful:
+- [JonesForth](https://github.com/nornagon/jonesforth/): A tutorial-like implementation of FORTH for the x86 with a lot of inline documentation.
 - [fig-FORTH 6502 assembly source listing](https://ksquiggle.neocities.org/ff6502.htm)
 - [forthkit/eforth.forth](https://github.com/tehologist/forthkit/blob/master/eforth.forth)
 - [6502.org: Source: Division (32-bit)](http://www.6502.org/source/integers/ummodfix/ummodfix.htm)
