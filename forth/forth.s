@@ -971,7 +971,7 @@ defword "UM_STAR","UM*",
 	.ADDR do_ROT, do_DROP
 	.ADDR do_SEMI
 
-defword "STAR_UM_STAR","UM*",
+defword "STAR_UM_STAR","*UM*",
 ; ( n1 n2 0 -- n1 Dproduct )
 	; we copy N2 to G1, clear G2
 	; we will use G2G1 as HILO tmp register to shift-left n2
