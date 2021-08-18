@@ -165,6 +165,131 @@ Now run for example `2E fib-seq`, to print the Fibonacci numbers from Fib(0) up 
 
 # Implementation notes
 
+## Direct Threaded Code
+
+This implementation of FORTH follows a Direct Threaded Code (DTC) model.
+
+There are two 16 bit registers defined in zero page that are fundamental to walk along the threaded code (see `NEXT`):
+- IP: Next instruction pointer. (IP) -> W
+- W: Address of the code to run. JMP (W)
+
+### Entry point
+
+At the beginning of our code, we'll find this instructions which initialize IP with the address of the first WORD of our FORTH program, and jumps to `NEXT`.
+
+```
+; Load the entry point of our main FORTH
+; program and start execution (with JMP NEXT)
+	; Place forth_prog ADDR into IP register
+	LDA #<forth_prog
+	STA IP
+	LDA #>forth_prog
+	STA IP+1
+
+; Start FORTH
+	BRA NEXT
+```
+
+Where forth_prog is a label. At this address we have our first hand-compiled FORTH code. 
+
+Notice that this is the very beginning of our code (after a few initialization code)! We're already running FORTH code (although hand-compiled).
+
+```
+forth_prog:
+; Print version string
+	.ADDR do_LIT, VERS_STR
+	.ADDR do_COUNT, do_TYPE
+```
+
+This FORTH code will print the version string on the output device.
+
+### NEXT
+
+```
+NEXT:
+; (IP) --> W
+	LDA (IP)
+	STA W
+	LDY #1
+	LDA (IP),y
+	STA W+1
+; IP+2 --> IP
+	CLC
+	LDA IP
+	ADC #2		; A<-A+2
+	STA IP
+	BCC @skip
+	INC IP+1
+@skip:
+	JMP (W)
+```
+
+First `NEXT` takes the address pointed to by IP and put it in W.
+
+It then advances IP by 2.
+
+Finally, `NEXT` jumps to the address stored at W.
+
+### COLON
+
+```
+h_COLON:
+	.DW $0000
+	.STR "DOCOL"
+do_COLON: ; COLON aka ENTER
+; push IP to Return Stack
+	LDA IP+1	; HI
+	PHA
+	LDA IP		; LO
+	PHA
+
+; W+3 --> IP 
+; (Code at W was a JMP, so 3 bytes)
+	CLC
+	LDA W
+	ADC #3
+	STA IP
+	LDA W+1
+	ADC #0
+	STA IP+1
+	JMP NEXT
+```
+
+`COLON` is the assembler code run upon entering any colon word.
+
+- It will first push IP (address of the next word to run) to the Return Stack, so that we come back to it upon finishing to run the current word (see `SEMI`).
+
+- It will advance W by 3 (skipping over the JMP instruction) and store it in IP, so that IP will then point to the address of the code of the next word (next word in the definition of this colon word being run).
+
+- It finally jumps to `NEXT`
+
+### SEMI
+
+```
+; SEMICOLON aka EXIT
+h_SEMI:
+	.DW h_COLON
+	.STR "SEMI"
+do_SEMI:
+; POP IP from Return Stack
+	PLA
+	STA IP
+	PLA
+	STA IP+1
+; JMP NEXT
+	JMP NEXT
+```
+
+The last word in a colon definition is `SEMI` (`;`).
+
+`SEMI` simply retrieves the address of the next word to run from the Return Stack and stores it in IP.
+
+It then jumps to `NEXT`.
+
+### Charts and images
+
+To Do
+
 ![](./imgs/code_HERE_COMMA.png)
 
 ![](./imgs/compiledHERE.png)
@@ -173,7 +298,15 @@ Now run for example `2E fib-seq`, to print the Fibonacci numbers from Fib(0) up 
 
 ![](./imgs/extractSymbols.png)
 
-![](./imgs/COMMA.png)
+## The Stacks
+
+### Data Stack
+
+To Do
+
+### Return Stack
+
+To Do
 
 # References
 
