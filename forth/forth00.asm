@@ -370,9 +370,87 @@ do_PUSH1:
 	STZ 1,x
 	JMP DEX2_NEXT
 
+h_TWICE:
+	.DW h_PUSH1
+	.STR "2*"
+do_TWICE:
+; ( n -- 2*n )
+; n is one signed or unsigned cell
+; if n is signed, sign is kept
+	ASL 2,X
+	ROL 3,X
+	JMP NEXT
+
+h_DTWICE:
+	.DW h_TWICE
+	.STR "D2*"
+do_DTWICE:
+; ( d -- 2*d )
+; d is a signed or unsigned double (2 cells)
+; if d is signed, sign is kept
+	ASL 4,X
+	ROL 5,X
+	ROL 2,X
+	ROL 3,X
+	JMP NEXT
+
+h_UHALF:
+	.DW h_DTWICE
+	.STR "U2/"
+do_UHALF:
+; ( u -- u/2 )
+; u is an unsigned cell
+	LSR 3,X		; Logical Shift Right, The bit that was in bit 0 is shifted into the carry flag. Bit 7 is set to zero
+	ROR 2,X
+	JMP NEXT
+
+h_UDHALF:
+	.DW h_UHALF
+	.STR "UD2/"
+do_UDHALF:
+; ( ud -- ud/2 )
+; u is an unsigned double
+	LSR 3,X		; Logical Shift Right, The bit that was in bit 0 is shifted into the carry flag. Bit 7 is set to zero
+	ROR 2,X
+	ROR 5,X
+	ROR 4,X
+	JMP NEXT
+
+h_HALF:
+	.DW h_UDHALF
+	.STR "2/"
+do_HALF:
+; ( n -- n/2 )
+; n is an SIGNED cell
+	SEC			; by default we set the carry so it will ROR into the MSB (assume it's negative number)
+	LDA 3,X
+	BMI .skip	; will branch if indeed negative
+	CLC			; here we clear the Carry (so that it won't ROR into the MSB)
+.skip:
+	ROR 3,X
+	ROR 2,X
+	JMP NEXT
+
+h_DHALF:
+	.DW h_HALF
+	.STR "D2/"
+do_DHALF:
+; ( d -- d/2 )
+; u is a SIGNED double
+	SEC			; by default we set the carry so it will ROR into the MSB (assume it's negative number)
+	LDA 3,X
+	BMI .skip	; will branch if indeed negative
+	CLC			; here we clear the Carry (so that it won't ROR into the MSB)
+.skip:
+	ROR 3,X
+	ROR 2,X
+	ROR 5,X
+	ROR 4,X
+	JMP NEXT
+
 ; Push a literal word (2 bytes)
 h_LIT:
-	.DW h_PUSH1
+	.DW h_DHALF
 	.STR "LIT"
 do_LIT:
 ; (IP) points to literal
@@ -1997,7 +2075,7 @@ BOOT_PRG:
 	.DB " : FALSE 0 ; "
 	.DB " : = - 0= ; "
 	.DB " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
-	.DB " : <0 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
+	.DB " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 	.DB " : 2* DUP + ; "
 	.DB " : LIT, R> DUP @ , 2 + >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
@@ -2047,9 +2125,12 @@ BOOT_PRG:
 ;	.DB " : TEST1 4 1 DO I . LOOP ; " ; Count from 1 to 5
 ;	.DB " : TEST2 A 0 DO I . 2 +LOOP ; " ; Count from 0 to 8, 2 by 2
 
-	.DB " : >D DUP <0 IF FFFF ELSE 0 THEN ; " ; Extends signed cell into signed double
+	.DB " : >D DUP 0< IF FFFF ELSE 0 THEN ; " ; Extends signed cell into signed double
 
 	.DB " : DNEG SWAP NOT SWAP NOT 1 0 D+ ; " ; ( D -- -D ) Negate double-signed D (returns -D)
+
+	.DB " : S. DUP 0< IF 2D EMIT NEG THEN . ; "   ; Print as SIGNED integer
+	.DB " : DS. DUP 0< IF 2D EMIT DNEG THEN D. ; " ; Print as SIGNED double
 
 	; UM+     ( un1 un2 -- ud )
 	;  Add two unsigned single numbers and return a double sum
