@@ -81,8 +81,4 @@ print(args)
 mpu.pc=getWord(mpu.RESET)
 
 while True:
-  try:
-    while True:
-        mpu.step()
-  except KeyboardInterrupt:
-    print(mpu)
+    mpu.step()

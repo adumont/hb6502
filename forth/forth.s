@@ -1925,16 +1925,36 @@ BOOT_PRG:
 
 	.BYTE " : >D DUP 0< IF FFFF ELSE 0 THEN ; " ; Extends signed cell into signed double
 
+	; UM+     ( un1 un2 -- ud )
+	;  Add two unsigned single numbers and return a double sum
+	.BYTE " : UM+ 0 SWAP 0 D+ ; "
+
+; some more stack words
+	.BYTE " : NIP SWAP DROP ; " ; ( x1 x0 -- x0 ) removes second on stack
+	.BYTE " : PICK 2 + 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
+	.BYTE " : DEPTH F4 SP - 2/ ; "
+	.BYTE " : CLS BEGIN DEPTH WHILE DROP REPEAT ; " ; CLear Stack
+	.BYTE " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CRLF THEN DROP ; " ; print stack, leave cells on stack
+
+	; Double version of stack words
+	.BYTE " : 2SWAP >R -ROT R> -ROT ; "
+	.BYTE " : 2DUP OVER OVER ; "
+	.BYTE " : 2DROP DROP DROP ; "
+	.BYTE " : 2ROT >R >R 2SWAP R> R> 2SWAP ; "
+	.BYTE " : 2>R R> -ROT SWAP >R >R >R ; "
+	.BYTE " : 2R> R> R> R> SWAP ROT >R ; "
+
+	.BYTE " : DU< D- NIP 0< ; " ; ( d1 d2 -- f ) returns wether d1<d2
+	.BYTE " : M+ >D UM+ ; " ; ( d1 n2 -- d3 ) d3=d1+n2
+
 	.BYTE " : DNEG SWAP NOT SWAP NOT 1 0 D+ ; " ; ( D -- -D ) Negate double-signed D (returns -D)
 
 	.BYTE " : S. DUP 0< IF 2D EMIT NEG THEN . ; "   ; Print as SIGNED integer
 	.BYTE " : DS. DUP 0< IF 2D EMIT DNEG THEN D. ; " ; Print as SIGNED double
 
-	; UM+     ( un1 un2 -- ud )
-	;  Add two unsigned single numbers and return a double sum
-	.BYTE " : UM+ 0 SWAP 0 D+ ; "
-
 	.BYTE " : * UM* DROP ; "
+
+	.BYTE " MARKER " ; so we can return to this point using FORGET
 
 	.BYTE " S( READY) TYPE CRLF"
 

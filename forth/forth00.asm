@@ -2127,6 +2127,24 @@ BOOT_PRG:
 
 	.DB " : >D DUP 0< IF FFFF ELSE 0 THEN ; " ; Extends signed cell into signed double
 
+	; some more stack words
+	.DB " : NIP SWAP DROP ; " ; ( x1 x0 -- x0 ) removes second on stack
+	.DB " : PICK 2 + 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
+	.DB " : DEPTH F4 SP - 2/ ; "
+	.DB " : CLS BEGIN DEPTH WHILE DROP REPEAT ; " ; CLear Stack
+	.DB " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CRLF THEN DROP ; " ; print stack, leave cells on stack
+
+	; Double version of stack words
+	.DB " : 2SWAP >R -ROT R> -ROT ; "
+	.DB " : 2DUP OVER OVER ; "
+	.DB " : 2DROP DROP DROP ; "
+	.DB " : 2ROT >R >R 2SWAP R> R> 2SWAP ; "
+	.DB " : 2>R R> -ROT SWAP >R >R >R ; "
+	.DB " : 2R> R> R> R> SWAP ROT >R ; "
+
+	.DB " : DU< D- NIP 0< ; "
+	.DB " : M+ >D UM+ ; "
+
 	.DB " : DNEG SWAP NOT SWAP NOT 1 0 D+ ; " ; ( D -- -D ) Negate double-signed D (returns -D)
 
 	.DB " : S. DUP 0< IF 2D EMIT NEG THEN . ; "   ; Print as SIGNED integer
@@ -2137,6 +2155,8 @@ BOOT_PRG:
 	.DB " : UM+ 0 SWAP 0 D+ ; "
 
 	.DB " : * UM* DROP ; "
+
+	.DB " MARKER " ; so we can return to this point using FORGET
 
 	.DB $00
 
