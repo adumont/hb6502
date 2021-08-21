@@ -56,7 +56,7 @@ G2	= IP-2		; general purpose register
 G1	= G2-2		; general purpose register
 DTOP	= G1-2		; Stack TOP
 BKSPACE = $08 ; BACKSPACE = CTRL+BCKSPACE in LINUX (Python)
-MAX_LEN = 80		; Input Buffer MAX length
+MAX_LEN = $80		; Input Buffer MAX length, $80= 128 bytes
 
 ; Offset of the WORD name in the label
 ; 2 bytes after the Header's addr
@@ -1945,7 +1945,7 @@ BOOT_PRG:
 	.BYTE " : 2R> R> R> R> SWAP ROT >R ; "
 
 	.BYTE " : DU< D- NIP 0< ; " ; ( d1 d2 -- f ) returns wether d1<d2
-	.BYTE " : M+ >D UM+ ; " ; ( d1 n2 -- d3 ) d3=d1+n2
+	.BYTE " : M+ >D D+ ; " ; ( d1 n2 -- d3 ) d3=d1+n2
 
 	.BYTE " : DNEG SWAP NOT SWAP NOT 1 0 D+ ; " ; ( D -- -D ) Negate double-signed D (returns -D)
 
@@ -1969,7 +1969,7 @@ BOOT:	.res 1	; <>0 Boot, 0 not boot anymore
 BOOTP:	.res 2	; pointer to BOOTstrap code
 ERROR:	.res 1	; Error when converting number
 INP_LEN: .res 1	; Length of the text in the input buffer
-INPUT:	.res 80	; CMD string (extend as needed, up to 256!)
+INPUT:	.res 128	; CMD string (extend as needed, up to 256!)
 INP_IDX: .res 1	; Index into the INPUT Buffer (for reading it with KEY)
 DP:		.res 2	; Data Pointer: Store the latest ADDR of next free space in RAM (HERE)
 
