@@ -163,6 +163,10 @@ Now run for example `2E fib-seq`, to print the Fibonacci numbers from Fib(0) up 
 002E B11924E1
 ```
 
+### Cellular Automaton
+
+Code here: [Cellular Automaton in (my) FORTH](https://gist.github.com/adumont/5efc97e5603ceb1d75d79cfcbfc91bd7)
+
 # Implementation notes
 
 ## Direct Threaded Code
