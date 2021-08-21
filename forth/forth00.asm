@@ -2143,7 +2143,7 @@ BOOT_PRG:
 	.DB " : 2R> R> R> R> SWAP ROT >R ; "
 
 	.DB " : DU< D- NIP 0< ; "
-	.DB " : M+ >D UM+ ; "
+	.DB " : M+ >D D+ ; "
 
 	.DB " : DNEG SWAP NOT SWAP NOT 1 0 D+ ; " ; ( D -- -D ) Negate double-signed D (returns -D)
 
