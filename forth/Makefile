@@ -7,8 +7,8 @@ XXD = xxd
 XXD_ARGS = -i
 LIB=lib
 
-ifdef HW
-  OPT:= --asm-define HW
+ifdef ACIA
+  OPT:= --asm-define ACIA
 endif
 
 %.hex: %.bin

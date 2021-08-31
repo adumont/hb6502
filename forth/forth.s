@@ -62,7 +62,7 @@ MAX_LEN = $80		; Input Buffer MAX length, $80= 128 bytes
 ; 2 bytes after the Header's addr
 HDR_OFFSET_STR = 2	
 
-.ifdef HW
+.ifdef ACIA
 	.include "lib/acia.s"
 .endif
 
@@ -78,7 +78,7 @@ RES_vec:
     	LDX #DTOP
     	CLI
 
-.ifdef HW
+.ifdef ACIA
 	JSR acia_init
 .endif
 
@@ -1670,7 +1670,7 @@ defword "SQUOT","S(",1
 ; p_LATEST point to the latest defined word (using defword macro)
 p_LATEST = .ident(.sprintf("__word_%u", __word_last))
 
-.ifndef HW
+.ifndef ACIA
 ;-----------------------------------------------------------------
 ; I/O routines for Kowalkski simulator 
 ; Change for SBC

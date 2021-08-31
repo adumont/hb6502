@@ -2,11 +2,11 @@
 ; (C) Alex Dumont, 2021
 
 ; ACIA $4200
-.define   ACIA         $4200 ; 
-.define   ACIA_DATA  ACIA+$0 ; 
-.define   ACIA_STAT  ACIA+$1 ; 
-.define   ACIA_CMD   ACIA+$2 ; 
-.define   ACIA_CTRL  ACIA+$3 ; 
+.define   ACIA_BASE         $4200 ;
+.define   ACIA_DATA  ACIA_BASE+$0 ;
+.define   ACIA_STAT  ACIA_BASE+$1 ;
+.define   ACIA_CMD   ACIA_BASE+$2 ;
+.define   ACIA_CTRL  ACIA_BASE+$3 ;
 
 putc:
 acia_send_char:
