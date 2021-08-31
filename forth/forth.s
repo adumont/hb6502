@@ -1964,6 +1964,27 @@ BOOT_PRG:
 
 	.BYTE " : * UM* DROP ; "
 
+; Local variables support (up to 4 locals)
+;	We only support 4 locals (x,y,z,t in that order!)
+;	If you need 2 locals, use "2 LOCALS" then in the word you can use x,y
+;   /!\ At the end of the word, we need to use -LOCALS to free the locals
+
+; 	Local variable storage grows downwards from 3FFF
+; 	No safety checks are done to avoid running over the dictionary!
+
+	.BYTE " VARIABLE BP 3FFE BP !"
+	.BYTE " : LOCALS  BP @ DUP ROT 2* - DUP -ROT ! BP ! ;"
+	.BYTE " : -LOCALS BP DUP @ @ SWAP ! ;"
+
+	.BYTE " : L@ BP @ + @ ;" ; ( n -- value) helper word to get local var n
+	.BYTE " : L! BP @ + ! ;" ; ( n -- value) helper word to save to local var n
+
+	.BYTE " : x 2 L@ ; : x! 2 L! ;"
+	.BYTE " : y 4 L@ ; : y! 4 L! ;"
+	.BYTE " : z 6 L@ ; : z! 6 L! ;"
+	.BYTE " : t 8 L@ ; : t! 8 L! ;"
+; End of Local variables support
+
 	.BYTE " MARKER " ; so we can return to this point using FORGET
 
 	.BYTE " S( READY) TYPE CRLF"
