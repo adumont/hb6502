@@ -7,6 +7,9 @@
 	- [Stacks](#stacks)
 - [Try it!](#try-it)
 	- [Examples](#examples)
+- [How to build](#how-to-build)
+	- [Build for the hardware](#build-for-the-hardware)
+	- [Build for py65 simulator](#build-for-py65-simulator)
 - [References](#references)
 
 # Introduction
@@ -313,6 +316,38 @@ Now run for example `2E fib-seq`, to print the Fibonacci numbers from Fib(0) up 
 ### Cellular Automaton
 
 Code here: [Cellular Automaton in (my) FORTH](https://gist.github.com/adumont/5efc97e5603ceb1d75d79cfcbfc91bd7)
+
+# How to build
+
+## Build for the hardware
+
+Instructions to build and flash the forth.bin for the Homebrew (hardware) version:
+
+```
+ACIA=1 make forth.bin
+
+../programmer/eeprom.py flash forth.bin
+
+minicom -D /dev/ttyUSB0 -b 9600
+```
+
+Minicom config file (~/.minirc.dfl)
+
+```
+# Machine-generated file - use setup menu in minicom to change parameters.
+pu baudrate         9600
+pu rtscts           No 
+```
+
+## Build for py65 simulator
+
+Instructions to build and run the forth.bin py65 simulator:
+
+```
+make forth.bin
+
+./py65forth.py
+```
 
 # References
 
