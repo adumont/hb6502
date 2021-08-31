@@ -62,6 +62,10 @@ MAX_LEN = $80		; Input Buffer MAX length, $80= 128 bytes
 ; 2 bytes after the Header's addr
 HDR_OFFSET_STR = 2	
 
+.ifdef HW
+	.include "lib/acia.s"
+.endif
+
 ;	*= $8000
 .segment  "CODE"
 
@@ -73,6 +77,10 @@ RES_vec:
 	STX BOOT	; set BOOT to FF
     	LDX #DTOP
     	CLI
+
+.ifdef HW
+	JSR acia_init
+.endif
 
 ; store the ADDR of the latest word to
 ; LATEST variable:
@@ -1662,6 +1670,7 @@ defword "SQUOT","S(",1
 ; p_LATEST point to the latest defined word (using defword macro)
 p_LATEST = .ident(.sprintf("__word_%u", __word_last))
 
+.ifndef HW
 ;-----------------------------------------------------------------
 ; I/O routines for Kowalkski simulator 
 ; Change for SBC
@@ -1677,7 +1686,8 @@ getc:
 putc:
 	STA IO_AREA+1
 	RTS
-	
+.endif
+
 ; Input Buffer Routines
 
 ; Getline refills the INPUT buffer

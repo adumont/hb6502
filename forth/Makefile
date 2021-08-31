@@ -7,11 +7,15 @@ XXD = xxd
 XXD_ARGS = -i
 LIB=lib
 
+ifdef HW
+  OPT:= --asm-define HW
+endif
+
 %.hex: %.bin
 	$(HEXDUMP) $(HEXDUMP_ARGS) $< > $@
 
 %.bin: %.s #$(LIB)/interrupt.s $(LIB)/vectors.s $(LIB)/copydata.s
-	$(CL65) $(CLFLAGS) -Ln $*.lbl -o $@ $^
+	$(CL65) $(CLFLAGS) $(OPT) -Ln $*.lbl -o $@ $^
 	@echo Flash with: ../programmer/eeprom.py flash $@
 
 %.h: %.bin
