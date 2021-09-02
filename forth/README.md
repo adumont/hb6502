@@ -405,3 +405,4 @@ Some more articles, routines or listings that have also been useful:
 - [forthkit/eforth.forth](https://github.com/tehologist/forthkit/blob/master/eforth.forth)
 - [6502.org: Source: Division (32-bit)](http://www.6502.org/source/integers/ummodfix/ummodfix.htm)
 - [6502.org: Source: Multiply & Divide](http://www.6502.org/source/integers/32muldiv.htm)
+- [Stack Frames and Local Variables](http://soton.mpeforth.com/flag/jfar/vol3/no1/article3.pdf) by George B. Lyons, in The Journal of Forth Application and Research Volume 3, Number 1, 1985
