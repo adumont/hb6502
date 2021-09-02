@@ -157,11 +157,49 @@ To Do
 
 ### Data Stack
 
-To Do
+To be documented
 
 ### Return Stack
 
-To Do
+To be documented
+
+### Local Variables Stack
+
+Local variables are implemented using the approach of a third stack and fixed named local variables (x,y,z and t) for simplicity. Only 4 local variable have names, but more can be easily added.
+
+- `LOCALS ( n -- )` will allocate a new stack frame on the Local Variable Stack. It takes the number of variables to allocate.
+- `-LOCALS ( -- )` will remove the last allocated Local Variable stack frame.
+- Set the local variables `( n -- )` using: `x!`, `y!`, `z!` and `t!`.
+- Get the local variables `( -- n)` using: `x`, `y`, `z` and `t`.
+
+Example word:
+
+```
+: swap			\ redefines SWAP with locals
+  2 LOCALS		\ allocate 2 local variables
+  y! x!			\ set y and x
+  y x			\ restore y and x
+  -LOCALS		\ remove the local variables
+;
+```
+
+Which would produce the desired effect:
+
+```
+1 2 .S
+0001 0002 
+
+swap .S
+0002 0001 
+```
+
+The stack pointer is defined as a FORTH variable called BP (base pointer).
+
+Each call to `LOCALS` will create a new stack frame made of:
+- pointer to the previous frame (previous value of BP)
+- 1 cell per local variable
+
+Implementation is 100% made in FORTH in the bootstrap code (see [hb6502@d76eaec](https://github.com/adumont/hb6502/commit/d76eaecc93ba2ea9235a7a79540a4dca0a3a6cad#diff-a0410665e1d6f9fcce04ae1870c02c3718b27058590c6f8c40d5284e46e2b626R1967)). If not used, the whole block can be commented out to save RAM.
 
 # Try it!
 
