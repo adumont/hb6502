@@ -157,7 +157,7 @@ To Do
 
 ### Data Stack
 
-The Data Stack is build in Zerop Page. It starts at the top of ZP (just below some register W, IP, G1 and G2 that are at the top of ZP).
+The Data Stack is build in Zero Page. It starts at the top of ZP (just below registers W, IP, G1 and G2 that are at the top of ZP).
 
 Accessing the Data Stack is easy using the index Zero Page addressing mode `ZP,X` as show on this diagram:
 
