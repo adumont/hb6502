@@ -373,7 +373,8 @@ Minicom config file (~/.minirc.dfl)
 
 ```
 # Machine-generated file - use setup menu in minicom to change parameters.
-pu baudrate         9600
+pu port             /dev/ttyUSB0
+pu baudrate         115200
 pu rtscts           No 
 ```
 
