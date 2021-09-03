@@ -157,7 +157,19 @@ To Do
 
 ### Data Stack
 
-To be documented
+The Data Stack is build in Zerop Page. It starts at the top of ZP (just below some register W, IP, G1 and G2 that are at the top of ZP).
+
+Accessing the Data Stack is easy using the index Zero Page addressing mode `ZP,X` as show on this diagram:
+
+![](./imgs/DataStack.png)
+
+At boot time, the stack is empty. X points to the next cell on the stack.
+
+Pushing a two byte cell on the stack is done my storing the LO byte at 0,X, and the HI byte at 1,X, and then decrementing X twice (DEX).
+
+At any time can access the TOS cell LO byte at 2,X, and its HI byte at 3,X.
+
+Dropping the TOS is simply done by incrementing X (INX) twice.
 
 ### Return Stack
 
