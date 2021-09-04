@@ -157,23 +157,27 @@ To Do
 
 ### Data Stack
 
-The Data Stack is build in Zero Page. It starts at the top of ZP (just below registers W, IP, G1 and G2 that are at the top of ZP).
+The *Data Stack* is build in Zero Page. It starts at the top of ZP (just below the FORTH registers W, IP, G1 and G2).
 
 Accessing the Data Stack is easy using the index Zero Page addressing mode `ZP,X` as show on this diagram:
 
 ![](./imgs/DataStack.png)
 
-At boot time, the stack is empty. X points to the next cell on the stack.
+*Note*: The 6502 `X` register is used as the Data Stack pointer through all assembly code. If an assembly routine needs to use the `X` register, it must save it and restore it before returning (see for example the code for `R@`).
 
-Pushing a two byte cell on the stack is done my storing the LO byte at 0,X, and the HI byte at 1,X, and then decrementing X twice (DEX).
+At boot time, the stack is empty. `X` points to the next cell on the stack.
 
-At any time can access the TOS cell LO byte at 2,X, and its HI byte at 3,X.
+Pushing a two byte cell on the stack is done my storing the *LO byte* at 0,X, and the *HI byte* at 1,X, and then decrementing X twice (`DEX`).
 
-Dropping the TOS is simply done by incrementing X (INX) twice.
+At any time one can access the TOS cell's *LO byte* at 2,X, and its *HI byte* at 3,X.
+
+Dropping the TOS cell is simply done by incrementing `X` (`INX`) twice.
 
 ### Return Stack
 
-To be documented
+The *Return Stack* is implemented on the 6502 stack (in page 01: $0100-$1ff), values are pushed/popped using the stack manipulations mnemonics (PHA, PLA,...).
+
+As seen above, `COLON` pushes `IP` to the *Return Stack*, and `SEMI` pops it back into `IP` upong exiting the word.
 
 ### Local Variables Stack
 
