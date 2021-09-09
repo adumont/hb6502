@@ -108,8 +108,8 @@ forth_prog:
 ;	.DW do_DUP, do_PRINT, do_CRLF	; print
 
 ; Print version string
-;	.DW do_LIT, VERS_STR
-;	.DW do_COUNT, do_TYPE	
+	.DW do_LIT, VERS_STR
+	.DW do_COUNT, do_TYPE	
 
 ; test LITSTR
 
@@ -2157,6 +2157,8 @@ BOOT_PRG:
 	.DB " : * UM* DROP ; "
 
 	.DB " MARKER " ; so we can return to this point using FORGET
+
+	.DB " S( READY) TYPE CRLF "
 
 	.DB $00
 
