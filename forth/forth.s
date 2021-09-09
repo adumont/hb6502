@@ -1021,7 +1021,7 @@ defword "COMMA",",",
 defword "CCOMMA","C,",
 ; ( C -- ) save a byte C to HERE and advance
 ; HERE by 1
-; : , HERE ! HERE 2 + DP ! ;
+; : , HERE ! HERE 1 + DP ! ;
 	JMP do_COLON
 	.ADDR do_HERE, do_CSTORE
 	.ADDR do_HERE, do_1PLUS
@@ -1890,7 +1890,7 @@ BOOT_PRG:
 	.BYTE " : = - 0= ; "
 	.BYTE " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
 	.BYTE " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
-	.BYTE " : LIT, R> DUP @ , 2 + >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
+	.BYTE " : LIT, R> DUP @ , 1+ 1+ >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.BYTE " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.BYTE " : ' WORD FIND >CFA ; " ; is this ever used?
 	.BYTE " : STOP BREAK ; IMMEDIATE "
@@ -1941,7 +1941,7 @@ BOOT_PRG:
 
 ; some more stack words
 	.BYTE " : NIP SWAP DROP ; " ; ( x1 x0 -- x0 ) removes second on stack
-	.BYTE " : PICK 2 + 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
+	.BYTE " : PICK 1+ 1+ 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
 	.BYTE " : DEPTH F4 SP - 2/ ; "
 	.BYTE " : CLS BEGIN DEPTH WHILE DROP REPEAT ; " ; CLear Stack
 	.BYTE " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CRLF THEN DROP ; " ; print stack, leave cells on stack
