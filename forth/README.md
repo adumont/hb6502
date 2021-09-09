@@ -18,6 +18,11 @@ This page is about my own implementation of FORTH for my Homebrew 6502 SBC.
 
 ![](./imgs/Forth.png)
 
+To develop this FORTH I have started with Kowalsky 6502 simulator, as it helped me debugging the 6502 code step by step, while introspecting registers and ram. I've been maintaining two paralel versions of the code, which hopefully should be aligned:
+
+- `forth00.asm` is the source for Kowalsky 6502 simulator, with no macro for the words header for example.
+- `forth.s` is the source for ca65 assembler. this is the source that is used to build forth.bin either for simulation in py65 or to flash onto the real hardware eeprom.
+
 # Implementation notes
 
 ## Direct Threaded Code
