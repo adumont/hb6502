@@ -1134,7 +1134,7 @@ h_CCOMMA:
 do_CCOMMA:
 ; ( C -- ) save a byte C to HERE and advance
 ; HERE by 1
-; : , HERE ! HERE 2 + DP ! ;
+; : , HERE ! HERE 1+ DP ! ;
 	JMP do_COLON
 	.DW do_HERE, do_CSTORE
 	.DW do_HERE, do_1PLUS
@@ -2077,7 +2077,7 @@ BOOT_PRG:
 	.DB " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
 	.DB " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 	.DB " : 2* DUP + ; "
-	.DB " : LIT, R> DUP @ , 2 + >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
+	.DB " : LIT, R> DUP @ , 1+ 1+ >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.DB " : ' WORD FIND >CFA ; "
 	.DB " : STOP BREAK ; IMMEDIATE "
@@ -2129,7 +2129,7 @@ BOOT_PRG:
 
 	; some more stack words
 	.DB " : NIP SWAP DROP ; " ; ( x1 x0 -- x0 ) removes second on stack
-	.DB " : PICK 2 + 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
+	.DB " : PICK 1+ 1+ 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
 	.DB " : DEPTH F4 SP - 2/ ; "
 	.DB " : CLS BEGIN DEPTH WHILE DROP REPEAT ; " ; CLear Stack
 	.DB " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CRLF THEN DROP ; " ; print stack, leave cells on stack
