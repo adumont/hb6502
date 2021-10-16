@@ -1702,7 +1702,13 @@ getline:
 
 @next:	JSR getc
 
-	CMP #BKSPACE
+	CMP #$04     ; CTRL-D -> BRK
+	BEQ @break
+
+	CMP #BKSPACE ; Backspace, CTRL-H
+	BEQ @bkspace
+
+	CMP #$7F    ; Backspace key on Linux?
 	BEQ @bkspace
 
 	CPY #MAX_LEN
@@ -1728,8 +1734,12 @@ getline:
 @bkspace:
 	CPY #0		; start of line?
 	BEQ @next	; do nothing
+  LDA #BKSPACE
 	JSR putc	; echo char
 	DEY		; else: Y--
+	BRA @next
+@break:
+  BRK
 	BRA @next
 @finish:
 	STY INP_LEN
