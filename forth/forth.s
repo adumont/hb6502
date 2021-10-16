@@ -1953,7 +1953,9 @@ BOOT_PRG:
 ; some more stack words
 	.BYTE " : NIP SWAP DROP ; " ; ( x1 x0 -- x0 ) removes second on stack
 	.BYTE " : PICK 1+ 1+ 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
-	.BYTE " : DEPTH F4 SP - 2/ ; "
+	.BYTE " : DEPTH "
+	.BYTE .sprintf("%X", DTOP-2)
+	.BYTE  " SP - 2/ ; "
 	.BYTE " : CLS BEGIN DEPTH WHILE DROP REPEAT ; " ; CLear Stack
 	.BYTE " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CRLF THEN DROP ; " ; print stack, leave cells on stack
 
