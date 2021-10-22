@@ -57,6 +57,7 @@ G1	= G2-2		; general purpose register
 DTOP	= G1-2		; Stack TOP
 BKSPACE = $08 ; BACKSPACE = CTRL+BCKSPACE in LINUX (Python)
 MAX_LEN = $80		; Input Buffer MAX length, $80= 128 bytes
+BP   = $4000 - 2	; top of LOCALS stack (grows down). Right below the HW addr block
 
 ; Offset of the WORD name in the label
 ; 2 bytes after the Header's addr
@@ -2040,7 +2041,10 @@ BOOT_PRG:
 ; 	Local variable storage grows downwards from 3FFF
 ; 	No safety checks are done to avoid running over the dictionary!
 
-	.BYTE " VARIABLE BP 3FFE BP !"
+	.BYTE " VARIABLE BP "		; defines BP variable (Base Pointer)
+	.BYTE .sprintf("%X", BP)	; put the address on the stack
+	.BYTE " BP !"
+
 	.BYTE " : LOCALS  BP @ DUP ROT 2* - DUP -ROT ! BP ! ;"
 	.BYTE " : -LOCALS BP DUP @ @ SWAP ! ;"
 
