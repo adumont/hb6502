@@ -227,9 +227,8 @@ Implementation is 100% made in FORTH in the bootstrap code (see [hb6502@d76eaec]
 You can use my Forth here [Alex Forth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).  
 
 Notice:
-- It doesn't print {OK}
 - It's not ANS Forth, but my own incomplete and free implementation.
-- At this moment, it only supports integers
+- At this moment, it only supports integers Math
 - The base for all numbers is hexadecimal
 - Comments \ and ( ) are not supported
 - Words are case sensitive! (all default words defined in CAPS, for example SWAP, DUP, DROP... )

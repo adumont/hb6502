@@ -100,6 +100,9 @@ RES_vec:
 	STA BOOTP
 	LDA #>BOOT_PRG
 	STA BOOTP+1
+
+	; clear the OK flag
+	stz OK
 	
 ; This is a Direct Threaded Code based FORTH
 	
@@ -168,7 +171,31 @@ forth_prog:
 ; Restart Intepreter loop:
 rsin:	.ADDR do_RSIN	; Reset Input
 	
-loop1:	.ADDR do_WORD	; ( addr len )
+loop1:
+
+	; if OK flag is 0, don't show OK prompt
+	.ADDR do_LIT, OK, do_CFETCH
+	.ADDR do_0BR, @skipOK
+
+	; else show OK prompt
+	;.ADDR do_LIT, OK_STR, do_COUNT, do_TYPE
+	.ADDR do_PRMP
+
+	; and clear OK flag
+	.ADDR do_PUSH0, do_LIT, OK, do_CSTORE	; // TODO appears twice, make a primitive in assembly faster than a colon word
+
+@skipOK:
+
+	.ADDR do_WORD	; ( addr len )
+	.ADDR do_OVER, do_OVER	; 2DUP ( addr len addr len )
+
+	.ADDR do_OR, do_EQZ, do_0BR, @cont ; If WORD didn't returned 2 "0", we continue
+
+; else we loop for a new word
+	.ADDR do_DROP, do_DROP
+	.ADDR do_JUMP, loop1
+
+@cont:
 	.ADDR do_OVER, do_OVER	; 2DUP ( addr len addr len )
 
 ;	.ADDR do_OVER, do_OVER, do_TYPE	; DEBUG: Show TOKEN
@@ -219,7 +246,8 @@ numscan:
 	.ADDR do_TYPE ; ( -- ) print the unknown word
 	.ADDR do_LIT, WHAT_STR
 	.ADDR do_COUNT, do_TYPE
-
+	; and clear OK flag
+	.ADDR do_PUSH0, do_LIT, OK, do_CSTORE
 
 	; if we were in compilation mode, we have to cancel the last word
 	; that was started (but is unfinished). we have to restore LATEST to its
@@ -1179,6 +1207,12 @@ defword "STAR_HEADER","*HEADER",
 
 	.ADDR do_SEMI
 
+defword "PRMP",,
+	; Print the OK Prompt
+	JMP do_COLON
+	.ADDR do_LIT, OK_STR, do_COUNT, do_TYPE
+	.ADDR do_SEMI
+
 defword "MARKER",,
 ; When called, MARKER creates a new word on the dictionary called FORGET
 ; in its definition, it encodes the FORTH code to restore LATEST and HERE
@@ -1337,12 +1371,27 @@ defword "WORD",,
 	BEQ @next1
 
 	CMP #$0A
-	BEQ @next1
+	BEQ @return0		;--> tenemos que salir de WORD, dejando 2 0 ( 0 0 ) en el stack
 
 	CMP #$0D
-	BEQ @next1
-	
+	BEQ @return0
+
 	; otherwise --> start of a word (@startW)
+	bra @startW
+
+@return0:
+	lda BOOT
+	bne :+		; if boot<>0 (aka boot mode, we don't set the prompt to 1)
+	lda #1		; we mark 1 the OK flag
+	sta OK
+:
+	stz 0,X		; we push a 0 on the stack
+	stz 1,X
+	DEX
+	DEX
+	stz 0,X		; we push another 0 on the stack
+	stz 1,X
+	JMP DEX2_NEXT	; exit "WORD"
 
 ; start of word
 @startW:
@@ -1365,12 +1414,17 @@ defword "WORD",,
 	BEQ @endW
 
 	CMP #$0A
-	BEQ @endW
+	BEQ @return
 
 	CMP #$0D
-	BEQ @endW
+	BEQ @return
 
 	BRA @next2
+@return:
+	lda BOOT
+	bne @endW	; if boot<>0 (aka boot mode, we don't set the prompt to 1)
+	lda #1		; we mark 1 the OK flag
+	sta OK
 @endW:
 	; compute length
 	LDA INP_IDX
@@ -1411,7 +1465,7 @@ _KEY:
 @eos:	; refill input string
 	JSR getline	
 	BRA @retry	; and try again
-	RTS
+	RTS	; // TODO is it ever reached??
 
 defword "EXEC",,
 ; ( ADDR -- )
@@ -1888,6 +1942,7 @@ NMI_vec:
 
 VERS_STR: CString {"ALEX FORTH v0", $0A, $0D}
 WHAT_STR: CString {" ?", $0A, $0D}
+OK_STR: CString {"ok "}
 
 ; Bootstrap code:
 ; At this point we can extend our forth in forth
@@ -1999,8 +2054,7 @@ BOOT_PRG:
 ; End of Local variables support
 
 	.BYTE " MARKER " ; so we can return to this point using FORGET
-
-	.BYTE " S( READY) TYPE CRLF"
+	.BYTE " PRMP" ; Shows ok prompt to user
 
 	.BYTE " ", $00
 
@@ -2015,6 +2069,7 @@ ERROR:	.res 1	; Error when converting number
 INP_LEN: .res 1	; Length of the text in the input buffer
 INPUT:	.res 128	; CMD string (extend as needed, up to 256!)
 INP_IDX: .res 1	; Index into the INPUT Buffer (for reading it with KEY)
+OK:		.res 1	; 1 -> show OK prompt
 DP:		.res 2	; Data Pointer: Store the latest ADDR of next free space in RAM (HERE)
 
 
