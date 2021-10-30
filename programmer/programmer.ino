@@ -54,8 +54,8 @@ char data_pins[] = { 6, 7, 8, 15, 18, 19, 20, 21 };
 
 int data_pin_mode = 1234; // dummy value
 
-//#define DEBUG
-#undef DEBUG
+#define DEBUG
+// #undef DEBUG
 
 // WE# 
 #define WE_LOW  _CLEAR(WE_PIN)
@@ -173,7 +173,7 @@ void wait_write_completed(uint8_t data) {
     }
   }
   CE_HIGH;
-  OE_HIGH;  
+  OE_HIGH;
 }
 
 void write_eeprom_byte(uint16_t address, byte data) {
@@ -574,89 +574,61 @@ void unrecognized_cmd(const char *command) {
 #ifdef DEBUG
 void test_cmd() {
   char buf[256];
-  byte d;
+  uint16_t d;
 
   Serial.println("Next step: press 'n'");
 
-  Serial.println("Pin 1 (A14)");
+  Serial.println("CE if flashing");
   while(Serial.read()!='n') {
-    set_address(1<<14);
+    CE_LOW;
     delay(250);
-    set_address(0);
+    CE_HIGH;
     delay(250);
   }
 
-  CE_LOW;
-  Serial.println("CE Low");
-  while(Serial.read()!='n');
+  Serial.println("OE if flashing");
+  while(Serial.read()!='n') {
+    OE_LOW;
+    delay(250);
+    OE_HIGH;
+    delay(250);
+  }
 
-  CE_HIGH;
-  Serial.println("CE High");
-  while(Serial.read()!='n');
+  Serial.println("WE if flashing");
+  while(Serial.read()!='n') {
+    WE_LOW;
+    delay(250);
+    WE_HIGH;
+    delay(250);
+  }
 
-  OE_LOW;
-  Serial.println("OE Low");
-  while(Serial.read()!='n');
-
-  OE_HIGH;
-  Serial.println("OE High");
-  while(Serial.read()!='n');
-
-  WE_LOW;
-  Serial.println("WE Low");
-  while(Serial.read()!='n');
-
-  WE_HIGH;
-  Serial.println("WE High");
-  while(Serial.read()!='n');
-
-  Serial.println("Moving 1 on address bus");
+  Serial.println("Address Bus Test:");
   for(char i = 0; i<15; i++) {
+    sprintf(buf, "  A%d is flashing", i);
+    Serial.println(buf);
     d=1<<i;
-
-    set_address(d);
-
-    sprintf(buf, "  address bit %d is 1 : %d", i, d);
-    Serial.println(buf);
-
-    while(Serial.read()!='n');
+    while(Serial.read()!='n') {
+      set_address(d);
+      delay(250);
+      set_address(0);
+      delay(250);
+    }
   }
 
-  Serial.println("Moving 0 on data bus");
-  for(char i = 0; i<15; i++) {
-    d=~(1<<i);
-
-    set_address(d);
-
-    sprintf(buf, "  address bit %d is 0 : %d", i, d);
-    Serial.println(buf);
-
-    while(Serial.read()!='n');
-  }
-  
-  Serial.println("Moving 1 on data bus");
+  Serial.println("Data Bus Test:");
   for(char i = 0; i<8; i++) {
+    sprintf(buf, "  D%d is flashing", i);
+    Serial.println(buf);
     d=1<<i;
-
-    write_data_bus(d);
-
-    sprintf(buf, "  data bit %d is 1 : %d", i, d);
-    Serial.println(buf);
-
-    while(Serial.read()!='n');
+    while(Serial.read()!='n') {
+      write_data_bus(d);
+      delay(250);
+      write_data_bus(0);
+      delay(250);
+    }
   }
 
-  Serial.println("  Test 2 - Moving 0 on data bus");
-  for(char i = 0; i<8; i++) {
-    d=~(1<<i);
-
-    write_data_bus(d);
-
-    sprintf(buf, "data bit %d is 0 : %d", i, d);
-    Serial.println(buf);
-
-    while(Serial.read()!='n');
-  }
+  Serial.println("End of Tests");
 
 }
 #endif //DEBUG
