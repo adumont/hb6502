@@ -1211,7 +1211,9 @@ defword "STAR_HEADER","*HEADER",
 defword "PRMP",,
 	; Print the OK Prompt
 	JMP do_COLON
+	.ADDR do_LIT, MODE, do_CFETCH, do_0BR, @skip
 	.ADDR do_LIT, OK_STR, do_COUNT, do_TYPE
+@skip:
 	.ADDR do_SEMI
 
 defword "MARKER",,
