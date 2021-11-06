@@ -575,7 +575,6 @@ defword "DMINUS","D-",
 	JMP do_DROP
 
 defword "1PLUS","1+",
-	CLC
 	INC 2,X
 	BNE @skip
 	INC 3,X
