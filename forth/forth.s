@@ -282,7 +282,7 @@ cleanStack:  ; ( addr len n )
 commitN:
 	; ( n )
 	; Add number to the word we are defining
-	.ADDR do_LIT, do_LIT, do_COMMA	; first add "LIT" ( n )
+	.ADDR do_COMPILE, do_LIT	; first add "LIT" ( n )
 	.ADDR do_COMMA			; add n to word (  )
 
 	.ADDR do_JUMP, loop1
@@ -472,6 +472,19 @@ defword "DHALF","D2/",
 	ROR 5,X
 	ROR 4,X
 	JMP NEXT
+
+defword "COMPILE",
+; like doing LIT, addr, COMMA
+; we call COMPILE, addr
+	JMP do_COLON
+compile_addr:	; label so we we can jump here from the alias "LIT,"
+	.ADDR do_FROM_R, do_DUP, do_FETCH, do_COMMA, do_2PLUS, do_TO_R ; COMPILE R> DUP @ , CELL+ >R
+	.ADDR do_SEMI
+
+defword "LIT_COMMA_ALIAS", "LIT,"
+; this is an alias for COMPILE, shorter, so it occupies less space in the bootstrap code in ROM
+	JMP do_COLON
+	.ADDR do_JUMP, compile_addr
 
 defword "LIT",,
 ; Push a literal word (2 bytes)
@@ -1245,21 +1258,21 @@ defword "MARKER",,
 
 	.ADDR do_STAR_HEADER, do_STAR_COMMIT_JMP
 
-	.ADDR do_LIT, do_COLON, do_COMMA	; do_COLON
+	.ADDR do_COMPILE, do_COLON	; do_COLON
 
-	.ADDR do_LIT, do_LIT, do_COMMA	; LIT
+	.ADDR do_COMPILE, do_LIT	; LIT
 	.ADDR do_COMMA	; stores old LATEST
 
-	.ADDR do_LIT, do_LATEST, do_COMMA	; LATEST
-	.ADDR do_LIT, do_STORE, do_COMMA	; !
+	.ADDR do_COMPILE, do_LATEST	; LATEST
+	.ADDR do_COMPILE, do_STORE	; !
 
-	.ADDR do_LIT, do_LIT, do_COMMA	; LIT
+	.ADDR do_COMPILE, do_LIT	; LIT
 	.ADDR do_COMMA	; stores old HERE
 
-	.ADDR do_LIT, do_DP, do_COMMA	; DP
-	.ADDR do_LIT, do_STORE, do_COMMA	; !
+	.ADDR do_COMPILE, do_DP	; DP
+	.ADDR do_COMPILE, do_STORE	; !
 	
-	.ADDR do_LIT, do_SEMI, do_COMMA	; ;
+	.ADDR do_COMPILE, do_SEMI	; ;
 
 	.ADDR do_SEMI
 
@@ -1267,7 +1280,7 @@ defword "NEXT",,
 ; commit a JMP NEXT to close the primitive word
 	JMP do_COLON
 	.ADDR do_STAR_COMMIT_JMP
-	.ADDR do_LIT, NEXT, do_COMMA
+	.ADDR do_COMPILE, NEXT
 	.ADDR do_SEMI
 
 defword "CREATE",,
@@ -1284,8 +1297,7 @@ defword "FCOLON",":",	; Forth Colon ":"
 	JMP do_COLON
 	.ADDR do_CREATE		; creates header
 	.ADDR do_STAR_COMMIT_JMP	; adds JMP
-	.ADDR do_LIT, do_COLON, do_COMMA	; store do_COLON addr
-	;.ADDR do_STAR_LIT_COMMA, do_COLON
+	.ADDR do_COMPILE, do_COLON ; store do_COLON addr
 	.ADDR do_RBRAC ; Enter Compilation mode
 	.ADDR do_SEMI
 
@@ -1294,10 +1306,10 @@ defword "VARIABLE",,
 ; a Header for a new word
 	JMP do_COLON
 	.ADDR do_FCOLON	; creates a Forth colon word's header
-	.ADDR do_LIT, do_LIT, do_COMMA
+	.ADDR do_COMPILE, do_LIT
 	.ADDR do_HERE		; put HERE on the stack
 	.ADDR do_PUSH0, do_COMMA	; store 00 as
-	.ADDR do_LIT, do_SEMI, do_COMMA	; word is complete
+	.ADDR do_COMPILE, do_SEMI	; word is complete
 	.ADDR do_HERE, do_SWAP, do_STORE	; store the address right after the word into the address slot of the word
 	.ADDR do_PUSH1, do_1PLUS, do_ALLOT
 	.ADDR do_LBRAC ; Exits Compilation mode
@@ -1307,7 +1319,7 @@ defword "SEMICOLON",";",1
 ; Add's do_SEMI to header of word being defined
 ; and exits COMPILATION mode (1->MODE)
 	JMP do_COLON
-	.ADDR do_LIT, do_SEMI, do_COMMA	; commits do_SEMI addr
+	.ADDR do_COMPILE, do_SEMI	; commits do_SEMI addr
 	
 	;.ADDR do_PUSH1, do_LIT, MODE, do_CSTORE ; Exits Compilation mode
 	.ADDR do_LBRAC ; Exits Compilation mode
@@ -1720,7 +1732,7 @@ defword "SQUOT","S(",1
 	; here we have (oldHERE newHERE) newHERE=oldHERE+FF)
 	; we'll restore oldHERE at the end. we store the STR at newHERE:
 @CModeStart:
-	.ADDR do_LIT, do_LITSTR, do_COMMA ; adds LITSTR to the definition
+	.ADDR do_COMPILE, do_LITSTR ; adds LITSTR to the definition
 	; get HERE on the stack for later
 	.ADDR do_HERE
 @commitStr:
@@ -1750,7 +1762,7 @@ defword "SQUOT","S(",1
 
 @CmodeEnd:
 	.ADDR do_SWAP, do_CSTORE
-	.ADDR do_LIT, do_COUNT, do_COMMA ; add COUNT to the definition
+	.ADDR do_COMPILE, do_COUNT ; add COUNT to the definition
 	.ADDR do_SEMI
 	
 ;-----------------------------------------------------------------
@@ -1988,11 +2000,11 @@ BOOT_PRG:
 	.BYTE " : = - 0= ; "
 	.BYTE " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
 	.BYTE " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
-	.BYTE " : LIT, R> DUP @ , 1+ 1+ >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.BYTE " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.BYTE " : ' WORD FIND >CFA ; " ; is this ever used?
 	.BYTE " : STOP BREAK ; IMMEDIATE "
 
+	; LIT, is an alias for COMPILE, it's shorter ;)
 	.BYTE " : IF LIT, 0BR HERE LIT, 0 ; IMMEDIATE "
 	.BYTE " : THEN HERE SWAP ! ; IMMEDIATE "
 	.BYTE " : ELSE LIT, JUMP HERE LIT, 0 SWAP HERE SWAP ! ; IMMEDIATE "
