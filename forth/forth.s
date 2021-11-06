@@ -1276,14 +1276,7 @@ defword "MARKER",,
 
 	.ADDR do_SEMI
 
-defword "NEXT",,
-; commit a JMP NEXT to close the primitive word
-	JMP do_COLON
-	.ADDR do_STAR_COMMIT_JMP
-	.ADDR do_COMPILE, NEXT
-	.ADDR do_SEMI
-
-defword "CREATE",,
+defword "CODE",,
 ; get next TOKEN in INPUT (with WORD) and creates a Header
 ; but doesn't fill the Code Field (can be used for primitive word, or secondary if we will it with do_COLON (see FCOLON))
 	JMP do_COLON
@@ -1291,11 +1284,18 @@ defword "CREATE",,
 	.ADDR do_STAR_HEADER
 	.ADDR do_SEMI
 
+defword "END_CODE",";CODE",
+; commit a JMP NEXT to close the primitive word
+	JMP do_COLON
+	.ADDR do_STAR_COMMIT_JMP
+	.ADDR do_COMPILE, NEXT
+	.ADDR do_SEMI
+
 defword "FCOLON",":",	; Forth Colon ":"
 ; get next TOKEN in INPUT and creates 
 ; a Header for a new word
 	JMP do_COLON
-	.ADDR do_CREATE		; creates header
+	.ADDR do_CODE		; creates empty header
 	.ADDR do_STAR_COMMIT_JMP	; adds JMP
 	.ADDR do_COMPILE, do_COLON ; store do_COLON addr
 	.ADDR do_RBRAC ; Enter Compilation mode
