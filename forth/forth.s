@@ -580,6 +580,15 @@ defword "1PLUS","1+",
 	INC 3,X
 @skip:	JMP NEXT
 
+defword "2PLUS","2+",
+	CLC
+	LDA 2,x
+	ADC #2
+	STA 2,x
+	BCC @skip
+	INC 3,X
+@skip:	JMP NEXT
+
 defword "EMIT",,
 ; EMIT emit a single char
 	; char is on stack
@@ -1042,7 +1051,7 @@ defword "COMMA",",",
 ; : , HERE ! HERE 2 + DP ! ;
 	JMP do_COLON
 	.ADDR do_HERE, do_STORE
-	.ADDR do_HERE, do_1PLUS, do_1PLUS
+	.ADDR do_HERE, do_2PLUS
 	.ADDR do_DP, do_STORE
 	.ADDR do_SEMI
 
@@ -1332,7 +1341,7 @@ defword "CFA",">CFA",
 	; ( ADDR -- ADDR )
 	; takes the dictionary pointer to a word
 	; returns the codeword pointer
-	.ADDR do_1PLUS, do_1PLUS  ; 1+ 1+	; skip prev. word link
+	.ADDR do_2PLUS  ; 2+ ; skip prev. word link
 	.ADDR do_DUP, do_CFETCH 	; ( LEN ) with FLAG
 
 	.ADDR do_CLIT	;
@@ -2031,7 +2040,7 @@ BOOT_PRG:
 
 ; some more stack words
 	.BYTE " : NIP SWAP DROP ; " ; ( x1 x0 -- x0 ) removes second on stack
-	.BYTE " : PICK 1+ 1+ 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
+	.BYTE " : PICK 2+ 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
 	.BYTE " : DEPTH "
 	.BYTE .sprintf("%X", DTOP-2)
 	.BYTE  " SP - 2/ ; "
