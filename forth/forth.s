@@ -1061,22 +1061,59 @@ defword "HERE",,
 defword "COMMA",",",
 ; ( XX -- ) save a word XX to HERE and advance
 ; HERE by 2
-; : , HERE ! HERE 2 + DP ! ;
-	JMP do_COLON
-	.ADDR do_HERE, do_STORE
-	.ADDR do_HERE, do_2PLUS
-	.ADDR do_DP, do_STORE
-	.ADDR do_SEMI
+; Primitive version!
+	; put DP in G1 in ZP
+	LDA DP
+	STA G1
+	LDA DP+1
+	STA G1+1
+	; save TOS in (DP)
+	LDA 2,X
+	STA (G1)
+	LDA 3,X
+	LDY #1
+	STA (G1),y
+	; Drop
+	INX
+	INX
+	; Advance HERE by 1 cell
+	BRA do_HEREPP
+
+defword "HEREPP","HERE++",
+; advance HERE by 1 cell (HERE+2 -> HERE)
+	CLC
+	LDA DP
+	ADC #2
+	STA DP
+	BCC @skip
+	INC DP+1
+@skip:
+	JMP NEXT
 
 defword "CCOMMA","C,",
 ; ( C -- ) save a byte C to HERE and advance
 ; HERE by 1
-; : , HERE ! HERE 1 + DP ! ;
-	JMP do_COLON
-	.ADDR do_HERE, do_CSTORE
-	.ADDR do_HERE, do_1PLUS
-	.ADDR do_DP, do_STORE
-	.ADDR do_SEMI
+; Primitive version!
+	; put DP in G1 in ZP
+	LDA DP
+	STA G1
+	LDA DP+1
+	STA G1+1
+	; save TOS in (DP), only LO byte
+	LDA 2,X
+	STA (G1)
+	; Drop TOS
+	INX
+	INX
+	; Advance HERE by 1 byte
+	CLC
+	LDA DP
+	ADC #1	; TODO: I tried INC DP but it wasn't working... Why?
+	STA DP
+	BCC @skip
+	INC DP+1
+@skip:
+	JMP NEXT
 
 defword "UM_STAR","UM*",
 ; UM*     ( un1 un2 -- ud )
