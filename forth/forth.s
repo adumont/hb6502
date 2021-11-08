@@ -887,11 +887,17 @@ defword "PRINT",".",
 ; ( n -- )
 	LDA 3,X
 	JSR print_byte
+cprint:
 	LDA 2,X
 	JSR print_byte
 	LDA #' '
 	JSR putc
 	JMP do_DROP
+
+defword "CPRINT","C.",
+; Print data on top of stack (in hex for now)
+; ( n -- )
+	BRA cprint
 
 ; COUNT: ( addr -- addr+1 len )
 ; Converts a counted string, whose length is contained in
