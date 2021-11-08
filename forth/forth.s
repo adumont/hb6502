@@ -1344,6 +1344,23 @@ defword "CREATE",,
 	.ADDR do_HERE, do_SWAP, do_STORE ; we store the addr in the first empty cell (*)
 	.ADDR do_SEMI
 
+defword "DOES","DOES>",
+; the last word supposedly created by CREATE is made of a byte and 4 cells:
+; [4C][do_COLON][LIT][addr][do_SEMI][xxxx]
+; DOES> will replace the last 2 cells with [do_JUMP][Addr], leaving the last word like this:
+; [4C][do_COLON][LIT][addr][do_JUMP][Addr]
+	JMP do_COLON
+	.ADDR do_LATEST, do_FETCH, do_CFA		; get CFA of latest word (created with CREATE)
+	.ADDR do_CLIT
+	.BYTE 7
+	.ADDR do_PLUS				; advance 7 bytes (1+3 cells, so we point to [do_SEMI] cell)
+	.ADDR do_LIT, do_JUMP
+	.ADDR do_OVER, do_STORE		; overwrite the []do_SEMI cell with a [JUMP]
+	.ADDR do_2PLUS				; advance 1 more cell
+	.ADDR do_FROM_R				; pull next word in compiled definition (right after DOES>)
+	.ADDR do_SWAP, do_STORE		; store it in last cell!
+	.ADDR do_SEMI
+
 defword "FCOLON",":",	; Forth Colon ":"
 ; get next TOKEN in INPUT and creates 
 ; a Header for a new word
