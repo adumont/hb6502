@@ -2176,6 +2176,8 @@ BOOT_PRG:
 	.BYTE " : t 8 L@ ; : t! 8 L! ;"
 ; End of Local variables support
 
+	.BYTE " : DUMP SWAP DUP . DO I C@ C. LOOP ; " ; ( addr1 addr2 -- ) dumps memory from addr1 to addr2
+
 	.BYTE " MARKER " ; so we can return to this point using FORGET
 	.BYTE " PRMP" ; Shows ok prompt to user
 
