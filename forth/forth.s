@@ -1328,6 +1328,22 @@ defword "END_CODE",";CODE",
 	.ADDR do_COMPILE, NEXT
 	.ADDR do_SEMI
 
+defword "CREATE",,
+	JMP do_COLON
+	.ADDR do_CODE				; creates an empty header
+	.ADDR do_STAR_COMMIT_JMP 	; adds JMP
+	.ADDR do_COMPILE, do_COLON	; compiles do_COLON
+	.ADDR do_COMPILE, do_LIT	; compiles do_LIT
+	.ADDR do_HERE ; leave HERE on the stack, we'll need it later to fill this slot cell ;)
+	.ADDR do_HEREPP	; Advance HERE by 1 cell (+2), we effectively leave the first empty cell (*)
+	; now we'll fill two cells: one for SEMI, another free for now.
+	; when we call DOES> it will patch them and overwrite them with [do_JUMP][someAddr]
+	.ADDR do_COMPILE, do_SEMI
+	.ADDR do_HEREPP	; Advance HERE by 1 cell (+2), we effectively leave an empty cell (again)
+	; now we patch the empty cell (*) we left after the LIT
+	.ADDR do_HERE, do_SWAP, do_STORE ; we store the addr in the first empty cell (*)
+	.ADDR do_SEMI
+
 defword "FCOLON",":",	; Forth Colon ":"
 ; get next TOKEN in INPUT and creates 
 ; a Header for a new word
