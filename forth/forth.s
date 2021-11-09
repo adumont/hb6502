@@ -179,11 +179,10 @@ loop1:
 	.ADDR do_0BR, @skipOK
 
 	; else show OK prompt
-	;.ADDR do_LIT, OK_STR, do_COUNT, do_TYPE
 	.ADDR do_PRMP
 
 	; and clear OK flag
-	.ADDR do_PUSH0, do_LIT, OK, do_CSTORE	; // TODO appears twice, make a primitive in assembly faster than a colon word
+	.ADDR do_CLEAR_OK
 
 @skipOK:
 
@@ -248,7 +247,7 @@ numscan:
 	.ADDR do_LIT, WHAT_STR
 	.ADDR do_COUNT, do_TYPE
 	; and clear OK flag
-	.ADDR do_PUSH0, do_LIT, OK, do_CSTORE
+	.ADDR do_CLEAR_OK
 
 	; if we were in compilation mode, we have to cancel the last word
 	; that was started (but is unfinished). we have to restore LATEST to its
@@ -289,6 +288,12 @@ commitN:
 
 ;------------------------------------------------------
 
+; Primitive word, not in the dictionary.
+do_CLEAR_OK:
+	; clears the OK flag
+	stz OK
+	JMP NEXT
+
 defword "COLON",,
 ; push IP to Return Stack
 	LDA IP+1	; HI
@@ -316,6 +321,22 @@ defword "SEMI",,
 	STA IP+1
 ; JMP NEXT
 	JMP NEXT
+
+defword "CLS",,
+; clear stack
+	LDX #DTOP
+	JMP NEXT
+
+defword "FALSE",,
+	lda #$00
+	bra store_on_ToS
+
+defword "TRUE",,
+	lda #$FF
+store_on_ToS:
+	sta 0,x
+	sta 1,x
+	jmp DEX2_NEXT
 
 ; RSIN ( -- )
 ; Reset Input buffer
@@ -2070,8 +2091,6 @@ OK_STR: CString {"ok "}
 ; enter the interpreter
 BOOT_PRG:
 	.BYTE " : ? @ . ; "
-	.BYTE " : TRUE FFFF ; "
-	.BYTE " : FALSE 0 ; "
 	.BYTE " : = - 0= ; "
 	.BYTE " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
 	.BYTE " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
@@ -2131,7 +2150,6 @@ BOOT_PRG:
 	.BYTE " : DEPTH "
 	.BYTE .sprintf("%X", DTOP-2)
 	.BYTE  " SP - 2/ ; "
-	.BYTE " : CLS BEGIN DEPTH WHILE DROP REPEAT ; " ; CLear Stack
 	.BYTE " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CRLF THEN DROP ; " ; print stack, leave cells on stack
 
 	; Double version of stack words
