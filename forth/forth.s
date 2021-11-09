@@ -175,7 +175,7 @@ rsin:	.ADDR do_RSIN	; Reset Input
 loop1:
 
 	; if OK flag is 0, don't show OK prompt
-	.ADDR do_LIT, OK, do_CFETCH
+	.ADDR do_FETCH_OK
 	.ADDR do_0BR, @skipOK
 
 	; else show OK prompt
@@ -288,11 +288,19 @@ commitN:
 
 ;------------------------------------------------------
 
-; Primitive word, not in the dictionary.
+; Primitive word, but not in the dictionary.
 do_CLEAR_OK:
 	; clears the OK flag
 	stz OK
 	JMP NEXT
+
+; Primitive word, but not in the dictionary.
+do_FETCH_OK:
+	; pushes OK flag on the stack
+	lda OK
+	sta 0,x
+	stz 1,x
+	JMP DEX2_NEXT
 
 defword "COLON",,
 ; push IP to Return Stack
