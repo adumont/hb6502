@@ -1396,11 +1396,19 @@ defword "DOES","DOES>",
 	.ADDR do_SWAP, do_STORE		; store it in last cell!
 	.ADDR do_SEMI
 
+defword "NONAME",":NONAME",	; Forth Anonymous word
+; Create a new word, without header (not in dictionary)
+; Leaves the CFA (XT) on the stack. Can be executed with EXEC
+	JMP do_COLON
+	.ADDR do_HERE	; leave CFA on the stack
+	.ADDR do_JUMP, prep_cfa
+
 defword "FCOLON",":",	; Forth Colon ":"
 ; get next TOKEN in INPUT and creates 
 ; a Header for a new word
 	JMP do_COLON
 	.ADDR do_CODE		; creates empty header
+prep_cfa:	; jump from noname
 	.ADDR do_STAR_COMMIT_JMP	; adds JMP
 	.ADDR do_COMPILE, do_COLON ; store do_COLON addr
 	.ADDR do_RBRAC ; Enter Compilation mode
