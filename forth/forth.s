@@ -1421,7 +1421,7 @@ defword "VARIABLE",,
 	.ADDR do_FCOLON	; creates a Forth colon word's header
 	.ADDR do_COMPILE, do_LIT
 	.ADDR do_HERE		; put HERE on the stack
-	.ADDR do_PUSH0, do_COMMA	; store 00 as
+	.ADDR do_HEREPP	; Advance HERE by 1 cell (+2), we effectively leave an empty cell
 	.ADDR do_COMPILE, do_SEMI	; word is complete
 	.ADDR do_HERE, do_SWAP, do_STORE	; store the address right after the word into the address slot of the word
 	.ADDR do_PUSH1, do_1PLUS, do_ALLOT
@@ -2115,9 +2115,9 @@ BOOT_PRG:
 	.BYTE " : STOP BREAK ; IMMEDIATE "
 
 	; LIT, is an alias for COMPILE, it's shorter ;)
-	.BYTE " : IF LIT, 0BR HERE LIT, 0 ; IMMEDIATE "
+	.BYTE " : IF LIT, 0BR HERE HERE++ ; IMMEDIATE "
 	.BYTE " : THEN HERE SWAP ! ; IMMEDIATE "
-	.BYTE " : ELSE LIT, JUMP HERE LIT, 0 SWAP HERE SWAP ! ; IMMEDIATE "
+	.BYTE " : ELSE LIT, JUMP HERE HERE++ SWAP HERE SWAP ! ; IMMEDIATE "
 
 ; TEST IF
 ;	.BYTE " : T IF AAAA ELSE BBBB THEN ; "
@@ -2138,11 +2138,11 @@ BOOT_PRG:
 ; TEST BEGIN UNTIL
 ;	.BYTE " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
 
-	.BYTE " : WHILE LIT, 0BR HERE LIT, 0 ; IMMEDIATE "
+	.BYTE " : WHILE LIT, 0BR HERE HERE++ ; IMMEDIATE "
 	.BYTE " : REPEAT LIT, JUMP SWAP , HERE SWAP ! ; IMMEDIATE "
 	
 ; Test BEGIN WHILE REPEAT
-;	.BYTE " : TBWR 6 BEGIN 1 - DUP WHILE DUP . REPEAT DROP ; TBWR "
+;	.BYTE " : T 6 BEGIN 1 - DUP WHILE DUP . REPEAT DROP ; T "
 
 ; DO LOOP
 	.BYTE " : DO LIT, *DO HERE ; IMMEDIATE " ;
