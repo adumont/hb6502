@@ -1090,8 +1090,29 @@ _getWordLen:
 
 defword "HERE",,
 ; : HERE	DP @ ;
-	JMP do_COLON
-	.ADDR do_DP, do_FETCH, do_SEMI
+; Primitive version!
+	; put DP in G1 in ZP
+	LDA #<DP
+	STA G1
+	LDA #>DP
+	STA G1+1
+	; Fetch HERE ie. (DP) and store in TOS
+	LDA (G1)
+	STA 0,X
+	LDY #1
+	LDA (G1),y
+	STA 1,X
+	;
+	JMP DEX2_NEXT
+
+defword "DP_STORE","DP!",
+	; put DP in G1 in ZP
+	LDA 2,X
+	STA DP
+	LDA 3,X
+	STA DP+1
+	; 
+	JMP do_DROP
 
 defword "COMMA",",",
 ; ( XX -- ) save a word XX to HERE and advance
@@ -1458,7 +1479,7 @@ defword "MODE",,
 defword "ALLOT",,
 ; : ALLOT	HERE + DP ! ;
 	JMP do_COLON
-	.ADDR do_HERE, do_PLUS, do_DP, do_STORE
+	.ADDR do_HERE, do_PLUS, do_DP_STORE
 	.ADDR do_SEMI
 
 defword "CFA",">CFA",
@@ -1839,7 +1860,7 @@ defword "SQUOT","S(",1
 	.ADDR do_CLIT
 	.BYTE $FF
 	.ADDR do_PLUS, do_DUP	; ( oldHERE oldHERE+FF oldHERE+FF )
-	.ADDR do_DP, do_STORE	; we update HERE
+	.ADDR do_DP_STORE	; we update HERE
 	.ADDR do_JUMP, @commitStr
 	; here we have (oldHERE newHERE) newHERE=oldHERE+FF)
 	; we'll restore oldHERE at the end. we store the STR at newHERE:
@@ -1868,7 +1889,7 @@ defword "SQUOT","S(",1
 	.ADDR do_OVER, do_CSTORE		; update len in length byte
 	; (oldHERE newHERE )
 	; restore old HERE and leave newHERE as str addr!
-	.ADDR do_SWAP, do_DP, do_STORE
+	.ADDR do_SWAP, do_DP_STORE
 	.ADDR do_COUNT
 	.ADDR do_SEMI
 
