@@ -207,7 +207,7 @@ loop1:
 ; Found a word! ( addr len hdr )
 	.ADDR do_NROT, do_DROP, do_DROP ; ( hdr ) header of the word
 
-	.ADDR do_MODE, do_CFETCH   ; ( hdr MODE ) 0: compile, 1 execute
+	.ADDR do_STATE   ; ( hdr MODE ) 0: compile, 1 execute
 
 	.ADDR do_0BR, compile ; Mode = 0 --> Compile
 	; if not 0, Execute!
@@ -252,7 +252,7 @@ numscan:
 	; if we were in compilation mode, we have to cancel the last word
 	; that was started (but is unfinished). we have to restore LATEST to its
 	; previous value (which is in LATEST @ )
-	.ADDR do_MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
+	.ADDR do_STATE   ; ( n MODE ) 0: compile, 1 execute
 	.ADDR do_0BR, removeW ; Mode = 0 --> remove unfinished word
 
 executeMode:
@@ -271,7 +271,7 @@ cleanStack:  ; ( addr len n )
 	; here we have the number N on the stack.
 	; are we in compilation mode?
 
-	.ADDR do_MODE, do_CFETCH   ; ( n MODE ) 0: compile, 1 execute
+	.ADDR do_STATE   ; ( n MODE ) 0: compile, 1 execute
 
 	.ADDR do_0BR, commitN ; Mode = 0 --> CommitN to new word
 	; if not 0, continue loop (N already on the stack)
@@ -1322,7 +1322,7 @@ do_STAR_HEADER:		; don't place it in the Dictionary
 defword "PRMP",,
 	; Print the OK Prompt
 	JMP do_COLON
-	.ADDR do_LIT, MODE, do_CFETCH, do_0BR, @skip
+	.ADDR do_STATE, do_0BR, @skip
 	.ADDR do_LIT, OK_STR, do_COUNT, do_TYPE
 @skip:
 	.ADDR do_SEMI
@@ -1827,13 +1827,19 @@ defword "LEAVE",,
 	.ADDR do_TO_R	; push Next IP back to R
 	.ADDR do_SEMI
 
-defword "IS_IMM","IMM?",1
+defword "STATE","STATE",1
 ; Is it immediate/execution mode? 
 ; returns the value of variable MODE
 ; 0 : Compilation mode, <>0 : Execution mode
-	JMP do_COLON
-	.ADDR do_MODE, do_CFETCH
-	.ADDR do_SEMI
+	LDA #<MODE
+	STA G1
+	LDA #>MODE
+	STA G1+1
+	LDA (G1)
+	STA 0,X
+	STZ 1,X
+	JMP DEX2_NEXT
+
 
 defword "SQUOT","S(",1
 ; ( -- ADDR )
@@ -1850,7 +1856,7 @@ defword "SQUOT","S(",1
 ; In Compilation mode, S( will store the String as LITSTR in the defined word.
 
 	JMP do_COLON
-	.ADDR do_IS_IMM         ; MODE: 0 Compile, >0 Execute
+	.ADDR do_STATE         ; MODE: 0 Compile, >0 Execute
 	.ADDR do_0BR, @CModeStart
 @XModeStart:
 	; Save HERE on the stack.
@@ -1883,7 +1889,7 @@ defword "SQUOT","S(",1
 	.ADDR do_HERE, do_OVER, do_MINUS	; compute str length
 	.ADDR do_PUSH1, do_MINUS
 ; End of @commitStr loop
-	.ADDR do_IS_IMM         ; MODE: 0 Compile, >0 Execute
+	.ADDR do_STATE         ; MODE: 0 Compile, >0 Execute
 	.ADDR do_0BR, @CmodeEnd
 @XmodeEnd:
 	.ADDR do_OVER, do_CSTORE		; update len in length byte
@@ -2154,7 +2160,6 @@ BOOT_PRG:
 	.BYTE " : UNTIL LIT, 0BR , ; IMMEDIATE "
 
 	.BYTE " : PAD HERE 64 + ; " ; $64 = d100, PAD is 100 byte above HERE
-	.BYTE " : IMM? MODE C@ ; " ; 0: COMPILATION mode, 1 EXEC/IMMEDIATE mode
  
 ; TEST BEGIN UNTIL
 ;	.BYTE " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
