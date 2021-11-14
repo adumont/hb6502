@@ -2187,7 +2187,7 @@ BOOT_PRG:
 	.BYTE " : PAD HERE 64 + ; " ; $64 = d100, PAD is 100 byte above HERE
  
 ; TEST BEGIN UNTIL
-;	.BYTE " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
+;	.BYTE " : T 5 BEGIN DUP . CR 1 - DUP 0= UNTIL ; T "
 
 	.BYTE " : WHILE LIT, 0BR HERE HERE++ ; IMMEDIATE "
 	.BYTE " : REPEAT LIT, JUMP SWAP , HERE SWAP ! ; IMMEDIATE "
@@ -2217,7 +2217,7 @@ BOOT_PRG:
 	.BYTE " : DEPTH "
 	.BYTE .sprintf("%X", DTOP-2)
 	.BYTE  " SP - 2/ ; "
-	.BYTE " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CRLF THEN DROP ; " ; print stack, leave cells on stack
+	.BYTE " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CR THEN DROP ; " ; print stack, leave cells on stack
 
 	; Double version of stack words
 	.BYTE " : 2SWAP >R -ROT R> -ROT ; "
