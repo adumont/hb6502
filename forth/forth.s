@@ -1207,7 +1207,9 @@ defword "UM_STAR","UM*",
 	.ADDR do_ROT, do_DROP
 	.ADDR do_SEMI
 
-defword "STAR_UM_STAR","*UM*",
+; defword "STAR_UM_STAR","*UM*",
+do_STAR_UM_STAR:
+; we don't need this in dictionary
 ; ( n1 n2 0 -- n1 Dproduct )
 	; we copy N2 to G1, clear G2
 	; we will use G2G1 as HILO tmp register to shift-left n2
@@ -1269,7 +1271,11 @@ defword "UM_DIV_MOD","UM/MOD",
 	.ADDR do_STAR_UM_DIV_MOD, do_SWAP
 	.ADDR do_SEMI
 
-defword "STAR_UM_DIV_MOD","*UM/MOD",
+; defword "STAR_UM_DIV_MOD","*UM/MOD",
+do_STAR_UM_DIV_MOD:
+; this is just a assembly subroutine used by UM/MOD,
+; no need for it to be in the dictionary
+
 ; Takes a Double (32bit/2 cells) dividend and
 ; a 1 cell (16bit) divisor
 ; and returns quotient and remainder (1 cell each)
