@@ -816,6 +816,31 @@ defword "FIND",,
 	STA W
 	LDA LATEST+1
 	STA W+1
+
+; shortcuts in FIND for ":" and ";"
+	LDA 2,X
+	CMP #1
+	BNE @nxt_word
+; 1 char word. here we test if the word is ":"
+	LDA (G2)
+	CMP #':'
+	BNE @not_colon
+	; word is ":"!!
+	LDA #<h_FCOLON
+	STA 4,X
+	LDA #>h_FCOLON
+	STA 5,X
+	JMP do_DROP
+@not_colon:
+	CMP #';'
+	BNE @not_semi
+	; word is ";"!!
+	LDA #<h_SEMICOLON
+	STA 4,X
+	LDA #>h_SEMICOLON
+	STA 5,X
+	JMP do_DROP
+@not_semi:
 @nxt_word:
 ; store W+2 in G1 (G1 points to the counted str)
 	CLC
