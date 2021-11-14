@@ -1009,7 +1009,7 @@ defword "SPACE",,
 	JSR putc
 	JMP NEXT
 
-defword "CRLF",,
+defword "CR",,
 ; Print a new line	( -- )
 	JSR _crlf
 	JMP NEXT
