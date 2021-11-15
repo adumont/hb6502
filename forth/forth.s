@@ -321,7 +321,7 @@ defword "COLON",,
 	JMP NEXT
 
 ; SEMICOLON aka EXIT
-defword "SEMI",,
+defword "SEMI","EXIT",
 ; POP IP from Return Stack
 	PLA
 	STA IP
