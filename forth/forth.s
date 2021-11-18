@@ -48,6 +48,12 @@ __word_0 = 0
 	.ident (.sprintf("do_%s", label)):
 .endmacro
 
+; Macro for defining words without headers (like :NONAMEs) so they won't show in dictionay
+; it just creates a label so we can call them from other words
+.macro noheader label
+	.ident (.sprintf("do_%s", label)):
+.endmacro
+
 ; IP: Next Instruction Pointer (IP)-->W
 ; W : Address of the code to run
 W	= $FE		; 2 bytes, an address
@@ -288,14 +294,12 @@ commitN:
 
 ;------------------------------------------------------
 
-; Primitive word, but not in the dictionary.
-do_CLEAR_OK:
+noheader "CLEAR_OK"
 	; clears the OK flag
 	stz OK
 	JMP NEXT
 
-; Primitive word, but not in the dictionary.
-do_FETCH_OK:
+noheader "FETCH_OK"
 	; pushes OK flag on the stack
 	lda OK
 	sta 0,x
@@ -349,7 +353,7 @@ store_on_ToS:
 ; RSIN ( -- )
 ; Reset Input buffer
 ; called on start-up, and each parse error
-defword "RSIN",,
+noheader "RSIN"
 	STZ INP_LEN
 	STZ INP_IDX
 	JMP NEXT
@@ -1207,9 +1211,7 @@ defword "UM_STAR","UM*",
 	.ADDR do_ROT, do_DROP
 	.ADDR do_SEMI
 
-; defword "STAR_UM_STAR","*UM*",
-do_STAR_UM_STAR:
-; we don't need this in dictionary
+noheader "STAR_UM_STAR"
 ; ( n1 n2 0 -- n1 Dproduct )
 	; we copy N2 to G1, clear G2
 	; we will use G2G1 as HILO tmp register to shift-left n2
@@ -1271,11 +1273,7 @@ defword "UM_DIV_MOD","UM/MOD",
 	.ADDR do_STAR_UM_DIV_MOD, do_SWAP
 	.ADDR do_SEMI
 
-; defword "STAR_UM_DIV_MOD","*UM/MOD",
-do_STAR_UM_DIV_MOD:
-; this is just a assembly subroutine used by UM/MOD,
-; no need for it to be in the dictionary
-
+noheader "STAR_UM_DIV_MOD"
 ; Takes a Double (32bit/2 cells) dividend and
 ; a 1 cell (16bit) divisor
 ; and returns quotient and remainder (1 cell each)
@@ -1336,8 +1334,7 @@ defword "RBRAC","]",
 	STZ MODE
 	JMP NEXT
 
-; defword "STAR_HEADER","*HEADER",
-do_STAR_HEADER:		; don't place it in the Dictionary
+noheader "STAR_HEADER"
 	JMP do_COLON
 	.ADDR do_HERE		; keep current HERE on stack
 	.ADDR do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
