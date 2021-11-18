@@ -2269,6 +2269,12 @@ BOOT_PRG:
 
 	.BYTE " : DUMP SWAP DUP . DO I C@ C. LOOP ; " ; ( addr1 addr2 -- ) dumps memory from addr1 to addr2
 
+; .NAME ( hdr -- ) takes the addr of the header of a Word in dictionary and print its name
+	.BYTE " : .NAME DUP 2+ DUP C@ 1F AND SWAP 1+ SWAP TYPE ; "
+; WORDS ( -- ) list all the words in the dictionary
+; Format is : HEADER CFA NAME
+	.BYTE " : WORDS LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR REPEAT DROP ; "
+
 	.BYTE " MARKER " ; so we can return to this point using FORGET
 	.BYTE " PRMP" ; Shows ok prompt to user
 
