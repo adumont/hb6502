@@ -1045,6 +1045,16 @@ defword "EQZ","0=",
 	STA 3,X
 	JMP NEXT
 
+defword "XOR",,
+; ( a b -- a^b ) bitwise XOR
+	LDA 2,X
+	EOR 4,X
+	STA 4,X
+	LDA 3,X
+	EOR 5,X
+	STA 5,X
+	JMP do_DROP
+
 defword "AND",,
 ; ( a b -- a&b ) bitwise AND
 	LDA 2,X
