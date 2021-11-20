@@ -2294,9 +2294,9 @@ BOOT_PRG:
 	.BYTE " : .NAME DUP 2+ DUP C@ 1F AND SWAP 1+ SWAP TYPE ; "
 ; WORDS ( -- ) list all the words in the dictionary
 ; Format is : HEADER CFA NAME
-; Press enter after each page
+; Press [qQ] to stop listing, any other key to continue (I use GETC to get a char from input)
 ;	.BYTE " : WORDS LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR REPEAT DROP ; "
-	.BYTE " : WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR SWAP 1+ DUP 10 = IF KEY 2DROP 0 THEN SWAP REPEAT 2DROP ; " ; 16 words per "page"
+	.BYTE " : WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 = IF 2DROP EXIT THEN DROP 0 THEN SWAP REPEAT 2DROP ; " ; 16 words per "page"
 
 	.BYTE " MARKER " ; so we can return to this point using FORGET
 	.BYTE " PRMP" ; Shows ok prompt to user
