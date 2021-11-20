@@ -1593,8 +1593,19 @@ defword "WORD",,
 	CMP #$0D
 	BEQ @return0
 
-	; otherwise --> start of a word (@startW)
-	bra @startW
+	CMP #'\'
+	BNE @startW
+
+	; here it's a \ comment
+@comment:
+	JSR _KEY
+
+	CMP #$0A
+	BEQ @return0		;--> tenemos que salir de WORD, dejando 2 0 ( 0 0 ) en el stack
+
+	CMP #$0D
+	BNE @comment
+	; fallthrough to @return0
 
 @return0:
 	lda BOOT
@@ -2197,6 +2208,9 @@ BOOT_PRG:
 
 	.BYTE " : UNTIL LIT, 0BR , ; IMMEDIATE "
 
+	; ( is an immediate word that will swallow all characters until a ')' is found
+	.BYTE " : ( BEGIN KEY 29 = UNTIL ; IMMEDIATE " ; now we can use ( ) inline comments!
+
 	.BYTE " : PAD HERE 64 + ; " ; $64 = d100, PAD is 100 byte above HERE
  
 ; TEST BEGIN UNTIL
@@ -2280,7 +2294,9 @@ BOOT_PRG:
 	.BYTE " : .NAME DUP 2+ DUP C@ 1F AND SWAP 1+ SWAP TYPE ; "
 ; WORDS ( -- ) list all the words in the dictionary
 ; Format is : HEADER CFA NAME
-	.BYTE " : WORDS LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR REPEAT DROP ; "
+; Press enter after each page
+;	.BYTE " : WORDS LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR REPEAT DROP ; "
+	.BYTE " : WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR SWAP 1+ DUP 10 = IF KEY 2DROP 0 THEN SWAP REPEAT 2DROP ; " ; 16 words per "page"
 
 	.BYTE " MARKER " ; so we can return to this point using FORGET
 	.BYTE " PRMP" ; Shows ok prompt to user
