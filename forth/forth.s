@@ -1617,11 +1617,23 @@ defword "SETIMM",,
 defword "WORD",,
 ; Find next word in input buffer (and advance INP_IDX)
 ; ( -- ADDR LEN )
+	lda #' '
+	bra _parse
+
+defword "PARSE",,
+; parse input buffer with separator SEPR (and advance INP_IDX)
+; ( SEP -- ADDR LEN )
+
+	lda 2,x
+	inx
+	inx
+_parse:
+	sta SEPR
 
 @next1:
 	JSR _KEY
 	
-	CMP #' '
+	CMP SEPR
 	BEQ @next1
 
 	CMP #$0A
@@ -1675,7 +1687,7 @@ defword "WORD",,
 @next2:
 	JSR _KEY
 
-	CMP #' '
+	CMP SEPR
 	BEQ @endW
 
 	CMP #$0A
@@ -2183,6 +2195,8 @@ BOOT_PRG:
 	.BYTE " : ' WORD FIND >CFA ; " ; is this ever used?
 	; .BYTE " : STOP BREAK ; IMMEDIATE "
 
+	.BYTE " : CHAR 20 PARSE DROP C@ ;"
+
 	; LIT, is an alias for COMPILE, it's shorter ;)
 	.BYTE " : IF LIT, 0BR HERE HERE++ ; IMMEDIATE "
 	.BYTE " : THEN HERE SWAP ! ; IMMEDIATE "
@@ -2302,6 +2316,7 @@ BOOT_PRG:
 LATEST:	.res 2	; Store the latest ADDR of the Dictionary
 MODE:	.res 1	; <>0 Execute, 0 compile
 BOOT:	.res 1	; <>0 Boot, 0 not boot anymore
+SEPR:	.res 1	; Separator for parsing input
 BOOTP:	.res 2	; pointer to BOOTstrap code
 ERROR:	.res 1	; Error when converting number
 INP_LEN: .res 1	; Length of the text in the input buffer
