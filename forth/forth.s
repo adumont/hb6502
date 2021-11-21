@@ -358,17 +358,6 @@ noheader "RSIN"
 	STZ INP_IDX
 	JMP NEXT
 
-defword "SWAP",,
-	LDA 2,X
-	LDY 4,X
-	STY 2,X
-	STA 4,X
-	LDA 3,X
-	LDY 5,X
-	STY 3,X
-	STA 5,X
-	JMP NEXT
-
 defword "ROT",,
 ; ( x y z -- y z x )
 ; X, stack 2 -> W
@@ -514,11 +503,6 @@ compile_addr:	; label so we we can jump here from the alias "LIT,"
 	.ADDR do_FROM_R, do_DUP, do_FETCH, do_COMMA, do_2PLUS, do_TO_R ; COMPILE R> DUP @ , CELL+ >R
 	.ADDR do_SEMI
 
-defword "LIT_COMMA_ALIAS", "LIT,"
-; this is an alias for COMPILE, shorter, so it occupies less space in the bootstrap code in ROM
-	JMP do_COLON
-	.ADDR do_JUMP, compile_addr
-
 defword "LIT",,
 ; Push a literal word (2 bytes)
 ; (IP) points to literal
@@ -584,16 +568,6 @@ defword "DPLUS","D+",
 	INX
 	JMP do_DROP
 
-defword "MINUS","-",
-	SEC
-	LDA 4,X
-	SBC 2,X
-	STA 4,X
-	LDA 5,X
-	SBC 3,X
-	STA 5,X
-	JMP do_DROP
-
 defword "DMINUS","D-",
 ; Double cells diff
 ; ( d1 d2 -- diff ) where really it's ( lo1 hi1 lo2 hi2 -- lodiff hidiff )
@@ -619,12 +593,6 @@ defword "DMINUS","D-",
 	INX
 	INX
 	JMP do_DROP
-
-defword "1PLUS","1+",
-	INC 2,X
-	BNE @skip
-	INC 3,X
-@skip:	JMP NEXT
 
 defword "2PLUS","2+",
 	CLC
@@ -685,42 +653,6 @@ defword "R_AT","R@",
 	STA 1,X
 	JMP DEX2_NEXT
 
-defword "0BR",,
-; Branch to Label if 0 on stack
-	LDA 2,X
-	ORA 3,X
-
-	BNE @not0
-	INX
-	INX
-	BRA do_JUMP	; 0?
-@not0:	
-
-; Now advance IP
-; IP+2 --> IP
-	CLC
-	LDA IP
-	ADC #2
-	STA IP
-	BCC @skip
-	INC IP+1
-@skip:
-
-	JMP do_DROP
-
-defword "JUMP",,
-; (IP) points to literal address to jump to
-; instead of next instruction ;)
-	; we push the addr to the Return Stack
-	LDY #1
-	LDA (IP),y
-	PHA
-	LDA (IP)
-	PHA
-	; and jump to do_SEMI to handle the rest ;)
-	JMP do_SEMI
-
-	
 do_JUMP_OLD: ; alternative way of jumping, no Return Stack
 ; (IP) points to literal address to jump to
 ; instead of next instruction ;)
@@ -732,47 +664,6 @@ do_JUMP_OLD: ; alternative way of jumping, no Return Stack
 	PLA
 	STA IP
 	JMP NEXT
-
-defword "FETCH","@",
-; @ ( ADDR -- value ) 
-; We read the data at the address on the 
-; stack and put the value on the stack
-	; copy address from stack to W
-	LDA 2,X	; LO
-	STA W
-	LDA 3,X	; HI
-	STA W+1
-	; Read data at (W) and save
-	; in the TOS
-	LDA (W)
-	STA 2,X
-	LDY #1
-	LDA (W),y
-	STA 3,X
-	JMP NEXT
-
-defword "STORE","!",
-; ! ( value ADDR -- )
-	; copy the address to W
-	LDA 2,X	; LO
-	STA W
-	LDA 3,X	; HI
-	STA W+1
-	; save the value to (W)
-	; LO
-	LDA 4,X
-	STA (W)
-	; HI
-	LDY #1
-	LDA 5,X
-	STA (W),y
-end_do_STORE:		; used by CSTORE (below)
-	INX
-	INX
-	;INX       ; INX INX NEXT is do_DROP
-	;INX
-	;JMP NEXT 	
-	JMP do_DROP
 
 defword "CFETCH","C@",
 ; c@ ( ADDR -- byte ) 
@@ -789,115 +680,6 @@ defword "CFETCH","C@",
 	STA 2,X
 	STz 3,X
 	JMP NEXT
-
-defword "CSTORE","C!",
-; C! ( value ADDR -- )
-	; copy the address to W
-	LDA 2,X	; LO
-	STA W
-	LDA 3,X	; HI
-	STA W+1
-	; save the value to (W)
-	; LO
-	LDA 4,X
-	STA (W)
-	BRA end_do_STORE
-
-defword "FIND",,
-; ( ADDRi LEN -- ADDRo )
-; ADDRi: Address of a string
-; LEN: Length of the string (LO byte only)
-; ADDRo: Address of the header if Found
-; or 0000 if not found
-
-; Store the addr on the STACK in G2
-	LDA 4,X	; LO
-	STA G2
-	LDA 5,X	; HI
-	STA G2+1
-; store LATEST in W
-	LDA LATEST
-	STA W
-	LDA LATEST+1
-	STA W+1
-
-; shortcuts in FIND for ":" and ";"
-	LDA 2,X
-	CMP #1
-	BNE @nxt_word
-; 1 char word. here we test if the word is ":"
-	LDA (G2)
-	CMP #':'
-	BNE @not_colon
-	; word is ":"!!
-	LDA #<h_FCOLON
-	STA 4,X
-	LDA #>h_FCOLON
-	STA 5,X
-	JMP do_DROP
-@not_colon:
-	CMP #';'
-	BNE @not_semi
-	; word is ";"!!
-	LDA #<h_SEMICOLON
-	STA 4,X
-	LDA #>h_SEMICOLON
-	STA 5,X
-	JMP do_DROP
-@not_semi:
-@nxt_word:
-; store W+2 in G1 (G1 points to the counted str)
-	CLC
-	LDA W
-	ADC #HDR_OFFSET_STR
-	STA G1
-	LDA W+1		; replace with BCC skip / INC G1+1 ?
-	ADC #0		;
-	STA G1+1	;
-
-; compare length
-	LDA (G1)	; load current dictionay word's length
-	AND #$1F		; remove flags (3 MSB)
-	CMP 2,X		; compare to len on stack (1byte)
-	BNE @advance_w	; not same length, advance to next word
-; same length: compare str
-	; G1+1 --> G1 (now points to STR, not length)
-	CLC
-	INC G1
-	BNE @skip
-	INC G1+1
-@skip:	
-	TAY		; we previously loaded LEN in A --> Y
-	JSR STRCMP
-	BEQ @found
-
-; not found: look for next word in
-; dictionnary
-
-@advance_w:
-	; W points to the previous entry
-	; (W) -> W
-	LDA (W)
-	STA 0,X ; we store it there temporarily
-	LDY #1
-	LDA (W),Y
-	STA W+1
-	LDA 0,X
-	STA W
-	BNE @nxt_word
-	LDA W+1
-	BNE @nxt_word
-	; here: not found :(, we put 00 on stack and exit
-	STZ 4,x
-	STZ 5,x
-	JMP do_DROP
-	
-@found:	; ADDR is W -> TOS
-	LDA W
-	STA 4,X
-	LDA W+1
-	STA 5,X
-	JMP do_DROP
 
 STRCMP:
 ; Clobbers: A, Y
@@ -928,34 +710,6 @@ defword "DP",,
 	LDA #>DP
 	STA 1,X
 	JMP DEX2_NEXT
-
-defword "DPRINT","D.",
-; Print a double cell number (in hex for now)
-; ( lo hi -- )
-	LDA 3,X
-	JSR print_byte
-	LDA 2,X
-	JSR print_byte
-	INX
-	INX
-	BRA do_PRINT	; fallback to "."
-
-defword "PRINT",".",
-; Print data on top of stack (in hex for now)
-; ( n -- )
-	LDA 3,X
-	JSR print_byte
-cprint:
-	LDA 2,X
-	JSR print_byte
-	LDA #' '
-	JSR putc
-	JMP do_DROP
-
-defword "CPRINT","C.",
-; Print data on top of stack (in hex for now)
-; ( n -- )
-	BRA cprint
 
 ; COUNT: ( addr -- addr+1 len )
 ; Converts a counted string, whose length is contained in
@@ -1025,26 +779,6 @@ _crlf:
 	JSR putc
 	RTS
 
-defword "EQZ","0=",
-; 0=, it's also equivalent to "logical NOT" (not a bitwise NOT)
-; logical NOT --> use 0=
-; 0<> --> use 0= 0=  (twice!)
-
-; ( n -- bool )
-; TRUE  (FFFF) if n is 0000
-; FALSE (0000) otherwise
-	LDA 2,X
-	ORA 3,X
-	BEQ @true
-@false:	STZ 2,X
-	STZ 3,X
-	JMP NEXT
-@true:
-	LDA #$FF
-	STA 2,X
-	STA 3,X
-	JMP NEXT
-
 defword "XOR",,
 ; ( a b -- a^b ) bitwise XOR
 	LDA 2,X
@@ -1052,16 +786,6 @@ defword "XOR",,
 	STA 4,X
 	LDA 3,X
 	EOR 5,X
-	STA 5,X
-	JMP do_DROP
-
-defword "AND",,
-; ( a b -- a&b ) bitwise AND
-	LDA 2,X
-	AND 4,X
-	STA 4,X
-	LDA 3,X
-	AND 5,X
 	STA 5,X
 	JMP do_DROP
 
@@ -1074,16 +798,6 @@ defword "OR",,
 	ORA 5,X
 	STA 5,X
 	JMP do_DROP
-
-defword "NOT",,
-; ( a -- not(a) ) bitwise NOT
-	LDA 2,X
-	EOR #$FF
-	STA 2,X
-	LDA 3,X
-	EOR #$FF
-	STA 3,X
-	JMP NEXT
 
 defword "GETIMM",,
 ; ( hdr -- imm_flag )
@@ -1101,17 +815,6 @@ defword "GETIMM",,
 	STZ 2,X		; clear LO, and exit
 	JMP NEXT
 
-defword "SETIMM",,
-; ( hdr -- )
-; takes a header to a word in dictionary
-; and sets its Immediate flag
-	JSR _getWordLen
-
-	ORA #$80	; MSB set
-	STA (W),Y	; LEN
-		
-	JMP do_DROP
-
 _getWordLen:
 ; ( hdr -- hdr )
 ; store's WORD header's addr in W
@@ -1127,23 +830,6 @@ _getWordLen:
 	LDA (W),Y	; LEN
 	RTS
 
-defword "HERE",,
-; : HERE	DP @ ;
-; Primitive version!
-	; put DP in G1 in ZP
-	LDA #<DP
-	STA G1
-	LDA #>DP
-	STA G1+1
-	; Fetch HERE ie. (DP) and store in TOS
-	LDA (G1)
-	STA 0,X
-	LDY #1
-	LDA (G1),y
-	STA 1,X
-	;
-	JMP DEX2_NEXT
-
 defword "DP_STORE","DP!",
 	; put DP in G1 in ZP
 	LDA 2,X
@@ -1152,38 +838,6 @@ defword "DP_STORE","DP!",
 	STA DP+1
 	; 
 	JMP do_DROP
-
-defword "COMMA",",",
-; ( XX -- ) save a word XX to HERE and advance
-; HERE by 2
-; Primitive version!
-	; put DP in G1 in ZP
-	LDA DP
-	STA G1
-	LDA DP+1
-	STA G1+1
-	; save TOS in (DP)
-	LDA 2,X
-	STA (G1)
-	LDA 3,X
-	LDY #1
-	STA (G1),y
-	; Drop
-	INX
-	INX
-	; Advance HERE by 1 cell
-	BRA do_HEREPP
-
-defword "HEREPP","HERE++",
-; advance HERE by 1 cell (HERE+2 -> HERE)
-	CLC
-	LDA DP
-	ADC #2
-	STA DP
-	BCC @skip
-	INC DP+1
-@skip:
-	JMP NEXT
 
 defword "CCOMMA","C,",
 ; ( C -- ) save a byte C to HERE and advance
@@ -1498,14 +1152,6 @@ defword "SEMICOLON",";",1
 	
 	.ADDR do_SEMI
 
-defword "LATEST",,
-; ( -- LATEST )
-	LDA #<LATEST
-	STA 0,X
-	LDA #>LATEST
-	STA 1,X
-	JMP DEX2_NEXT
-
 defword "MODE",,
 ; ( -- MODE ) MODE is the addr, not the value!
 	LDA #<MODE
@@ -1518,21 +1164,6 @@ defword "ALLOT",,
 ; : ALLOT	HERE + DP ! ;
 	JMP do_COLON
 	.ADDR do_HERE, do_PLUS, do_DP_STORE
-	.ADDR do_SEMI
-
-defword "CFA",">CFA",
-	JMP do_COLON
-	; ( ADDR -- ADDR )
-	; takes the dictionary pointer to a word
-	; returns the codeword pointer
-	.ADDR do_2PLUS  ; 2+ ; skip prev. word link
-	.ADDR do_DUP, do_CFETCH 	; ( LEN ) with FLAG
-
-	.ADDR do_CLIT	;
-	.BYTE $1F		; ( LEN ) w/o FLAGs
-	.ADDR do_AND	;
-
-	.ADDR do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
 	.ADDR do_SEMI
 
 defword "SP",,
@@ -1570,97 +1201,6 @@ defword "CMOVE",,
 	TAX
 
 	JMP NEXT
-
-defword "WORD",,
-; Find next word in input buffer (and advance INP_IDX)
-; ( -- ADDR LEN )
-
-	; INPUT --> W
-;	LDA #<INPUT
-;	STA W
-;	LDA #>INPUT
-;	STA W+1
-
-@next1:
-	JSR _KEY
-	
-	CMP #' '
-	BEQ @next1
-
-	CMP #$0A
-	BEQ @return0		;--> tenemos que salir de WORD, dejando 2 0 ( 0 0 ) en el stack
-
-	CMP #$0D
-	BEQ @return0
-
-	CMP #'\'
-	BNE @startW
-
-	; here it's a \ comment
-@comment:
-	JSR _KEY
-
-	CMP #$0A
-	BEQ @return0		;--> tenemos que salir de WORD, dejando 2 0 ( 0 0 ) en el stack
-
-	CMP #$0D
-	BNE @comment
-	; fallthrough to @return0
-
-@return0:
-	lda BOOT
-	bne :+		; if boot<>0 (aka boot mode, we don't set the prompt to 1)
-	lda #1		; we mark 1 the OK flag
-	sta OK
-:
-	stz 0,X		; we push a 0 on the stack
-	stz 1,X
-	DEX
-	DEX
-	stz 0,X		; we push another 0 on the stack
-	stz 1,X
-	JMP DEX2_NEXT	; exit "WORD"
-
-; start of word
-@startW:
-	; First we store the ADDR on stack
-	LDA INP_IDX
-	STA G1	; we save Y in G1, temporarily
-	DEA
-	CLC
-	ADC W
-	STA 0,X
-	LDA W+1		;
-	ADC #0		; replace with BCC skip / INC ?
-	STA 1,X		;
-	DEX
-	DEX
-@next2:
-	JSR _KEY
-
-	CMP #' '
-	BEQ @endW
-
-	CMP #$0A
-	BEQ @return
-
-	CMP #$0D
-	BEQ @return
-
-	BRA @next2
-@return:
-	lda BOOT
-	bne @endW	; if boot<>0 (aka boot mode, we don't set the prompt to 1)
-	lda #1		; we mark 1 the OK flag
-	sta OK
-@endW:
-	; compute length
-	LDA INP_IDX
-	SEC
-	SBC G1	; earlier we saved INP_IDX in G1 ;)
-	STA 0,X
-	STZ 1,X
-	JMP DEX2_NEXT
 
 defword "KEY",,
 ; Give next char in Input buffer
@@ -1953,6 +1493,459 @@ defword "SQUOT","S(",1
 	.ADDR do_COMPILE, do_COUNT ; add COUNT to the definition
 	.ADDR do_SEMI
 	
+defword "DPRINT","D.",
+; Print a double cell number (in hex for now)
+; ( lo hi -- )
+	LDA 3,X
+	JSR print_byte
+	LDA 2,X
+	JSR print_byte
+	INX
+	INX
+	BRA do_PRINT	; fallback to "."
+
+defword "CPRINT","C.",
+; Print data on top of stack (in hex for now)
+; ( n -- )
+	BRA cprint
+
+defword "PRINT",".",
+; Print data on top of stack (in hex for now)
+; ( n -- )
+	LDA 3,X
+	JSR print_byte
+cprint:
+	LDA 2,X
+	JSR print_byte
+	LDA #' '
+	JSR putc
+	JMP do_DROP
+
+defword "MINUS","-",
+	SEC
+	LDA 4,X
+	SBC 2,X
+	STA 4,X
+	LDA 5,X
+	SBC 3,X
+	STA 5,X
+	JMP do_DROP
+
+defword "EQZ","0=",
+; 0=, it's also equivalent to "logical NOT" (not a bitwise NOT)
+; logical NOT --> use 0=
+; 0<> --> use 0= 0=  (twice!)
+
+; ( n -- bool )
+; TRUE  (FFFF) if n is 0000
+; FALSE (0000) otherwise
+	LDA 2,X
+	ORA 3,X
+	BEQ @true
+@false:	STZ 2,X
+	STZ 3,X
+	JMP NEXT
+@true:
+	LDA #$FF
+	STA 2,X
+	STA 3,X
+	JMP NEXT
+
+defword "NOT",,
+; ( a -- not(a) ) bitwise NOT
+	LDA 2,X
+	EOR #$FF
+	STA 2,X
+	LDA 3,X
+	EOR #$FF
+	STA 3,X
+	JMP NEXT
+
+defword "1PLUS","1+",
+	INC 2,X
+	BNE @skip
+	INC 3,X
+@skip:	JMP NEXT
+
+defword "AND",,
+; ( a b -- a&b ) bitwise AND
+	LDA 2,X
+	AND 4,X
+	STA 4,X
+	LDA 3,X
+	AND 5,X
+	STA 5,X
+	JMP do_DROP
+
+defword "LATEST",,
+; ( -- LATEST )
+	LDA #<LATEST
+	STA 0,X
+	LDA #>LATEST
+	STA 1,X
+	JMP DEX2_NEXT
+
+defword "FETCH","@",
+; @ ( ADDR -- value ) 
+; We read the data at the address on the 
+; stack and put the value on the stack
+	; copy address from stack to W
+	LDA 2,X	; LO
+	STA W
+	LDA 3,X	; HI
+	STA W+1
+	; Read data at (W) and save
+	; in the TOS
+	LDA (W)
+	STA 2,X
+	LDY #1
+	LDA (W),y
+	STA 3,X
+	JMP NEXT
+
+defword "SETIMM",,
+; ( hdr -- )
+; takes a header to a word in dictionary
+; and sets its Immediate flag
+	JSR _getWordLen
+
+	ORA #$80	; MSB set
+	STA (W),Y	; LEN
+		
+	JMP do_DROP
+
+defword "WORD",,
+; Find next word in input buffer (and advance INP_IDX)
+; ( -- ADDR LEN )
+
+@next1:
+	JSR _KEY
+	
+	CMP #' '
+	BEQ @next1
+
+	CMP #$0A
+	BEQ @return0		;--> tenemos que salir de WORD, dejando 2 0 ( 0 0 ) en el stack
+
+	CMP #$0D
+	BEQ @return0
+
+	CMP #'\'
+	BNE @startW
+
+	; here it's a \ comment
+@comment:
+	JSR _KEY
+
+	CMP #$0A
+	BEQ @return0		;--> tenemos que salir de WORD, dejando 2 0 ( 0 0 ) en el stack
+
+	CMP #$0D
+	BNE @comment
+	; fallthrough to @return0
+
+@return0:
+	lda BOOT
+	bne :+		; if boot<>0 (aka boot mode, we don't set the prompt to 1)
+	lda #1		; we mark 1 the OK flag
+	sta OK
+:
+	stz 0,X		; we push a 0 on the stack
+	stz 1,X
+	DEX
+	DEX
+	stz 0,X		; we push another 0 on the stack
+	stz 1,X
+	JMP DEX2_NEXT	; exit "WORD"
+
+; start of word
+@startW:
+	; First we store the ADDR on stack
+	LDA INP_IDX
+	STA G1	; we save Y in G1, temporarily
+	DEA
+	CLC
+	ADC W
+	STA 0,X
+	LDA W+1		;
+	ADC #0		; replace with BCC skip / INC ?
+	STA 1,X		;
+	DEX
+	DEX
+@next2:
+	JSR _KEY
+
+	CMP #' '
+	BEQ @endW
+
+	CMP #$0A
+	BEQ @return
+
+	CMP #$0D
+	BEQ @return
+
+	BRA @next2
+@return:
+	lda BOOT
+	bne @endW	; if boot<>0 (aka boot mode, we don't set the prompt to 1)
+	lda #1		; we mark 1 the OK flag
+	sta OK
+@endW:
+	; compute length
+	LDA INP_IDX
+	SEC
+	SBC G1	; earlier we saved INP_IDX in G1 ;)
+	STA 0,X
+	STZ 1,X
+	JMP DEX2_NEXT
+
+defword "FIND",,
+; ( ADDRi LEN -- ADDRo )
+; ADDRi: Address of a string
+; LEN: Length of the string (LO byte only)
+; ADDRo: Address of the header if Found
+; or 0000 if not found
+
+; Store the addr on the STACK in G2
+	LDA 4,X	; LO
+	STA G2
+	LDA 5,X	; HI
+	STA G2+1
+; store LATEST in W
+	LDA LATEST
+	STA W
+	LDA LATEST+1
+	STA W+1
+
+; shortcuts in FIND for ":" and ";"
+	LDA 2,X
+	CMP #1
+	BNE @nxt_word
+; 1 char word. here we test if the word is ":"
+	LDA (G2)
+	CMP #':'
+	BNE @not_colon
+	; word is ":"!!
+	LDA #<h_FCOLON
+	STA 4,X
+	LDA #>h_FCOLON
+	STA 5,X
+	JMP do_DROP
+@not_colon:
+	CMP #';'
+	BNE @not_semi
+	; word is ";"!!
+	LDA #<h_SEMICOLON
+	STA 4,X
+	LDA #>h_SEMICOLON
+	STA 5,X
+	JMP do_DROP
+@not_semi:
+@nxt_word:
+; store W+2 in G1 (G1 points to the counted str)
+	CLC
+	LDA W
+	ADC #HDR_OFFSET_STR
+	STA G1
+	LDA W+1		; replace with BCC skip / INC G1+1 ?
+	ADC #0		;
+	STA G1+1	;
+
+; compare length
+	LDA (G1)	; load current dictionay word's length
+	AND #$1F		; remove flags (3 MSB)
+	CMP 2,X		; compare to len on stack (1byte)
+	BNE @advance_w	; not same length, advance to next word
+; same length: compare str
+	; G1+1 --> G1 (now points to STR, not length)
+	CLC
+	INC G1
+	BNE @skip
+	INC G1+1
+@skip:	
+	TAY		; we previously loaded LEN in A --> Y
+	JSR STRCMP
+	BEQ @found
+
+; not found: look for next word in
+; dictionnary
+
+@advance_w:
+	; W points to the previous entry
+	; (W) -> W
+	LDA (W)
+	STA 0,X ; we store it there temporarily
+	LDY #1
+	LDA (W),Y
+	STA W+1
+	LDA 0,X
+	STA W
+	BNE @nxt_word
+	LDA W+1
+	BNE @nxt_word
+	; here: not found :(, we put 00 on stack and exit
+	STZ 4,x
+	STZ 5,x
+	JMP do_DROP
+	
+@found:	; ADDR is W -> TOS
+	LDA W
+	STA 4,X
+	LDA W+1
+	STA 5,X
+	JMP do_DROP
+
+defword "CFA",">CFA",
+	JMP do_COLON
+	; ( ADDR -- ADDR )
+	; takes the dictionary pointer to a word
+	; returns the codeword pointer
+	.ADDR do_2PLUS  ; 2+ ; skip prev. word link
+	.ADDR do_DUP, do_CFETCH 	; ( LEN ) with FLAG
+
+	.ADDR do_CLIT	;
+	.BYTE $1F		; ( LEN ) w/o FLAGs
+	.ADDR do_AND	;
+
+	.ADDR do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
+	.ADDR do_SEMI
+
+defword "0BR",,
+; Branch to Label if 0 on stack
+	LDA 2,X
+	ORA 3,X
+
+	BNE @not0
+	INX
+	INX
+	BRA do_JUMP	; 0?
+@not0:	
+
+; Now advance IP
+; IP+2 --> IP
+	CLC
+	LDA IP
+	ADC #2
+	STA IP
+	BCC @skip
+	INC IP+1
+@skip:
+
+	JMP do_DROP
+
+defword "JUMP",,
+; (IP) points to literal address to jump to
+; instead of next instruction ;)
+	; we push the addr to the Return Stack
+	LDY #1
+	LDA (IP),y
+	PHA
+	LDA (IP)
+	PHA
+	; and jump to do_SEMI to handle the rest ;)
+	JMP do_SEMI
+
+defword "HEREPP","HERE++",
+; advance HERE by 1 cell (HERE+2 -> HERE)
+	CLC
+	LDA DP
+	ADC #2
+	STA DP
+	BCC @skip
+	INC DP+1
+@skip:
+	JMP NEXT
+
+defword "COMMA",",",
+; ( XX -- ) save a word XX to HERE and advance
+; HERE by 2
+; Primitive version!
+	; put DP in G1 in ZP
+	LDA DP
+	STA G1
+	LDA DP+1
+	STA G1+1
+	; save TOS in (DP)
+	LDA 2,X
+	STA (G1)
+	LDA 3,X
+	LDY #1
+	STA (G1),y
+	; Drop
+	INX
+	INX
+	; Advance HERE by 1 cell
+	BRA do_HEREPP
+
+defword "LIT_COMMA_ALIAS", "LIT,"
+; this is an alias for COMPILE, shorter, so it occupies less space in the bootstrap code in ROM
+	JMP do_COLON
+	.ADDR do_JUMP, compile_addr
+
+defword "HERE",,
+; : HERE	DP @ ;
+; Primitive version!
+	; put DP in G1 in ZP
+	LDA #<DP
+	STA G1
+	LDA #>DP
+	STA G1+1
+	; Fetch HERE ie. (DP) and store in TOS
+	LDA (G1)
+	STA 0,X
+	LDY #1
+	LDA (G1),y
+	STA 1,X
+	;
+	JMP DEX2_NEXT
+
+defword "SWAP",,
+	LDA 2,X
+	LDY 4,X
+	STY 2,X
+	STA 4,X
+	LDA 3,X
+	LDY 5,X
+	STY 3,X
+	STA 5,X
+	JMP NEXT
+
+defword "CSTORE","C!",
+; C! ( value ADDR -- )
+	; copy the address to W
+	LDA 2,X	; LO
+	STA W
+	LDA 3,X	; HI
+	STA W+1
+	; save the value to (W)
+	; LO
+	LDA 4,X
+	STA (W)
+	BRA end_do_STORE
+
+defword "STORE","!",
+; ! ( value ADDR -- )
+	; copy the address to W
+	LDA 2,X	; LO
+	STA W
+	LDA 3,X	; HI
+	STA W+1
+	; save the value to (W)
+	; LO
+	LDA 4,X
+	STA (W)
+	; HI
+	LDY #1
+	LDA 5,X
+	STA (W),y
+end_do_STORE:		; used by CSTORE (below)
+	INX
+	INX
+	;INX       ; INX INX NEXT is do_DROP
+	;INX
+	;JMP NEXT 	
+	JMP do_DROP
+
 ;-----------------------------------------------------------------
 ; p_LATEST point to the latest defined word (using defword macro)
 p_LATEST = .ident(.sprintf("__word_%u", __word_last))
@@ -2188,7 +2181,7 @@ BOOT_PRG:
 	.BYTE " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 	.BYTE " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.BYTE " : ' WORD FIND >CFA ; " ; is this ever used?
-	.BYTE " : STOP BREAK ; IMMEDIATE "
+	; .BYTE " : STOP BREAK ; IMMEDIATE "
 
 	; LIT, is an alias for COMPILE, it's shorter ;)
 	.BYTE " : IF LIT, 0BR HERE HERE++ ; IMMEDIATE "
