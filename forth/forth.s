@@ -10,9 +10,9 @@ __word_0 = 0
 
 ; Macro to encode FORTH counted strings
 ; Answered at https://retrocomputing.stackexchange.com/a/20379/19750
-.macro CString str, immflag
-	.ifnblank immflag
-		.byte :++  -  :+  +128
+.macro CString str, flags
+	.ifnblank flags
+		.byte :++  -  :+  +flags
 	.else
 		; we diff the two unamed labels :++ and :+ --> the length
 		.byte :++  -  :+
@@ -23,21 +23,21 @@ __word_0 = 0
 
 ; macro for new word headers
 ; Answered at https://retrocomputing.stackexchange.com/a/20161/19750
-.macro defword label, strname, immflag
+.macro defword label, strname, flags
 	.ident (.sprintf("h_%s", label)):
 	.ident (.sprintf("__word_%u", __word_last + 1)):
 
 	.addr .ident(.sprintf("__word_%u", __word_last))
 	; this ifblank cascading can probably be enhanced...
 	.ifnblank strname
-		.ifnblank immflag
-			CString strname, immflag
+		.ifnblank flags
+			CString strname, flags
 		.else
 			CString strname
 		.endif
 	.else
-		.ifnblank immflag
-			CString label, immflag
+		.ifnblank flags
+			CString label, flags
 		.else
 			CString label
 		.endif
@@ -64,6 +64,9 @@ DTOP	= G1-2		; Stack TOP
 BKSPACE = $08 ; BACKSPACE = CTRL+BCKSPACE in LINUX (Python)
 MAX_LEN = $80		; Input Buffer MAX length, $80= 128 bytes
 BP   = $4000 - 2	; top of LOCALS stack (grows down). Right below the HW addr block
+
+IMMEDIATE_FLAG = $80
+HIDDEN_FLAG = $40
 
 ; Offset of the WORD name in the label
 ; 2 bytes after the Header's addr
@@ -987,7 +990,7 @@ noheader "STAR_UM_DIV_MOD"
 
 @fin:   JMP     do_DROP  ; When you're done, show one less cell on data stack
 
-defword "LBRAC","[",1
+defword "LBRAC","[",IMMEDIATE_FLAG
 ; ( -- ) switch to EXECUTE/IMMEDIATE mode
 	LDA #1
 	STA MODE
@@ -1141,7 +1144,7 @@ defword "VARIABLE",,
 	.ADDR do_LBRAC ; Exits Compilation mode
 	.ADDR do_SEMI
 
-defword "SEMICOLON",";",1
+defword "SEMICOLON",";",IMMEDIATE_FLAG
 ; Add's do_SEMI to header of word being defined
 ; and exits COMPILATION mode (1->MODE)
 	JMP do_COLON
@@ -1416,7 +1419,7 @@ defword "LEAVE",,
 	.ADDR do_TO_R	; push Next IP back to R
 	.ADDR do_SEMI
 
-defword "STATE","STATE",1
+defword "STATE","STATE",IMMEDIATE_FLAG
 ; Is it immediate/execution mode? 
 ; returns the value of variable MODE
 ; 0 : Compilation mode, <>0 : Execution mode
@@ -1430,7 +1433,7 @@ defword "STATE","STATE",1
 	JMP DEX2_NEXT
 
 
-defword "SQUOT","S(",1
+defword "SQUOT","S(",IMMEDIATE_FLAG
 ; ( -- ADDR )
 ; This S( word is to enter a string. It will return the address of a
 ; counted string, suitable to follow with COUNT TYPE
