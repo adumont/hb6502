@@ -802,6 +802,20 @@ defword "OR",,
 	STA 5,X
 	JMP do_DROP
 
+defword "REVEAL",,
+; ( -- ) Reveals (unhide) latest word. Used in ; and ;CODE.
+	JMP do_COLON
+	.ADDR do_LATEST, do_FETCH
+	.ADDR do_STAR_REVEAL
+	.ADDR do_DROP
+	.ADDR do_SEMI
+
+noheader "STAR_REVEAL"
+	JSR _getWordLen			; sets Y=2 and A=LEN field, (W),Y point to LEN field
+	AND #($FF-HIDDEN_FLAG)	; removes the HIDDEN_FLAG
+	STA (W),Y				; store back in LEN field
+	JMP NEXT
+
 defword "GETIMM",,
 ; ( hdr -- imm_flag )
 ; BEWARE: Returns 0 if word IS indeed immediate
@@ -1007,7 +1021,11 @@ noheader "STAR_HEADER"
 	.ADDR do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
 	.ADDR do_LATEST, do_STORE ; store "old HERE" in LATEST
 
-	.ADDR do_DUP, do_CCOMMA	; store LEN in Header
+	.ADDR do_DUP
+	.ADDR do_CLIT     ;\
+	.BYTE HIDDEN_FLAG ; | Sets the Hidden Flag (we OR with HIDDEN_FLAG)
+	.ADDR do_OR       ;/
+	.ADDR do_CCOMMA	; store LEN in Header
 	.ADDR do_DUP, do_NROT	; ( len addr len )
 	.ADDR do_HERE, do_SWAP, do_CMOVE ; store name
 	.ADDR do_ALLOT		; advance HERE by LEN
@@ -1062,6 +1080,8 @@ defword "MARKER",,
 	
 	.ADDR do_COMPILE, do_SEMI	; ;
 
+	.ADDR do_REVEAL
+
 	.ADDR do_SEMI
 
 defword "CODE",,
@@ -1075,6 +1095,7 @@ defword "CODE",,
 defword "END_CODE",";CODE",
 ; commit a JMP NEXT to close the primitive word
 	JMP do_COLON
+	.ADDR do_REVEAL
 	.ADDR do_STAR_COMMIT_JMP
 	.ADDR do_COMPILE, NEXT
 	.ADDR do_SEMI
@@ -1142,12 +1163,14 @@ defword "VARIABLE",,
 	.ADDR do_HERE, do_SWAP, do_STORE	; store the address right after the word into the address slot of the word
 	.ADDR do_PUSH1, do_1PLUS, do_ALLOT
 	.ADDR do_LBRAC ; Exits Compilation mode
+	.ADDR do_REVEAL
 	.ADDR do_SEMI
 
 defword "SEMICOLON",";",IMMEDIATE_FLAG
 ; Add's do_SEMI to header of word being defined
 ; and exits COMPILATION mode (1->MODE)
 	JMP do_COLON
+	.ADDR do_REVEAL
 	.ADDR do_COMPILE, do_SEMI	; commits do_SEMI addr
 	
 	;.ADDR do_PUSH1, do_LIT, MODE, do_CSTORE ; Exits Compilation mode
@@ -1612,7 +1635,7 @@ defword "SETIMM",,
 ; and sets its Immediate flag
 	JSR _getWordLen
 
-	ORA #$80	; MSB set
+	ORA #IMMEDIATE_FLAG	; MSB set
 	STA (W),Y	; LEN
 		
 	JMP do_DROP
@@ -1768,6 +1791,11 @@ defword "FIND",,
 
 ; compare length
 	LDA (G1)	; load current dictionay word's length
+	TAY			; save A in Y
+	AND #HIDDEN_FLAG
+	BNE @advance_w	; Hidden word! skip it
+
+	TYA			; restore A (current dictionay word's length)
 	AND #$1F		; remove flags (3 MSB)
 	CMP 2,X		; compare to len on stack (1byte)
 	BNE @advance_w	; not same length, advance to next word
@@ -2196,6 +2224,7 @@ BOOT_PRG:
 	.BYTE " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 	.BYTE " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.BYTE " : ' WORD FIND >CFA ; " ; is this ever used?
+	.BYTE " : [,] , ; IMMEDIATE "
 	; .BYTE " : STOP BREAK ; IMMEDIATE "
 
 	.BYTE " : CHAR 20 PARSE DROP C@ ;"
@@ -2279,15 +2308,15 @@ BOOT_PRG:
 ;	If you need 2 locals, use "2 LOCALS" then in the word you can use x,y
 ;   /!\ At the end of the word, we need to use -LOCALS to free the locals
 
-; 	Local variable storage grows downwards from 3FFF
+; 	Local variable storage grows downwards from BP (see address defined in assembly code)
 ; 	No safety checks are done to avoid running over the dictionary!
 
 	.BYTE " VARIABLE BP "		; defines BP variable (Base Pointer)
 	.BYTE .sprintf("%X", BP)	; put the address on the stack
 	.BYTE " BP !"
 
-	.BYTE " : LOCALS  BP @ DUP ROT 2* - DUP -ROT ! BP ! ;"
-	.BYTE " : -LOCALS BP DUP @ @ SWAP ! ;"
+	.BYTE " : LOCALS  BP @ DUP ROT 2* - DUP -ROT ! BP ! ;" ; ( n -- ) Allocates n local variables
+	.BYTE " : -LOCALS BP DUP @ @ SWAP ! ;" ; ( n -- ) Dellocates n local variables
 
 	.BYTE " : L@ BP @ + @ ;" ; ( n -- value) helper word to get local var n
 	.BYTE " : L! BP @ + ! ;" ; ( n -- value) helper word to save to local var n
@@ -2298,14 +2327,27 @@ BOOT_PRG:
 	.BYTE " : t 8 L@ ; : t! 8 L! ;"
 ; End of Local variables support
 
+	.BYTE " :NONAME SWAP C! ;" ; defined as noname to factor it, I can't find a name for that...
+	.BYTE " :NONAME 2+ DUP C@ ;" ; defined as noname to factor it, I can't find a name for that...
+	; the two NONAME words above leave their CFA on the stack. In the next 3 words (HIDDEN, HIDE, UNHIDE), we'll commit them using [,] (immediate ,).
+	; I use 2DUP to keep a copy of the 2 CFA until I won't need them anymore.
+	.BYTE " 2DUP : HIDDEN LATEST @ [,] 40 OR [,] ;" ; sets the latest word HIDDEN. The opposite of REVEAL.
+	.BYTE " 2DUP : HIDE [,] 40 OR [,] ;" ; ( hdr -- ) Hide a selected word from dictionary, takes the word's header addr (as given by FIND)
+	.BYTE " : UNHIDE [,] BF AND [,] ;" ; ( hdr -- ) Unhide a selected word from dictionary, takes the word's header addr (as given by FIND)
+
+	; Recursivity
+	; to do RECURSIVE words, we can force a REVEAL of a word by using [ REVEAL ] in its definition
+	; or uncomment this RECURSIVE definition and use it inside its definition:
+	; .BYTE " : RECURSIVE REVEAL ; IMMEDIATE "
+
 	.BYTE " : DUMP SWAP DUP . DO I C@ C. LOOP ; " ; ( addr1 addr2 -- ) dumps memory from addr1 to addr2
 
 ; .NAME ( hdr -- ) takes the addr of the header of a Word in dictionary and print its name
-	.BYTE " : .NAME DUP 2+ DUP C@ 1F AND SWAP 1+ SWAP TYPE ; "
+; it will also print a "*" after the word if the word is hidden in the dictionary
+	.BYTE " : .NAME DUP 2+ DUP C@ DUP 40 AND >R 1F AND SWAP 1+ SWAP TYPE R> IF SPACE 2A EMIT THEN ; "
 ; WORDS ( -- ) list all the words in the dictionary
 ; Format is : HEADER CFA NAME
 ; Press [qQ] to stop listing, any other key to continue (I use GETC to get a char from input)
-;	.BYTE " : WORDS LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR REPEAT DROP ; "
 	.BYTE " : WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 = IF 2DROP EXIT THEN DROP 0 THEN SWAP REPEAT 2DROP ; " ; 16 words per "page"
 
 	.BYTE " MARKER " ; so we can return to this point using FORGET
