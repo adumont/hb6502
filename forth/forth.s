@@ -1114,6 +1114,7 @@ defword "CREATE",,
 	.ADDR do_HEREPP	; Advance HERE by 1 cell (+2), we effectively leave an empty cell (again)
 	; now we patch the empty cell (*) we left after the LIT
 	.ADDR do_HERE, do_SWAP, do_STORE ; we store the addr in the first empty cell (*)
+	.ADDR do_REVEAL ; we reveal the word
 	.ADDR do_SEMI
 
 defword "DOES","DOES>",
