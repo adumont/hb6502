@@ -270,7 +270,7 @@ executeMode:
 	.ADDR do_JUMP, rsin ; reset input buffer
 
 removeW:
-	.ADDR do_LATEST, do_FETCH, do_FETCH ; LATEST @ @
+	.ADDR do_LAST, do_FETCH ; LATEST @ @
 	.ADDR do_LATEST, do_STORE           ; LATEST !
 	.ADDR do_JUMP, executeMode ; back to execute mode and reset input buffer
 
@@ -805,7 +805,7 @@ defword "OR",,
 defword "REVEAL",,
 ; ( -- ) Reveals (unhide) latest word. Used in ; and ;CODE.
 	JMP do_COLON
-	.ADDR do_LATEST, do_FETCH
+	.ADDR do_LAST
 	.ADDR do_STAR_REVEAL
 	.ADDR do_DROP
 	.ADDR do_SEMI
@@ -1018,7 +1018,7 @@ defword "RBRAC","]",
 noheader "STAR_HEADER"
 	JMP do_COLON
 	.ADDR do_HERE		; keep current HERE on stack
-	.ADDR do_LATEST, do_FETCH, do_COMMA ; store value of LATEST in the Link of new Header
+	.ADDR do_LAST, do_COMMA ; store value of LATEST in the Link of new Header
 	.ADDR do_LATEST, do_STORE ; store "old HERE" in LATEST
 
 	.ADDR do_DUP
@@ -1056,7 +1056,7 @@ defword "MARKER",,
 ; we encode the values of LATEST and HERE using LIT in the FORGET definition
 	JMP do_COLON
 	.ADDR do_HERE		; keep current HERE on stack
-	.ADDR do_LATEST, do_FETCH ;
+	.ADDR do_LAST ;
 
 	.ADDR do_LITSTR
 	CString "FORGET"	; commits counted string
@@ -1123,7 +1123,7 @@ defword "DOES","DOES>",
 ; DOES> will replace the last 2 cells with [do_JUMP][Addr], leaving the last word like this:
 ; [4C][do_COLON][LIT][addr][do_JUMP][Addr]
 	JMP do_COLON
-	.ADDR do_LATEST, do_FETCH, do_CFA		; get CFA of latest word (created with CREATE)
+	.ADDR do_LAST, do_CFA		; get CFA of latest word (created with CREATE)
 	.ADDR do_CLIT
 	.BYTE 7
 	.ADDR do_PLUS				; advance 7 bytes (1+3 cells, so we point to [do_SEMI] cell)
@@ -1609,6 +1609,20 @@ defword "LATEST",,
 	LDA #<LATEST
 	STA 0,X
 	LDA #>LATEST
+	STA 1,X
+	JMP DEX2_NEXT
+
+defword "LAST",,
+; ( -- ADDR ) returns header addr of last word in dict
+; equivalent to LATEST @
+	LDA #<LATEST
+	STA G1
+	LDA #>LATEST
+	STA G1+1
+	LDA (G1)
+	STA 0,X
+	LDY #1
+	LDA (G1),Y
 	STA 1,X
 	JMP DEX2_NEXT
 
@@ -2223,7 +2237,7 @@ BOOT_PRG:
 	.BYTE " : = - 0= ; "
 	.BYTE " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
 	.BYTE " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
-	.BYTE " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
+	.BYTE " : IMMEDIATE LAST SETIMM ; "	; sets the latest word IMMEDIATE
 	.BYTE " : ' WORD FIND >CFA ; " ; is this ever used?
 	.BYTE " : [,] , ; IMMEDIATE "
 	; .BYTE " : STOP BREAK ; IMMEDIATE "
