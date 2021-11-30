@@ -2332,9 +2332,9 @@ BOOT_PRG:
 	.BYTE " :NONAME 2+ DUP C@ ;" ; defined as noname to factor it, I can't find a name for that...
 	; the two NONAME words above leave their CFA on the stack. In the next 3 words (HIDDEN, HIDE, UNHIDE), we'll commit them using [,] (immediate ,).
 	; I use 2DUP to keep a copy of the 2 CFA until I won't need them anymore.
-	.BYTE " 2DUP : HIDDEN LATEST @ [,] 40 OR [,] ;" ; sets the latest word HIDDEN. The opposite of REVEAL.
 	.BYTE " 2DUP : HIDE [,] 40 OR [,] ;" ; ( hdr -- ) Hide a selected word from dictionary, takes the word's header addr (as given by FIND)
 	.BYTE " : UNHIDE [,] BF AND [,] ;" ; ( hdr -- ) Unhide a selected word from dictionary, takes the word's header addr (as given by FIND)
+	.BYTE " : HIDDEN LAST HIDE ;" ; sets the latest word HIDDEN. The opposite of REVEAL.
 
 	; Recursivity
 	; to do RECURSIVE words, we can force a REVEAL of a word by using [ REVEAL ] in its definition
