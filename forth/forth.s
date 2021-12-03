@@ -2055,7 +2055,10 @@ getline:
 	STA INPUT,y	; save char to INPUT
 	INY
 
-	CMP #$0D ; \n
+	CMP #$0A ; \n
+	BEQ @finish
+
+	CMP #$0D ; \r
 	BEQ @finish
 
 	JSR putc	; echo char
