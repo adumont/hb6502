@@ -17,6 +17,7 @@ endif
 %.bin: %.s #$(LIB)/interrupt.s $(LIB)/vectors.s $(LIB)/copydata.s
 	$(CL65) $(CLFLAGS) $(OPT) -Ln $*.lbl -o $@ $^
 	@echo Flash with: ../programmer/eeprom.py flash $@
+	@echo Flash with: minipro -p AT28C256 -w $@
 
 %.h: %.bin
 	#cp $< /tmp/rom.bin
