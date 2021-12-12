@@ -67,7 +67,7 @@ def cmd_run(args):
   print()
 
 parser = argparse.ArgumentParser(
-        description='Cerberus2080 Serial Programmer',
+        description='FORTH Serial Programmer',
         epilog='Written by @adumont')
 
 parser.add_argument('-p', '--port', help='USB port to use', default="/dev/ttyUSB0" )
@@ -114,7 +114,7 @@ if __name__ == '__main__':
       bytesize=serial.EIGHTBITS,
       timeout=0
   )
-  print("Connected to Cerberus on port: " + ser.portstr)
+  print("Connected to FORTH on port: " + ser.portstr)
 
   sleep(1)
 
