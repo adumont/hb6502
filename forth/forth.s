@@ -1398,7 +1398,9 @@ defword "STAR_LOOP","*LOOP",
 
 ; *LOOP should be followed by JUMP, ADDR
 ; where ADDR is the instruction after DO
-; *LOOP will with run it or bypass it
+; *LOOP will either run it (ie. jump back to DO) or bypass it (ie. leaving the DO LOOP)
+; // TODO rewrite in assembly 
+; Then NextIP won't be in R! but we can use W+6?
 
 	JMP do_COLON
 	.ADDR do_FROM_R	; get ADDR (NextIP). Right after LOOP is the JUMP back to DO, that we can bypass with *LOOP
@@ -1408,7 +1410,7 @@ defword "STAR_LOOP","*LOOP",
 	.ADDR do_FROM_R	; End
 	.ADDR do_OVER, do_OVER	; 2DUP	( ADDR I END I END )
 	.ADDR do_MINUS
-	.ADDR do_LIT, $1000
+	.ADDR do_LIT, $8000
 	.ADDR do_AND	; 0 iif END>=I, $1000 iif I>END
 	.ADDR do_EQZ	; invert
 	.ADDR do_0BR, @loop
