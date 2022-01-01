@@ -1396,38 +1396,75 @@ defword "STAR_LOOP","*LOOP",
 ; ( INC -- )
 ; Used by LOOP, +LOOP, takes the increment on the stack
 
-; *LOOP should be followed by JUMP, ADDR
-; where ADDR is the instruction after DO
+; *LOOP should be followed by [ADDR], so IP points to ADDR
+; where ADDR is the word after DO
 ; *LOOP will either run it (ie. jump back to DO) or bypass it (ie. leaving the DO LOOP)
-; // TODO rewrite in assembly 
-; Then NextIP won't be in R! but we can use W+6?
 
-	JMP do_COLON
-	.ADDR do_FROM_R	; get ADDR (NextIP). Right after LOOP is the JUMP back to DO, that we can bypass with *LOOP
-	.ADDR do_FROM_R	;           ( INC ADDR I )
-	.ADDR do_ROT	;           ( ADDR I INC )
-	.ADDR do_PLUS	; I=I+INC   ( ADDR I )
-	.ADDR do_FROM_R	; End
-	.ADDR do_OVER, do_OVER	; 2DUP	( ADDR I END I END )
-	.ADDR do_MINUS
-	.ADDR do_LIT, $8000
-	.ADDR do_AND	; 0 iif END>=I, $1000 iif I>END
-	.ADDR do_EQZ	; invert
-	.ADDR do_0BR, @loop
-; exit loop:
-	; ( ADDR I END )
-	.ADDR do_DROP, do_DROP ; ( )
-	.ADDR do_CLIT
-	.BYTE $04
-	.ADDR do_PLUS ; Add 4 to Next IP ( bypass jump do -> Exit DO-LOOP)
-	.ADDR do_TO_R ; push NextIP back to R
-	.ADDR do_SEMI ; jump over
+	; Copy INC (on ToS) to G1
+	LDA 2,X
+	STA G1
+	LDA 3,X
+	STA G1+1
 
-@loop:	; ( ADDR I END )
-	.ADDR do_TO_R	; push END back to R
-	.ADDR do_TO_R	; push I back to R
-	.ADDR do_TO_R	; push NextIP back to R
-	.ADDR do_SEMI
+	; Drop INC from ToS
+	INX
+	INX
+	; Save X to G2
+	TXA
+	STA G2
+
+	TSX
+	; END and I (of DO/LOOP) are on the 6502 stack, after transfering S to X
+	; we can now address them like that:
+	; $104,X $103,X [ END ]
+	; $102,X $101,X [  I  ]
+
+	; Add INC to I: I+INC -> I
+	CLC
+	LDA G1
+	ADC $101,X
+	STA $101,X
+	LDA G1+1
+	ADC $102,X
+	STA $102,X
+
+	; Compare I to END
+	; LDA $102,X	; HI I ; we can skip that line, as $102,X is in A already!
+	CMP $104,X	; HI END
+	BNE :+
+	LDA $101,X	; LO I
+	CMP $103,X	; LO END
+:	BMI @loop_again
+
+; Here we exit the LOOP
+	; Remove I and END from 6502 Hw Stack
+	INX	; INX is only 2 cycles, vs PLA 4 cycles
+	INX
+	INX
+	INX
+	TXS
+	; Restore X from G2
+	LDA G2
+	TAX
+
+	; Skip over the [ADDR]
+	; IP+2 --> IP
+	CLC
+	LDA IP
+	ADC #2		; A<-A+2
+	STA IP
+	BCC :+
+	INC IP+1
+:	JMP NEXT
+
+@loop_again:
+	; Restore X from G2
+	LDA G2
+	TAX
+
+	; IP just happen to point to [ADDR]!
+	; now we call JUMP
+	JMP do_JUMP
 
 defword "LEAVE",,
 ; ( -- )
@@ -2283,8 +2320,8 @@ BOOT_PRG:
 
 ; DO LOOP
 	.BYTE " : DO LIT, *DO HERE ; IMMEDIATE " ;
-	.BYTE " : LOOP LIT, 1  LIT, *LOOP  LIT, JUMP , ; IMMEDIATE " ;
-	.BYTE " : +LOOP LIT, *LOOP LIT, JUMP , ; IMMEDIATE " ;
+	.BYTE " : LOOP LIT, 1 LIT, *LOOP , ; IMMEDIATE " ;
+	.BYTE " : +LOOP LIT, *LOOP , ; IMMEDIATE " ;
 	.BYTE " : LEAVE R> DROP R@ >R ; " ;
 
 ; Test DO-LOOP
