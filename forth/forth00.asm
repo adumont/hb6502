@@ -105,7 +105,7 @@ forth_prog:
 	.DW do_LIT, h_LBRAC, do_SETIMM
 	.DW do_LIT, h_SQUOT, do_SETIMM
 
-;	.DW do_DUP, do_PRINT, do_CRLF	; print
+;	.DW do_DUP, do_PRINT, do_CR	; print
 
 ; Print version string
 	.DW do_LIT, VERS_STR
@@ -472,6 +472,42 @@ do_LIT:
 	INC IP+1
 .skip:
 	JMP DEX2_NEXT
+
+do_STAR_LIT_COMMA: ; NOT IN THE DICTIONARY
+; like doing LIT, addr, COMMA
+; we call do_STAR_LIT_COMMA, addr
+	; put HERE in G1
+	LDA DP
+	STA G1
+	LDA DP+1
+	STA G1+1
+
+	; copy what's at IP to HERE
+	LDA (IP)
+	STA (G1)
+	LDY #1
+	LDA (IP),y
+	STA (G1),y
+
+	; HERE+2 -> HERE
+	CLC
+	LDA DP
+	ADC #2
+	STA DP
+	BCC .label1
+	STA DP+1
+.label1:
+; Now advance IP
+; IP+2 --> IP
+	CLC
+	LDA IP
+	ADC #2
+	STA IP
+	BCC .label2
+	INC IP+1
+.label2:
+	JMP NEXT
+
 
 h_DUP:
 	.DW h_LIT
@@ -986,7 +1022,7 @@ do_SPACE:
 ; Print a new line	( -- )
 h_CRLF:
 	.DW h_SPACE
-	.STR "CRLF"
+	.STR "CR"
 do_CRLF:
 	JSR _crlf
 	JMP NEXT
@@ -1747,36 +1783,78 @@ do_STAR_LOOP:
 ; ( INC -- )
 ; Used by LOOP, +LOOP, takes the increment on the stack
 
-; *LOOP should be followed by JUMP, ADDR
-; where ADDR is the instruction after DO
-; *LOOP will with run it or bypass it
+; *LOOP should be followed by [ADDR] (2 cells)
+; where ADDR is the word after DO
+; *LOOP will either run it (ie. jump back to DO) or bypass it (ie. leaving the DO LOOP)
+; // Assembly version
 
-	JMP do_COLON
-	.DW do_FROM_R	; get ADDR (NextIP). Right after LOOP is the JUMP back to DO, that we can bypass with *LOOP
-	.DW do_FROM_R	;           ( INC ADDR I )
-	.DW do_ROT	;           ( ADDR I INC )
-	.DW do_PLUS	; I=I+INC   ( ADDR I )
-	.DW do_FROM_R	; End
-	.DW do_OVER, do_OVER	; 2DUP	( ADDR I END I END )
-	.DW do_MINUS
-	.DW do_LIT, $1000
-	.DW do_AND	; 0 iif END>=I, $1000 iif I>END
-	.DW do_EQZ	; invert
-	.DW do_0BR, .loop
-; exit loop:
-	; ( ADDR I END )
-	.DW do_DROP, do_DROP ; ( )
-	.DW do_CLIT
-	.DB $04
-	.DW do_PLUS ; Add 4 to Next IP ( bypass jump do -> Exit DO-LOOP)
-	.DW do_TO_R ; push NextIP back to R
-	.DW do_SEMI
+	; Copy INC (on ToS) to G1
+	LDA 2,X
+	STA G1
+	LDA 3,X
+	STA G1+1
 
-.loop:	; ( ADDR I END )
-	.DW do_TO_R	; push END back to R
-	.DW do_TO_R	; push I back to R
-	.DW do_TO_R	; push NextIP back to R
-	.DW do_SEMI
+	; Drop INC from ToS
+	INX
+	INX
+	; Save X to G2
+	TXA
+	STA G2
+
+	TSX
+	; END and I (of DO/LOOP) are on the 6502 stack, after transfering S to X
+	; we can now address them like that:
+	; $104,X $103,X [ END ]
+	; $102,X $101,X [  I  ]
+
+	; Add INC to I: I+INC -> I
+	CLC
+	LDA G1
+	ADC $101,X
+	STA $101,X
+	LDA G1+1
+	ADC $102,X
+	STA $102,X
+
+	; Compare I to END
+	; LDA $102,X	; HI I ; we can skip that line, as $102,X is in A already!
+	CMP $104,X	; HI END
+	BNE .skip
+	LDA $101,X	; LO I
+	CMP $103,X	; LO END
+.skip:
+	BMI .loop_again
+
+; Here we exit the LOOP
+	; Remove I and END from 6502 Hw Stack
+	INX	; INX is only 2 cycles, vs PLA 4 cycles
+	INX
+	INX
+	INX
+	TXS
+	; Restore X from G2
+	LDA G2
+	TAX
+
+	; Skip over the [ADDR]
+	; IP+2 --> IP
+	CLC
+	LDA IP
+	ADC #2		; A<-A+2
+	STA IP
+	BCC .skip2
+	INC IP+1
+.skip2:
+	JMP NEXT
+
+.loop_again:
+	; Restore X from G2
+	LDA G2
+	TAX
+
+	; IP just happen to point to [ADDR]!
+	; now we call JUMP
+	JMP do_JUMP
 
 h_IS_IMM:
 	.DW h_STAR_LOOP
@@ -2108,18 +2186,18 @@ BOOT_PRG:
 ;	.DB " : IMM? MODE C@ ; " ; 0: COMPILATION mode, 1 EXEC/IMMEDIATE mode
  
 ; Test BEGIN UNTIL
-;	.DB " : T 5 BEGIN DUP . CRLF 1 - DUP 0= UNTIL ; T "
+;	.DB " : T 5 BEGIN DUP . CR 1 - DUP 0= UNTIL ; T "
 
 	.DB " : WHILE LIT, 0BR HERE LIT, 0 ; IMMEDIATE "
 	.DB " : REPEAT LIT, JUMP SWAP , HERE SWAP ! ; IMMEDIATE "
 	
 ; Test BEGIN WHILE REPEAT
-;	.DB " : TBWR 6 BEGIN DUP 1 - DUP WHILE DUP . CRLF REPEAT ; TBWR "
+;	.DB " : TBWR 6 BEGIN DUP 1 - DUP WHILE DUP . CR REPEAT ; TBWR "
 
 ; DO LOOP
 	.DB " : DO LIT, *DO HERE ; IMMEDIATE " ;
-	.DB " : LOOP LIT, 1  LIT, *LOOP  LIT, JUMP , ; IMMEDIATE " ;
-	.DB " : +LOOP LIT, *LOOP LIT, JUMP , ; IMMEDIATE " ;
+	.DB " : LOOP LIT, 1 LIT, *LOOP , ; IMMEDIATE " ;
+	.DB " : +LOOP LIT, *LOOP , ; IMMEDIATE " ;
 
 ; Test DO-LOOP
 ;	.DB " : TEST1 4 1 DO I . LOOP ; " ; Count from 1 to 5
@@ -2132,7 +2210,7 @@ BOOT_PRG:
 	.DB " : PICK 1+ 1+ 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
 	.DB " : DEPTH F4 SP - 2/ ; "
 	.DB " : CLS BEGIN DEPTH WHILE DROP REPEAT ; " ; CLear Stack
-	.DB " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CRLF THEN DROP ; " ; print stack, leave cells on stack
+	.DB " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CR THEN DROP ; " ; print stack, leave cells on stack
 
 	; Double version of stack words
 	.DB " : 2SWAP >R -ROT R> -ROT ; "
@@ -2158,7 +2236,7 @@ BOOT_PRG:
 
 	.DB " MARKER " ; so we can return to this point using FORGET
 
-	.DB " S( READY) TYPE CRLF "
+	.DB " S( READY) TYPE CR "
 
 	.DB $00
 
