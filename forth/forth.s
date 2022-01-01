@@ -1370,7 +1370,14 @@ defword "LITSTR",,
 @skip:
 	JMP DEX2_NEXT
 
-defword "STAR_DO","*DO",
+defword "DO",,IMMEDIATE_FLAG
+;  : DO LIT, *DO HERE ; IMMEDIATE
+	JMP do_COLON
+	.ADDR do_COMPILE, do_STAR_DO
+	.ADDR do_HERE
+	.ADDR do_SEMI
+
+noheader "STAR_DO"
 ; ( end start -- )
 ; Used by DO
 ; We don't use >R as it would mean being a colon word, and that would
@@ -1392,7 +1399,7 @@ defword "STAR_DO","*DO",
 	; drop end
 	JMP do_DROP
 
-defword "STAR_LOOP","*LOOP",
+noheader "STAR_LOOP"
 ; ( INC -- )
 ; Used by LOOP, +LOOP, takes the increment on the stack
 
@@ -1465,6 +1472,21 @@ defword "STAR_LOOP","*LOOP",
 	; IP just happen to point to [ADDR]!
 	; now we call JUMP
 	JMP do_JUMP
+
+defword "LOOP",,IMMEDIATE_FLAG
+;  : LOOP LIT, 1 LIT, *LOOP , ; IMMEDIATE
+	JMP do_COLON
+	.ADDR do_COMPILE, do_PUSH1
+	.ADDR do_JUMP, call_from_do_LOOP	; we fallback into +LOOP
+	; it's a small penalty at compile time, but code is more compact in ROM
+
+defword "PLUS_LOOP","+LOOP",IMMEDIATE_FLAG
+;  : +LOOP LIT, *LOOP , ; IMMEDIATE " ;
+	JMP do_COLON
+call_from_do_LOOP:
+	.ADDR do_COMPILE, do_STAR_LOOP
+	.ADDR do_COMMA
+	.ADDR do_SEMI
 
 defword "LEAVE",,
 ; ( -- )
@@ -2319,9 +2341,9 @@ BOOT_PRG:
 ;	.BYTE " : T 6 BEGIN 1 - DUP WHILE DUP . REPEAT DROP ; T "
 
 ; DO LOOP
-	.BYTE " : DO LIT, *DO HERE ; IMMEDIATE " ;
-	.BYTE " : LOOP LIT, 1 LIT, *LOOP , ; IMMEDIATE " ;
-	.BYTE " : +LOOP LIT, *LOOP , ; IMMEDIATE " ;
+;	.BYTE " : DO LIT, *DO HERE ; IMMEDIATE " ;
+;	.BYTE " : LOOP LIT, 1 LIT, *LOOP , ; IMMEDIATE " ;
+;	.BYTE " : +LOOP LIT, *LOOP , ; IMMEDIATE " ;
 	.BYTE " : LEAVE R> DROP R@ >R ; " ;
 
 ; Test DO-LOOP
