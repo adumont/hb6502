@@ -2344,7 +2344,6 @@ BOOT_PRG:
 ;	.BYTE " : DO LIT, *DO HERE ; IMMEDIATE " ;
 ;	.BYTE " : LOOP LIT, 1 LIT, *LOOP , ; IMMEDIATE " ;
 ;	.BYTE " : +LOOP LIT, *LOOP , ; IMMEDIATE " ;
-	.BYTE " : LEAVE R> DROP R@ >R ; " ;
 
 ; Test DO-LOOP
 ;	.BYTE " : TEST1 6 1 DO I . LOOP ; TEST1 " ; Count from 1 to 5
