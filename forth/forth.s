@@ -1508,15 +1508,10 @@ defword "STATE","STATE",IMMEDIATE_FLAG
 ; Is it immediate/execution mode? 
 ; returns the value of variable MODE
 ; 0 : Compilation mode, <>0 : Execution mode
-	LDA #<MODE
-	STA G1
-	LDA #>MODE
-	STA G1+1
-	LDA (G1)
+	LDA MODE
 	STA 0,X
 	STZ 1,X
 	JMP DEX2_NEXT
-
 
 defword "SQUOT","S(",IMMEDIATE_FLAG
 ; ( -- ADDR )
@@ -2004,16 +1999,10 @@ defword "LIT_COMMA_ALIAS", "LIT,"
 defword "HERE",,
 ; : HERE	DP @ ;
 ; Primitive version!
-	; put DP in G1 in ZP
-	LDA #<DP
-	STA G1
-	LDA #>DP
-	STA G1+1
 	; Fetch HERE ie. (DP) and store in TOS
-	LDA (G1)
+	LDA DP
 	STA 0,X
-	LDY #1
-	LDA (G1),y
+	LDA DP+1
 	STA 1,X
 	;
 	JMP DEX2_NEXT
