@@ -448,9 +448,45 @@ do_DHALF:
 	ROR 4,X
 	JMP NEXT
 
+
+h_COMPILE:
+	.DW h_DHALF
+	.STR "LIT,"
+do_COMPILE:
+	; IP points to the [ADDR] that we want to commit
+	; put DP in G1 in ZP
+	LDA DP
+	STA G1
+	LDA DP+1
+	STA G1+1
+	; (IP)-->(DP)
+	LDY #1
+	LDA (IP)
+	STA (G1)
+	LDA (IP),y
+	STA (G1),y
+	; Add 2 to G2
+	CLC
+	LDA IP
+	ADC #2
+	STA IP
+	BCC .skip2
+	INC IP+1
+.skip2:
+	; Advance Here by 2 (same code as HEREPP)
+	CLC
+	LDA DP
+	ADC #2
+	STA DP
+	BCC .skip
+	INC DP+1
+.skip:
+	JMP NEXT
+
+
 ; Push a literal word (2 bytes)
 h_LIT:
-	.DW h_DHALF
+	.DW h_COMPILE
 	.STR "LIT"
 do_LIT:
 ; (IP) points to literal
@@ -2152,7 +2188,7 @@ BOOT_PRG:
 	.DB " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
 	.DB " : 0< 8000 AND ; " ; ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 	.DB " : 2* DUP + ; "
-	.DB " : LIT, R> DUP @ , 1+ 1+ >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
+;	.DB " : LIT, R> DUP @ , 1+ 1+ >R ; " ; COMPILEs the next word to the colon definition at run time (called in an IMMEDIATE word)
 	.DB " : IMMEDIATE LATEST @ SETIMM ; "	; sets the latest word IMMEDIATE
 	.DB " : ' WORD FIND >CFA ; "
 	.DB " : STOP BREAK ; IMMEDIATE "

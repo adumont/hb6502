@@ -498,13 +498,53 @@ defword "DHALF","D2/",
 	ROR 4,X
 	JMP NEXT
 
-defword "COMPILE",
+; defword "COMPILE",,
+; ; like doing LIT, addr, COMMA
+; ; we call COMPILE, addr
+; 	JMP do_COLON
+; compile_addr:	; label so we we can jump here from the alias "LIT,"
+; 	.ADDR do_FROM_R, do_DUP, do_FETCH, do_COMMA, do_2PLUS, do_TO_R ; COMPILE R> DUP @ , CELL+ >R
+; 	.ADDR do_SEMI
+
+defword "LIT_COMMA_ALIAS", "LIT,"
+; this is an alias for COMPILE, shorter, so it occupies less space in the bootstrap code in ROM
+	JMP compile_addr
+
+defword "COMPILE",,
 ; like doing LIT, addr, COMMA
 ; we call COMPILE, addr
-	JMP do_COLON
 compile_addr:	; label so we we can jump here from the alias "LIT,"
-	.ADDR do_FROM_R, do_DUP, do_FETCH, do_COMMA, do_2PLUS, do_TO_R ; COMPILE R> DUP @ , CELL+ >R
-	.ADDR do_SEMI
+	; IP points to the [ADDR] that we want to commit
+	; put DP in G1 in ZP
+	LDA DP
+	STA G1
+	LDA DP+1
+	STA G1+1
+	; (IP)-->(DP)
+	LDY #1
+	LDA (IP)
+	STA (G1)
+	LDA (IP),y
+	STA (G1),y
+	; Add 2 to G2
+	CLC
+	LDA IP
+	ADC #2
+	STA IP
+	BCC @skip2
+	INC IP+1
+@skip2:
+	; Advance Here by 2 (same code as HEREPP)
+	; I could replace this by JMP do_HEREPP or BRA do_HEREPP
+	; but when I tried and measured it added more clock cycles...
+	CLC
+	LDA DP
+	ADC #2
+	STA DP
+	BCC @skip
+	INC DP+1
+@skip:
+	JMP NEXT
 
 defword "LIT",,
 ; Push a literal word (2 bytes)
@@ -1987,11 +2027,6 @@ defword "COMMA",",",
 	INX
 	; Advance HERE by 1 cell
 	BRA do_HEREPP
-
-defword "LIT_COMMA_ALIAS", "LIT,"
-; this is an alias for COMPILE, shorter, so it occupies less space in the bootstrap code in ROM
-	JMP do_COLON
-	.ADDR do_JUMP, compile_addr
 
 defword "HERE",,
 ; : HERE	DP @ ;
