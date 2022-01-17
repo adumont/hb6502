@@ -1945,19 +1945,32 @@ defword "FIND",,
 	JMP do_DROP
 
 defword "CFA",">CFA",
-	JMP do_COLON
-	; ( ADDR -- ADDR )
-	; takes the dictionary pointer to a word
-	; returns the codeword pointer
-	.ADDR do_2PLUS  ; 2+ ; skip prev. word link
-	.ADDR do_DUP, do_CFETCH 	; ( LEN ) with FLAG
+	; ( HDR -- CFA )
+	; takes the addr to the header of a word
+	; returns the code field address pointer
 
-	.ADDR do_CLIT	;
-	.BYTE $1F		; ( LEN ) w/o FLAGs
-	.ADDR do_AND	;
+	; ToS + 2 --> W
+	CLC
+	LDA 2,X
+	ADC #2
+	STA W
+	LDA 3,X
+	ADC #0
+	STA W+1
 
-	.ADDR do_1PLUS, do_PLUS ; DUP c@ 1+ +	; add length
-	.ADDR do_SEMI
+	; get length+flags byte
+	LDA (W)
+	AND #$1F	; remove flags, keep only length
+	INA
+
+	; W + length --> ToS
+	CLC
+	ADC W
+	STA 2,X
+	LDA W+1
+	ADC #0
+	STA 3,X
+	JMP NEXT
 
 defword "0BR",,
 ; Branch to Label if 0 on stack
