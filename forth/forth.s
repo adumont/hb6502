@@ -202,25 +202,25 @@ loop1:
 @skipOK:
 
 	.ADDR do_WORD	; ( addr len )
-	.ADDR do_OVER, do_OVER	; 2DUP ( addr len addr len )
+	.ADDR do_2DUP	; ( addr len addr len )
 
 	.ADDR do_OR, do_EQZ, do_0BR, @cont ; If WORD didn't returned 2 "0", we continue
 
 ; else we loop for a new word
-	.ADDR do_DROP, do_DROP
+	.ADDR do_2DROP
 	.ADDR do_JUMP, loop1
 
 @cont:
-	.ADDR do_OVER, do_OVER	; 2DUP ( addr len addr len )
+	.ADDR do_2DUP	; 2DUP ( addr len addr len )
 
-;	.ADDR do_OVER, do_OVER, do_TYPE	; DEBUG: Show TOKEN
+;	.ADDR do_2DUP, do_TYPE	; DEBUG: Show TOKEN
 
 	.ADDR do_FIND ; ( addr len hdr )
 	.ADDR do_DUP  ; ( addr len hdr hdr )
 	.ADDR do_0BR, numscan ; Not a word? Goto numscan
 
 ; Found a word! ( addr len hdr )
-	.ADDR do_NROT, do_DROP, do_DROP ; ( hdr ) header of the word
+	.ADDR do_NROT, do_2DROP ; ( hdr ) header of the word
 
 	.ADDR do_STATE   ; ( hdr MODE ) 0: compile, 1 execute
 
@@ -249,7 +249,7 @@ compile:
 
 numscan:
 	.ADDR do_DROP ; ( addr len )
-	.ADDR do_OVER, do_OVER ; 2DUP ( addr len addr len )
+	.ADDR do_2DUP ; 2DUP ( addr len addr len )
 	.ADDR do_NUMBER ; ( addr len n ) n or garbage if ERROR
 
 	.ADDR do_LIT, ERROR  ; ( addr len n Addr )
@@ -281,7 +281,7 @@ removeW:
 	.ADDR do_JUMP, executeMode ; back to execute mode and reset input buffer
 
 cleanStack:  ; ( addr len n )
-	.ADDR do_NROT, do_DROP, do_DROP ; ( n )
+	.ADDR do_NROT, do_2DROP ; ( n )
 	
 	; here we have the number N on the stack.
 	; are we in compilation mode?
@@ -367,6 +367,20 @@ noheader "RSIN"
 	STZ INP_IDX
 	JMP NEXT
 
+defword "2DUP",,
+; ( a b -- a b a b )
+	DEX
+	DEX
+	LDA 7,X
+	STA 3,X
+	LDA 6,X
+	STA 2,X
+	LDA 5,X
+	STA 1,X
+	LDA 4,X
+	STA 0,X
+	JMP DEX2_NEXT
+
 defword "ROT",,
 ; ( x y z -- y z x )
 ; X, stack 2 -> W
@@ -422,6 +436,11 @@ defword "OVER",,
 	LDA 5,X
 	STA 1,X
 	JMP DEX2_NEXT
+
+defword "2DROP",,
+	INX
+	INX
+	BRA do_DROP
 
 defword "DROP",,
 	INX
@@ -1467,7 +1486,7 @@ noheader "STAR_SKIP_DO"
 	; (addr of the next word is stored in the next cell)
 @skip:
 	; skip_over_the_loop:
-	.ADDR do_DROP, do_DROP	; we drop end & start as we won't use them
+	.ADDR do_2DROP	; we drop end & start as we won't use them
 	.ADDR do_FROM_R, do_FETCH, do_TO_R ; get the addr to skip over the DO/LOOP (and push it back to R)  R> @ >R
 	.ADDR do_SEMI
 
@@ -2472,8 +2491,6 @@ BOOT_PRG:
 
 	; Double version of stack words
 	.BYTE " : 2SWAP >R -ROT R> -ROT ; "
-	.BYTE " : 2DUP OVER OVER ; "
-	.BYTE " : 2DROP DROP DROP ; "
 	.BYTE " : 2ROT >R >R 2SWAP R> R> 2SWAP ; "
 	.BYTE " : 2>R R> -ROT SWAP >R >R >R ; "
 	.BYTE " : 2R> R> R> R> SWAP ROT >R ; "
