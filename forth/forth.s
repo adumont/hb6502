@@ -845,19 +845,56 @@ defword "OR",,
 	STA 5,X
 	JMP do_DROP
 
+; Routine used by REVEAL / HIDDEN
+_LenOfLastWord:
+; store the last WORD header's addr in W
+; set Y to 2.
+; (W),Y point to LEN field (including Immediate flag)
+; returns LEN in A
+	LDA #<LATEST
+	STA G1
+	LDA #>LATEST
+	STA G1+1
+	;
+	LDA (G1)
+	STA W
+	LDY #1
+	LDA (G1),y
+	STA W+1
+	;
+	LDY #2
+	LDA (W),Y	; LEN
+	RTS
+
 defword "REVEAL",,
 ; ( -- ) Reveals (unhide) latest word. Used in ; and ;CODE.
-	JMP do_COLON
-	.ADDR do_LAST
-	.ADDR do_STAR_REVEAL
-	.ADDR do_DROP
-	.ADDR do_SEMI
-
-noheader "STAR_REVEAL"
-	JSR _getWordLen			; sets Y=2 and A=LEN field, (W),Y point to LEN field
+	JSR _LenOfLastWord
 	AND #($FF-HIDDEN_FLAG)	; removes the HIDDEN_FLAG
 	STA (W),Y				; store back in LEN field
 	JMP NEXT
+
+defword "HIDDEN",,
+; ( -- ) Reveals (unhide) latest word. Used in ; and ;CODE.
+	JSR _LenOfLastWord
+	ORA #(HIDDEN_FLAG)		; sets the HIDDEN_FLAG
+	STA (W),Y				; store back in LEN field
+	JMP NEXT
+
+defword "HIDE",,
+; Hide a selected word from dictionary, takes the word's header addr (as given by FIND)
+; ( HDR -- )
+	JSR _getWordLen
+	ORA #(HIDDEN_FLAG)		; sets the HIDDEN_FLAG
+	STA (W),Y				; store back in LEN field
+	JMP do_DROP
+
+defword "UNHIDE",,
+; Unhide a selected word from dictionary, takes the word's header addr (as given by FIND)
+; ( HDR -- )
+	JSR _getWordLen
+	AND #($FF-HIDDEN_FLAG)	; removes the HIDDEN_FLAG
+	STA (W),Y				; store back in LEN field
+	JMP do_DROP
 
 defword "GETIMM",,
 ; ( hdr -- imm_flag )
@@ -878,7 +915,7 @@ defword "GETIMM",,
 _getWordLen:
 ; ( hdr -- hdr )
 ; store's WORD header's addr in W
-; set Y to 2. 
+; set Y to 2.
 ; (W),Y point to LEN field (including Immediate flag)
 ; returns LEN in A
 	LDA 2,X
@@ -2432,14 +2469,6 @@ BOOT_PRG:
 	.BYTE " : z 6 L@ ; : z! 6 L! ;"
 	.BYTE " : t 8 L@ ; : t! 8 L! ;"
 ; End of Local variables support
-
-	.BYTE " :NONAME SWAP C! ;" ; defined as noname to factor it, I can't find a name for that...
-	.BYTE " :NONAME 2+ DUP C@ ;" ; defined as noname to factor it, I can't find a name for that...
-	; the two NONAME words above leave their CFA on the stack. In the next 3 words (HIDDEN, HIDE, UNHIDE), we'll commit them using [,] (immediate ,).
-	; I use 2DUP to keep a copy of the 2 CFA until I won't need them anymore.
-	.BYTE " 2DUP : HIDE [,] 40 OR [,] ;" ; ( hdr -- ) Hide a selected word from dictionary, takes the word's header addr (as given by FIND)
-	.BYTE " : UNHIDE [,] BF AND [,] ;" ; ( hdr -- ) Unhide a selected word from dictionary, takes the word's header addr (as given by FIND)
-	.BYTE " : HIDDEN LAST HIDE ;" ; sets the latest word HIDDEN. The opposite of REVEAL.
 
 	; Recursivity
 	; to do RECURSIVE words, we can force a REVEAL of a word by using [ REVEAL ] in its definition
