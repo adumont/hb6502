@@ -1440,9 +1440,41 @@ defword "LITSTR",,
 @skip:
 	JMP DEX2_NEXT
 
+defword "QDO","?DO",IMMEDIATE_FLAG
+; ( end start -- )
+; ?DO will only enter the loop if end != start
+; If end == start, the loop will be skipped
+	JMP do_COLON
+	.ADDR do_COMPILE, do_STAR_SKIP_DO
+	.ADDR do_HERE	; ADDR of slot for the 0BR jump's addr, we'll use it in LOOP
+	.ADDR do_HEREPP	; advance Here by 1 cell
+	.ADDR do_COMPILE, do_STAR_DO
+	.ADDR do_HERE	; ADDR of start of do/loop
+	.ADDR do_SEMI
+
+noheader "STAR_SKIP_DO"
+; ( end start -- )
+; Used by ?DO
+	JMP do_COLON
+	.ADDR do_OVER, do_OVER	; ( end start end start )
+	.ADDR do_MINUS			; ( end start flag )
+	.ADDR do_0BR, @skip
+	; skip over address and we enter the DO loop
+	.ADDR do_FROM_R, do_2PLUS, do_TO_R
+	.ADDR do_SEMI
+	; Here we handle the case where end=start
+	; we have to skip the loop. The addr where to resume execution
+	; (addr of the next word is stored in the next cell)
+@skip:
+	; skip_over_the_loop:
+	.ADDR do_DROP, do_DROP	; we drop end & start as we won't use them
+	.ADDR do_FROM_R, do_FETCH, do_TO_R ; get the addr to skip over the DO/LOOP (and push it back to R)  R> @ >R
+	.ADDR do_SEMI
+
 defword "DO",,IMMEDIATE_FLAG
 ;  : DO LIT, *DO HERE ; IMMEDIATE
 	JMP do_COLON
+	.ADDR do_PUSH0	; we leave a 0000. Not a valid ADDR. We'll use it in LOOP to know if it was a DO or ?DO
 	.ADDR do_COMPILE, do_STAR_DO
 	.ADDR do_HERE
 	.ADDR do_SEMI
@@ -1556,6 +1588,16 @@ defword "PLUS_LOOP","+LOOP",IMMEDIATE_FLAG
 call_from_do_LOOP:
 	.ADDR do_COMPILE, do_STAR_LOOP
 	.ADDR do_COMMA
+
+; support for ?DO
+	; here we take the value in ToS: 0000 --> skip
+	; not 0000 --> assume the addr where to store back the ADDR of HERE at <-- this very point of the execution!
+	.ADDR do_DUP
+	.ADDR do_0BR, @end_do_loop
+	.ADDR do_HERE, do_SWAP, do_STORE	; we store this Addr (HERE) = addr of "after the LOOP" into the corresponding ?DO 0BR branch slot
+	.ADDR do_SEMI
+@end_do_loop:
+	.ADDR do_DROP
 	.ADDR do_SEMI
 
 defword "LEAVE",,
