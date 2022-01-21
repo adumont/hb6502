@@ -16,8 +16,12 @@ endif
 
 %.bin: %.s #$(LIB)/interrupt.s $(LIB)/vectors.s $(LIB)/copydata.s
 	$(CL65) $(CLFLAGS) $(OPT) -Ln $*.lbl -o $@ $^
-	@echo Flash with: ../programmer/eeprom.py flash $@
-	@echo Flash with: minipro -p AT28C256 -w $@
+	@echo
+	@if [ -z "$(ACIA)" ]; \
+	then echo Run with: ./py65forth.py -r $@ ;\
+	else echo "Flash with: minipro -p AT28C256 -w $@" ;\
+       echo "   or with: ../programmer/eeprom.py flash $@" ;\
+	fi
 
 %.h: %.bin
 	#cp $< /tmp/rom.bin
