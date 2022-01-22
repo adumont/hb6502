@@ -1475,8 +1475,8 @@ noheader "STAR_SKIP_DO"
 ; ( end start -- )
 ; Used by ?DO
 	JMP do_COLON
-	.ADDR do_OVER, do_OVER	; ( end start end start )
-	.ADDR do_MINUS			; ( end start flag )
+	.ADDR do_2DUP		; ( end start end start )
+	.ADDR do_MINUS		; ( end start flag )
 	.ADDR do_0BR, @skip
 	; skip over address and we enter the DO loop
 	.ADDR do_FROM_R, do_2PLUS, do_TO_R
