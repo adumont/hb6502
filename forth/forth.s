@@ -1439,6 +1439,33 @@ defword "FIND",,
 	STA 5,X
 	JMP do_DROP
 @not_semi:
+	CMP #'@'
+	BNE @not_fetch
+	; word is "@"
+	LDA #<h_FETCH
+	STA 4,X
+	LDA #>h_FETCH
+	STA 5,X
+	JMP do_DROP
+@not_fetch:
+	CMP #'!'
+	BNE @not_store
+	; word is "!"
+	LDA #<h_STORE
+	STA 4,X
+	LDA #>h_STORE
+	STA 5,X
+	JMP do_DROP
+@not_store:
+	CMP #','
+	BNE @not_comma
+	; word is ","
+	LDA #<h_COMMA
+	STA 4,X
+	LDA #>h_COMMA
+	STA 5,X
+	JMP do_DROP
+@not_comma:
 @nxt_word:
 ; store W+2 in G1 (G1 points to the counted str)
 	CLC
