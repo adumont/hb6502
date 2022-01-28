@@ -2492,7 +2492,7 @@ BOOT_PRG:
 ;	.BYTE " : TEST1 6 1 DO I . LOOP ; TEST1 " ; Count from 1 to 5
 ;	.BYTE " : TEST2 A 0 DO I . 2 +LOOP ; TEST2 " ; Count from 0 to 8, 2 by 2
 
-	.BYTE " : >D DUP 0< IF FFFF ELSE 0 THEN ; " ; Extends signed cell into signed double
+	.BYTE " : >D DUP 0< 0= 0= ; " ; Extends signed cell into signed double (0= 0= will convert any non 0 into FFFF)
 
 	; UM+     ( un1 un2 -- ud )
 	;  Add two unsigned single numbers and return a double sum
