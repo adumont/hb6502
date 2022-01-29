@@ -978,7 +978,7 @@ defword "VARIABLE",,
 	.ADDR do_HEREPP	; Advance HERE by 1 cell (+2), we effectively leave an empty cell
 	.ADDR do_COMPILE, do_SEMI	; word is complete
 	.ADDR do_HERE, do_SWAP, do_STORE	; store the address right after the word into the address slot of the word
-	.ADDR do_PUSH1, do_1PLUS, do_ALLOT
+	.ADDR do_HEREPP	; HERE++
 	.ADDR do_LBRAC ; Exits Compilation mode
 	.ADDR do_REVEAL
 	.ADDR do_SEMI
