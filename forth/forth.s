@@ -1415,6 +1415,10 @@ defword "FIND",,
 	LDA LATEST+1
 	STA W+1
 
+	lda BOOT			; Shortcuts are only available in BOOT mode	
+	beq @nxt_word		; after boot mode, I disable them. 
+						; shortcuts made it impossible to redefine those words
+
 ; shortcuts in FIND for ":" and ";"
 	LDA 2,X
 	CMP #1
