@@ -916,7 +916,7 @@ defword "END_CODE",";CODE",
 	.ADDR do_COMPILE, NEXT
 	.ADDR do_SEMI
 
-noheader "CREATED",,
+noheader "CREATED"
 ; : CREATED R> DUP 4 + SWAP >R ;
 ; we extract the addr of next cell, and add 2 --> it's the PFA
 	JMP do_COLON
