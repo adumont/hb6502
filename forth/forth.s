@@ -916,36 +916,36 @@ defword "END_CODE",";CODE",
 	.ADDR do_COMPILE, NEXT
 	.ADDR do_SEMI
 
+noheader "CREATED",,
+; : CREATED R> DUP 4 + SWAP >R ;
+; we extract the addr of next cell, and add 2 --> it's the PFA
+	JMP do_COLON
+	.ADDR do_FROM_R, do_DUP, do_2PLUS
+; then we fetch it, and effectively jump to it. By default it's a do_SEMI.
+; if the word was patched by DOES>, it's the DOES> clause addr.
+	.ADDR do_SWAP, do_FETCH, do_TO_R
+	.ADDR do_SEMI
+
 defword "CREATE",,
 	JMP do_COLON
 	.ADDR do_CODE				; creates an empty header
 	.ADDR do_STAR_COMMIT_JMP 	; adds JMP
 	.ADDR do_COMPILE, do_COLON	; compiles do_COLON
-	.ADDR do_COMPILE, do_LIT	; compiles do_LIT
-	.ADDR do_HERE ; leave HERE on the stack, we'll need it later to fill this slot cell ;)
-	.ADDR do_HEREPP	; Advance HERE by 1 cell (+2), we effectively leave the first empty cell (*)
-	; now we'll fill two cells: one for SEMI, another free for now.
-	; when we call DOES> it will patch them and overwrite them with [do_JUMP][someAddr]
-	.ADDR do_COMPILE, do_SEMI
-	.ADDR do_HEREPP	; Advance HERE by 1 cell (+2), we effectively leave an empty cell (again)
-	; now we patch the empty cell (*) we left after the LIT
-	.ADDR do_HERE, do_SWAP, do_STORE ; we store the addr in the first empty cell (*)
+	.ADDR do_COMPILE, do_CREATED; compiles do_CREATED
+	.ADDR do_COMPILE, @addr_to_do_SEMI	; we start with SEMI , later DOES> can patch it to
 	.ADDR do_REVEAL ; we reveal the word
+@addr_to_do_SEMI:	; trick: we use this label to store into the created word the address to a do_SEMI call. It will be retrieved by CREATED and pushed to R-stack
 	.ADDR do_SEMI
 
 defword "DOES","DOES>",
-; the last word supposedly created by CREATE is made of a byte and 4 cells:
-; [4C][do_COLON][LIT][addr][do_SEMI][xxxx]
-; DOES> will replace the last 2 cells with [do_JUMP][Addr], leaving the last word like this:
-; [4C][do_COLON][LIT][addr][do_JUMP][Addr]
+; the last word supposedly created by CREATE is made of a byte and 3 cells:
+; [4C][do_COLON][CREATED][ADDR]
+; DOES> will replace the last cell with the ADDR of the DOES> clause. CREATED will "jump" into it.
 	JMP do_COLON
 	.ADDR do_LAST, do_CFA		; get CFA of latest word (created with CREATE)
 	.ADDR do_CLIT
-	.BYTE 7
+	.BYTE 5
 	.ADDR do_PLUS				; advance 7 bytes (1+3 cells, so we point to [do_SEMI] cell)
-	.ADDR do_LIT, do_JUMP
-	.ADDR do_OVER, do_STORE		; overwrite the []do_SEMI cell with a [JUMP]
-	.ADDR do_2PLUS				; advance 1 more cell
 	.ADDR do_FROM_R				; pull next word in compiled definition (right after DOES>)
 	.ADDR do_SWAP, do_STORE		; store it in last cell!
 	.ADDR do_SEMI
