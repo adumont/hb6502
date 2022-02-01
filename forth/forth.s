@@ -1212,7 +1212,7 @@ defword "LEAVE",,
 	.ADDR do_TO_R	; push Next IP back to R
 	.ADDR do_SEMI
 
-defword "STATE","STATE",IMMEDIATE_FLAG
+defword "STATE","?EXEC"		; Renamed as ?EXEC as it's 1 if EXEC mode
 ; Is it immediate/execution mode? 
 ; returns the value of variable MODE
 ; 0 : Compilation mode, <>0 : Execution mode
