@@ -614,6 +614,13 @@ defword "DMINUS","D-",
 	INX
 	JMP do_DROP
 
+defword "QDUP","?DUP",
+	LDA 2,X
+	EOR 3,X
+	BEQ :+
+	JMP do_DUP
+:	JMP NEXT
+
 defword "I",,
 ; I is same code as R@
 	BRA do_R_AT
