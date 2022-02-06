@@ -318,6 +318,31 @@ noheader "FETCH_OK"
 	stz 1,x
 	JMP DEX2_NEXT
 
+defword "SP_STORE","SP!",
+	LDA 2,X
+	TAX
+	JMP DEX2_NEXT
+
+defword "RP_FETCH","RP@",
+; RP@ : put the Return Stack Pointer on ToS
+	PHX	;\   This decrements SP by 1
+	TSX	; \
+	INX	;  | Increment X to get the original SP
+	TXA	; /  Put 6502 SP into A
+	PLX	;/ 	 Restore X
+	STA 0,X
+	STZ 1,X
+	JMP DEX2_NEXT
+
+defword "RP_STORE","RP!",
+; RP! : Take LO from ToS and store it in RP
+	STX G1	; save X to G1
+	LDA 2,X	; load ToS LO to A
+	TAX		; and transfer to X
+	TXS		; then to SP
+	LDX G1	; finally restore X from G1
+	JMP do_DROP
+
 defword "DECPRINT","DEC.",
 ; ( n -- )
 ; Print the number in decimal form
