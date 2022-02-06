@@ -596,7 +596,7 @@ defword "I",,
 defword "R_AT","R@",
 ; R@ : copy the cell from the Return Stack
 ; to the Stack
-	PHX 	;\
+	PHX	;\
 	TSX	; \ 
 	TXA	;  | put SP into Y
 	TAY	; / (a bit involved...)
