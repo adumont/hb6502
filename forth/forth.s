@@ -1940,7 +1940,7 @@ defword "ROT",,
 	STA 3,X
 	JMP NEXT
 
-defword "SP",,
+defword "SP_FETCH","SP@",
 ; Put Data Stack Pointer on the stack
 	TXA
 	INA
@@ -2560,10 +2560,10 @@ BOOT_PRG:
 
 ; some more stack words
 	.BYTE " : NIP SWAP DROP ; " ; ( x1 x0 -- x0 ) removes second on stack
-	.BYTE " : PICK 1+ 2* SP + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
+	.BYTE " : PICK 1+ 2* SP@ + @ ; " ; ( xn ... x1 x0 n -- xn ... x1 x0 xn ) , removes n, push copy of xn on top. n>=0
 	.BYTE " : DEPTH "
 	.BYTE .sprintf("%X", DTOP)
-	.BYTE  " SP - 2/ ; "
+	.BYTE  " SP@ - 2/ ; "
 	.BYTE " : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CR THEN DROP ; " ; print stack, leave cells on stack
 
 	; Double version of stack words
