@@ -2653,6 +2653,13 @@ BOOT_PRG:
 ; Press [qQ] to stop listing, any other key to continue (I use GETC to get a char from input)
 	.BYTE " : WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 = IF 2DROP EXIT THEN DROP 0 THEN SWAP REPEAT 2DROP ; " ; 16 words per "page"
 
+	.BYTE " : VALUE CREATE , DOES> @ ;"
+	.BYTE " : CONSTANT VALUE ;"
+	.BYTE " : TO ' 7 + ?EXEC IF ! ELSE LIT, LIT , LIT, ! THEN ; IMMEDIATE"
+	.BYTE " : DEFER CREATE 0 , DOES> @ EXEC ;"
+	.BYTE " : POSTPONE ' , ; IMMEDIATE"
+	.BYTE " : IS POSTPONE TO ; IMMEDIATE"
+
 	.BYTE " MARKER " ; so we can return to this point using FORGET
 	.BYTE " PRMP" ; Shows ok prompt to user
 
