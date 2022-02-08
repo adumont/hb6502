@@ -801,10 +801,12 @@ defword "CCOMMA","C,",
 ; Primitive version!
 	; save TOS in (DP), only LO byte
 	LDA 2,X
-	STA (DP)
 	; Drop TOS
 	INX
 	INX
+	; commit to dictionary
+shortcut_ccomma:
+	STA (DP)
 	; Advance HERE by 1 byte
 	CLC
 	LDA DP
@@ -912,14 +914,11 @@ defword "PRMP",,
 @skip:
 	.ADDR do_SEMI
 
-do_STAR_COMMIT_JMP:
-; store a 4C (JMP) into the word
-	JMP do_COLON
-	.ADDR do_CLIT	;
-	.BYTE $4C		; store a 4C (JMP)
-	.ADDR do_CCOMMA	;
-	.ADDR do_SEMI
-
+noheader "STAR_COMMIT_JMP"
+; stores a 4C (JMP) into the word being defined
+; and advances HERE
+	LDA #$4C	; opcode for JMP
+	JMP shortcut_ccomma
 
 defword "MARKER",,
 ; When called, MARKER creates a new word on the dictionary called FORGET
