@@ -33,6 +33,9 @@ def cpuThread(ch, queue):
 
     def putc(address, value):
         try:
+            if value==0x08:
+                sys.stdout.write(chr(value))
+                sys.stdout.write(' ')
             sys.stdout.write(chr(value))
         except UnicodeEncodeError: # Python 3
             sys.stdout.write("?")
