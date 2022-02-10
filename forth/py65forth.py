@@ -28,10 +28,14 @@ def signal_handler(signum, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 def cpuThread(ch, queue):
+    started = False
+
     def load(memory, start_address, bytes):
         memory[start_address:start_address + len(bytes)] = bytes
 
     def putc(address, value):
+        if not started:
+            return
         try:
             if value==0x08:
                 sys.stdout.write(chr(value))
@@ -84,6 +88,8 @@ def cpuThread(ch, queue):
     load(mpu.memory, args.addr, program)
 
     mpu.pc=getWord(mpu.RESET)
+
+    started = True
 
     while True:
         mpu.step()
