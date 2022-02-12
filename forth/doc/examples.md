@@ -268,6 +268,8 @@ And we add the logic into our `TRACE`:
 
 We can implement [CATCH](https://forth-standard.org/standard/exception/CATCH) and [THROW](https://forth-standard.org/standard/exception/THROW):
 
+Interesting article about [How Forth implements exceptions](https://niedzejkob.p4.team/bootstrap/throw-catch/).
+
 ```
 VARIABLE HANDLER 0 HANDLER ! \ last exception handler
 
