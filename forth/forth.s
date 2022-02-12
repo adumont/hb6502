@@ -1024,18 +1024,12 @@ prep_cfa:	; jump from noname
 	.ADDR do_SEMI
 
 defword "VARIABLE",,
-; get next TOKEN in INPUT and creates
-; a Header for a new word
+; : VARIABLE CREATE 0 , ;
+; Creates a variable, initialized to 0
 	JMP do_COLON
-	.ADDR do_FCOLON	; creates a Forth colon word's header
-	.ADDR do_COMPILE, do_LIT
-	.ADDR do_HERE		; put HERE on the stack
-	.ADDR do_HEREPP	; Advance HERE by 1 cell (+2), we effectively leave an empty cell
-	.ADDR do_COMPILE, do_SEMI	; word is complete
-	.ADDR do_HERE, do_SWAP, do_STORE	; store the address right after the word into the address slot of the word
-	.ADDR do_HEREPP	; HERE++
-	.ADDR do_LBRAC ; Exits Compilation mode
-	.ADDR do_REVEAL
+	.ADDR do_CREATE
+	.ADDR do_PUSH0
+	.ADDR do_COMMA
 	.ADDR do_SEMI
 
 defword "SEMICOLON",";",IMMEDIATE_FLAG
