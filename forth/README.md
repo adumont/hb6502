@@ -5,6 +5,7 @@
 - [Implementation notes](#implementation-notes)
 	- [Direct Threaded Code](#direct-threaded-code)
 	- [Stacks](#stacks)
+	- [Anatomy of compiled words](#anatomy-of-compiled-words)
 - [Try it!](#try-it)
 	- [Examples](#examples)
 - [How to build](#how-to-build)
@@ -158,10 +159,6 @@ To Do
 
 ![](./imgs/extractSymbols.png)
 
-### Anatomy of compiled words
-
-See [this page](doc/anatomy.md) to see the anatomy different examples of compiled words.
-
 ## Stacks
 
 ### Data Stack
@@ -225,6 +222,10 @@ Each call to `LOCALS` will create a new stack frame made of:
 - 1 cell per local variable
 
 Implementation is 100% made in FORTH in the bootstrap code (see [hb6502@d76eaec](https://github.com/adumont/hb6502/commit/d76eaecc93ba2ea9235a7a79540a4dca0a3a6cad#diff-a0410665e1d6f9fcce04ae1870c02c3718b27058590c6f8c40d5284e46e2b626R1967)). If not used, the whole block can be commented out to save RAM.
+
+## Anatomy of compiled words
+
+See [this page](doc/anatomy.md) to see the anatomy different examples of compiled words.
 
 # Try it!
 
