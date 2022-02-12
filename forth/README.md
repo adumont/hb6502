@@ -402,13 +402,30 @@ pu rtscts           No
 
 ## Build for py65 simulator
 
-Instructions to build and run the forth.bin py65 simulator:
+Instructions to build and run the forth.bin in the py65 simulator:
 
 ```
 make forth.bin
 
 ./py65forth.py
 ```
+
+### Options of the emulator
+
+The py65forth emulator will load the forth.bin rom by default. It's possible to load a different rom using `-r`, also to a different base address using `-a`.
+
+The user can also specify a FORTH source file to load at boot time using the `-l` option.
+
+```
+usage: py65forth.py [-h] [-r ROM] [-a ADDR] [-l LOAD]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r ROM, --rom ROM     binary rom file
+  -a ADDR, --addr ADDR  address to load to
+  -l LOAD, --load LOAD  forth program to load
+```
+
 
 # References
 
