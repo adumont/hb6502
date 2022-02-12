@@ -237,6 +237,8 @@ Notice:
 
 ## Examples
 
+Here are some very simple examples. For more advanced example and tecniques, see [examples.md](doc/examples.md).
+
 ### Hello world
 
 ```

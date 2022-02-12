@@ -16,8 +16,8 @@ This page collects some random unclassified examples and code snippets of AlexFO
 \ Comparison operators
 \ ( a b -- f )
 : < - 0< ;
-: <= < 0= ;
 : > SWAP < ;
+: <= > 0= ;
 : >= SWAP <= ;
 ```
 
