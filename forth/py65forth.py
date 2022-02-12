@@ -15,6 +15,7 @@ from py65.utils import console
 parser = argparse.ArgumentParser()
 parser.add_argument('-r','--rom', help='binary rom file', default="forth.bin")
 parser.add_argument('-a','--addr', help='address to load to', default=0x8000)
+parser.add_argument('-l','--load', help='forth program to load')
 args = parser.parse_args()
 
 getc_addr=0xF004
@@ -97,6 +98,14 @@ def cpuThread(ch, queue):
 t=threading.Thread( target=cpuThread, args=("", queue))
 t.daemon = True
 t.start()
+
+if args.load:
+    f = open(args.load, 'r')
+    program = f.read()
+    f.close()
+
+    for c in program:
+        queue.put( ord(c) )
 
 while True:
     char = console.getch(sys.stdin)
