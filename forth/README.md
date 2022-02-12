@@ -158,6 +158,10 @@ To Do
 
 ![](./imgs/extractSymbols.png)
 
+### Anatomy of compiled words
+
+See [this page](doc/anatomy.md) to see the anatomy different examples of compiled words.
+
 ## Stacks
 
 ### Data Stack
