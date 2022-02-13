@@ -2653,6 +2653,8 @@ BOOT_PRG:
 	.BYTE " : POSTPONE ' , ; IMMEDIATE"
 	.BYTE " : IS POSTPONE TO ; IMMEDIATE"
 
+	.BYTE " : .( [ ' S( , ] ?EXEC IF TYPE ELSE LIT, TYPE THEN ; IMMEDIATE"
+
 	.BYTE " MARKER " ; so we can return to this point using FORGET
 	.BYTE " PRMP" ; Shows ok prompt to user
 
