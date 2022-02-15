@@ -44,25 +44,43 @@ ok SDUMP
 
 ## User input
 
+### CHAR
+
+`CHAR` is immediate, it relies on `KEY` and reads the next char, and commit it to the dictionary after a `CLIT` (when in compile mode). Interpret semantics is like `KEY`.
+
+```
+: CHAR ?EXEC IF KEY ELSE LIT, CLIT KEY C, THEN ; IMMEDIATE
+```
+
 ### Ask for alfanumeric strings
 
 ```forth
+\ Allocate a string buffer, 32 chars
 VARIABLE STR 20 ALLOT
 
-: ASK$ ( ADDR -- ) \ store the counted string to ADDR
-  1 LOCALS x!
-  0A PARSE DUP x C! x 1+ SWAP CMOVE -LOCALS ;
+: PLACE ( SRC CNT DST )
+  \ Copy string to DST
+  2DUP C!
+  1+ SWAP CMOVE
+;
 
-STR ASK$ \ store the string in STR
+: ASK$ ( ADDR -- )
+  \ store the counted string to ADDR
+  0A PARSE ROT PLACE
+;
+
+\ Example 1: Ask and store the string in STR
+STR ASK$
 
 : TEST$
   3 0 DO
     \ Show question
-    S( What's your name? ) TYPE
+    .( What's your name? )
     \ Ask the answer and store it in STR
     STR ASK$ 
     \ Reply with a greeting :)
-    S( Hello ) TYPE STR COUNT TYPE CR
+    .( Hello )
+    STR COUNT TYPE CR
   LOOP
 ;
 ```
@@ -78,11 +96,11 @@ STR ASK$ \ store the string in STR
 : TEST#
   3 0 DO
     \ Show question
-    S( What's your age? ) TYPE
+    .( What's your age? )
     \ Ask for the answer and return the number on the stack
     ASK#
     \ Reply using the number
-    S( Your age is ) TYPE . CR
+    .( Your age is ) . CR
   LOOP
 ;
 ```
