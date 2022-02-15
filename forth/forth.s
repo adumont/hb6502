@@ -125,6 +125,7 @@ RES_vec:
 	
 ; This is a Direct Threaded Code based FORTH
 	
+entry_point:
 ; Load the entry point of our main FORTH
 ; program and start execution (with JMP NEXT)
 	; Place forth_prog ADDR into IP register
@@ -2513,8 +2514,23 @@ hex16toBCD:
 ; Interrupts routines
 
 IRQ_vec:
-NMI_vec:
 	RTI
+NMI_vec:
+	; this NMI service routine will allow the user to get control back and drop into
+	; the interpreter. In the emulator, it's called when pressing teh ESC key
+	; If the computer was in BOOT mode (still interpreting the bootstrap code) it will drop out of boot mode
+	; Stack and return stack will be reset
+	; User will be presented again with the versions strings and the ok prompt
+	; All memory and dictionary should be available as left when the NMI was triggered
+	CLD             ; clear decimal mode
+	LDX #$FF
+	STX MODE		; set MODE to FF --> reset to exec mode
+	STX OK			; set the OK flag so the prompt shows
+	STZ BOOT		; force not in BOOT mode. that allow to force interrupt out of boot mode
+	TXS             ; set the stack pointer
+	LDX #DTOP
+	CLI
+	JMP entry_point
 
 VERS_STR: CString {"ALEX FORTH v0", $0A, "(c) 2021-2022 Alex Dumont", $0A}
 WHAT_STR: CString {" ?", $0A}
