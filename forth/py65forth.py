@@ -6,6 +6,7 @@ import time
 import threading
 from queue import Queue, Empty
 import signal
+import curses
 
 from py65.devices.mpu65c02 import MPU as CMOS65C02
 from py65.memory import ObservableMemory
@@ -35,8 +36,6 @@ int_queue = Queue()
 
 def signal_handler(signum, frame):
     exit()
-
-signal.signal(signal.SIGINT, signal_handler)
 
 def cpuThread(ch, queue, int_queue):
     started = False
@@ -123,22 +122,36 @@ def cpuThread(ch, queue, int_queue):
 
         mpu.step()
 
-t=threading.Thread( target=cpuThread, args=("", queue, int_queue))
-t.daemon = True
-t.start()
+def main(stdscr):
+    stdscr.keypad(True)     # receive special messages.
 
-if args.load:
-    f = open(args.load, 'r')
-    program = f.read()
-    f.close()
+    t=threading.Thread( target=cpuThread, args=("", queue, int_queue))
+    t.daemon = True
+    t.start()
 
-    for c in program:
-        queue.put( ord(c) )
+    if args.load:
+        f = open(args.load, 'r')
+        program = f.read()
+        f.close()
 
-while True:
-    char = console.getch(sys.stdin)
-    if char:
-        if ord(char) == 0x1b:    # ESC
+        for c in program:
+            queue.put( ord(c) )
+
+    while True:
+        key = stdscr.getch()
+        if key == 0x1b:     # ESC
             int_queue.put(0)     # Send an NMI signal to the thread
+
+        elif key == 0x107:  # Backspace key in REPL.it
+            queue.put( 0x08 )    # we send the normal 0x08 supported by our code
+
         else:
-            queue.put( ord(char) )
+            queue.put( key )
+
+if __name__ == '__main__':
+    # Must happen BEFORE calling the wrapper, else escape key has a 1 second delay after pressing:
+    os.environ.setdefault('ESCDELAY','100') # in mS; default: 1000
+
+    signal.signal(signal.SIGINT, signal_handler)
+
+    curses.wrapper(main)
