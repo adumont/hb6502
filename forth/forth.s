@@ -2532,8 +2532,8 @@ NMI_vec:
 	CLI
 	JMP entry_point
 
-VERS_STR: CString {"ALEX FORTH v0", $0A, "(c) 2021-2022 Alex Dumont", $0A}
-WHAT_STR: CString {" ?", $0A}
+VERS_STR: CString {"ALEX FORTH v0", $0A, $0D, "(c) 2021-2022 Alex Dumont", $0A, $0D}
+WHAT_STR: CString {" ?", $0A, $0D}
 OK_STR: CString {"ok "}
 
 ; Bootstrap code:
