@@ -7,6 +7,7 @@
   - [FORTH Decompiler](#forth-decompiler)
   - [Debugging & Tracing](#debugging--tracing)
   - [Exceptions (THROW / CATCH)](#exceptions-throw--catch)
+  - [Free Memory](#free-memory)
 
 This page collects some random unclassified examples and code snippets of AlexFORTH code, and shows how to do some advanced things.
 
@@ -320,4 +321,12 @@ VARIABLE HANDLER 0 HANDLER ! \ last exception handler
 : TEST-CATCH LIT TEST-THROW CATCH ;
 
 TEST-CATCH
+```
+
+## Free Memory
+
+`FREE` will print the available memory (between the upper end of dictionary and the lower end of the local variable stack)
+
+```
+: FREE BP @ 2+ HERE - DEC. .( BYTES FREE) CR ;
 ```
