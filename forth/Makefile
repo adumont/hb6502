@@ -8,8 +8,13 @@ XXD_ARGS = -i
 LIB=lib
 
 ifdef ACIA
-  OPT:= --asm-define ACIA
+  OPT:=$(OPT) --asm-define ACIA
 endif
+
+ifdef LINKING
+  OPT:=$(OPT) --asm-define LINKING
+endif
+
 
 %.hex: %.bin
 	$(HEXDUMP) $(HEXDUMP_ARGS) $< > $@

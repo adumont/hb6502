@@ -78,10 +78,6 @@ HIDDEN_FLAG = $40
 ; 2 bytes after the Header's addr
 HDR_OFFSET_STR = 2	
 
-.ifdef ACIA
-	.include "lib/acia.s"
-.endif
-
 ;	*= $8000
 .segment  "CODE"
 
@@ -96,20 +92,45 @@ RES_vec:
 
 .ifdef ACIA
 	JSR acia_init
+.else
+	; We need to respect the same length (to keep addresses in place)
+	; I can't displace the code by 3 (instead of the JMP)
+	; so I put 3 NOP instead
+	NOP
+	NOP
+	NOP
 .endif
 
 ; store the ADDR of the latest word to
 ; LATEST variable:
 
+.ifdef LINKING
+	; When building Stage 2 (linking)
+	; last.dat will restore the value we saved in Stage 1, after compiling the bootstrap code
+	.include "last.dat"
+.else
+	; Normal mode, we use labels to set 
+	; LATEST:
 	LDA #<p_LATEST
 	STA LATEST
 	LDA #>p_LATEST
 	STA LATEST+1
 
+	; "HERE"
 	LDA #<USER_BASE
 	STA DP
 	LDA #>USER_BASE
 	STA DP+1
+.endif
+
+	; Used only in cross-compilation
+	; HERE_ROM <- USER_BASE_ROM
+	LDA #<USER_BASE_ROM
+	STA HERE_ROM
+	LDA #>USER_BASE_ROM
+	STA HERE_ROM+1
+
+	stz TO_ROM	; clear TO_ROM flag, by default we compile to RAM
 
 	; Initialize bootP (pointer into Bootstrap code)
 	LDA #<BOOT_PRG
@@ -117,12 +138,28 @@ RES_vec:
 	LDA #>BOOT_PRG
 	STA BOOTP+1
 
+.ifdef LINKING
+	; set the OK flag
+	sta OK
+.else	
 	; clear the OK flag
 	stz OK
+.endif
+
+	; Here we copy the RAM block image (from the compiled dictionary)
+	; to RAM
+	LDY #(end_ram_image-start_ram_image+1)
+	CPY #1
+	BEQ skip_copy_ram_block
+:	LDA start_ram_image-1,y
+	STA RAM_BLOCK_DEST-1,Y
+	DEY
+	BNE :-
+skip_copy_ram_block:
 
 	; clear the PRT0 flag (print leading 0)
 	stz PRT0
-	
+
 ; This is a Direct Threaded Code based FORTH
 	
 entry_point:
@@ -306,6 +343,64 @@ commitN:
 	.ADDR do_JUMP, loop1
 
 ;------------------------------------------------------
+
+defword "_BP","_BP",
+	LDA #<BP
+	STA 0,X
+	LDA #>BP
+	STA 1,X
+	JMP DEX2_NEXT
+
+defword "DTOP",,
+	LDA #<DTOP
+	STA 0,X
+	LDA #>DTOP
+	STA 1,X
+	JMP DEX2_NEXT
+
+defword "TO_ROM",">ROM",
+; Used for cross-compilation
+	; check we were compiling to RAM (TO_ROM==0?)
+	; if TO_ROM != 0 we were already in >ROM mode, skip
+	LDA TO_ROM
+	BNE	@skip
+	; we were compiling to RAM, switch to ROM area
+	; HERE_RAM <- HERE
+	LDA DP
+	STA HERE_RAM
+	LDA DP+1
+	STA HERE_RAM+1
+	; HERE <- HERE_ROM
+	LDA HERE_ROM
+	STA DP
+	LDA HERE_ROM+1
+	STA DP+1
+	; update TO_ROM flag to !=0
+	STA TO_ROM
+@skip:
+	JMP NEXT
+
+defword "TO_RAM",">RAM",
+; Used for cross-compilation
+	; check first that we were compiling to ROM (TO_ROM!=0?)
+	; if TO_ROM == 0 we were already in >RAM mode, skip
+	LDA TO_ROM
+	BEQ	@skip
+	; we were compiling to ROM, switch to RAM area
+	; HERE_ROM <- HERE
+	LDA DP
+	STA HERE_ROM
+	LDA DP+1
+	STA HERE_ROM+1
+	; HERE <- HERE_RAM
+	LDA HERE_RAM
+	STA DP
+	LDA HERE_RAM+1
+	STA DP+1
+	; clear TO_ROM flag
+	STZ TO_ROM
+@skip:
+	JMP NEXT
 
 noheader "CLEAR_OK"
 	; clears the OK flag
@@ -2267,25 +2362,36 @@ defword "SWAP",,
 ; p_LATEST point to the latest defined word (using defword macro)
 p_LATEST = .ident(.sprintf("__word_%u", __word_last))
 
-.ifndef ACIA
-;-----------------------------------------------------------------
-; I/O routines for Kowalkski simulator 
-; Change for SBC
-
-IO_AREA = $F000
-
-getc:
-	LDA IO_AREA+4
-
-	BEQ getc
-	RTS
-
-putc:
-	STA IO_AREA+1
-	RTS
-.endif
-
 ; Input Buffer Routines
+
+start_comms_block:
+.ifdef ACIA
+	; This block is $24 bytes long
+	; see the .res $24 below for padding
+	.include "lib/acia.s"
+.else
+	;-----------------------------------------------------------------
+	; I/O routines for Kowalkski simulator 
+	; Change for SBC
+
+	IO_AREA = $F000
+
+	getc:
+		LDA IO_AREA+4
+
+		BEQ getc
+		RTS
+
+	putc:
+		STA IO_AREA+1
+		RTS
+.endif
+end_comms_block:
+
+; we pad the previous block to $24 bytes, so it has a fixed size.
+; needed so that the cross-compiled dictionary is in the same place
+; independently of wether we build for Emulator or HW
+.res $24-(end_comms_block-start_comms_block)
 
 ; Getline refills the INPUT buffer
 ; Bootstrapping mode BOOT<>0 then refill from BOOT_PRG
@@ -2541,6 +2647,7 @@ OK_STR: CString {"ok "}
 ; Must end with $00. That will exit BOOTstrap mode and
 ; enter the interpreter
 BOOT_PRG:
+.ifdef INCLUDE_BOOT_PRG
 	.BYTE " : ? @ . ; "
 	.BYTE " : = - 0= ; "
 	.BYTE " : NEG NOT 1+ ; " ; ( N -- -N ) Negate N (returns -N)
@@ -2673,8 +2780,25 @@ BOOT_PRG:
 
 	.BYTE " MARKER " ; so we can return to this point using FORGET
 	.BYTE " PRMP" ; Shows ok prompt to user
-
+.endif
 	.BYTE " ", $00
+
+; we set the address of USER_BASE_ROM right after the bootstrap code (if any)
+USER_BASE_ROM:
+
+.ifdef LINKING
+
+.out "Including rom.dat"
+.incbin "rom.dat"
+
+.endif
+
+start_ram_image:
+.ifdef LINKING
+.out "Including ram.dat"
+.incbin "ram.dat"
+.endif
+end_ram_image:
 
 ;	*= $0200
 .segment  "BSS"
@@ -2691,9 +2815,14 @@ INP_IDX: .res 1	; Index into the INPUT Buffer (for reading it with KEY)
 OK:		.res 1	; 1 -> show OK prompt
 PRT0:	.res 1	; flag we use to know if we print leading zeros. <0 we print the 0, otherwise we don't
 SCRATCH: .res 8	; 8 bytes we can use in routines...
+HERE_RAM: .res 2	; these variable will be used by >ROM / >RAM
+HERE_ROM: .res 2	; to save/restore the HERE value (when cross compiling)
+TO_ROM:   .res 1	; flag that indicate if we're compiling to ROM
 
 BIN = SCRATCH
 BCD = SCRATCH+2
+
+RAM_BLOCK_DEST:	.res (end_ram_image-start_ram_image)
 
 ; Base of user memory area.
 USER_BASE:
