@@ -91,6 +91,55 @@ _BP BP !
 
 : .( [ ' S( , ] ?EXEC IF TYPE ELSE LIT, TYPE THEN ; IMMEDIATE
 
+: FREE BP @ 2+ HERE - DEC. .( BYTES FREE) CR ;
+
+: >HDR ( XT -- HDR/0 ) \ 0 if not found
+  LATEST
+  BEGIN
+    @ DUP
+    DUP
+    IF
+      >CFA
+      2 PICK
+      =
+    ELSE
+      0= \ force exit leaving FALSE on ToS
+    THEN
+  UNTIL
+  NIP
+;
+
+\ Print the name or the ADDR if not found
+: >NAME ( XT -- )
+  DUP >HDR
+  DUP IF
+    .NAME 2DROP
+  ELSE
+    DROP .
+  THEN
+;
+
+\ Call with SEE WORDNAME , for example SEE T
+: SEE
+  2 LOCALS \ x is pointer to XT, y is XT
+  WORD FIND >CFA \ get CFA of name to decompile
+  \  x . S( : ) TYPE x >NAME CR
+  1+ x! \ skip 4C JMP  // TODO: what if not a colon word??
+  BEGIN
+    x .
+    x @ y!
+    y .   \ // TODO handle LITSTR (dump str and skip over it)
+
+    \\ what if it is a JUMP? should we follow it? (I think yes)
+
+    y >NAME CR
+    x 2+ x!
+    y LIT EXIT =
+  UNTIL
+  -LOCALS
+;
+
+
 MARKER
 \ PRMP
 
