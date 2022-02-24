@@ -30,6 +30,8 @@ endif
 %.dat: forth-stage1.bin bootstrap.f
 	./xcompiler.py -r forth-stage1.bin -l bootstrap.f
 
+stage1: rom.dat ram.dat last.dat
+
 ### STAGE 2
 
 # At the moment, LINKING <=> STAGE2
@@ -48,6 +50,12 @@ run: forth-emu.bin
 
 flash: forth-hw.bin
 	minipro -p AT28C256 -w $<
+
+help:
+	@echo "usage: make [run | flash]"
+	@echo ""
+	@echo "  run:    build and execute the rom in 6502 emulator"
+	@echo "  flash:  build and flash the rom for 6502 hw computer"
 
 clean:
 	-rm -f lib/*.o *.o *.hex *.map *.bin *.h *.lbl *.dat
