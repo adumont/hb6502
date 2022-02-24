@@ -82,14 +82,9 @@ def cpuThread(ch, queue, emu_queue):
     if args.addr and str(args.addr).startswith("0x"):
         args.addr = int(args.addr,16)
 
-    if args.rom:
-        # print("Loading %s at $%04X" % ( args.rom, args.addr ) )
-        f = open(args.rom, 'rb')
-        program = f.read()
-        f.close()
-    else:
-        # Dummy prog
-        program = [ 0xA9, 97, 0x8D, 0x01, 0xF0 ]
+    f = open(args.rom, 'rb')
+    program = f.read()
+    f.close()
 
     load(mpu.memory, args.addr, program)
 
@@ -129,9 +124,9 @@ def cpuThread(ch, queue, emu_queue):
     LAST = getWord(0x0009)
     print("LAST: %04X" % LAST )
 
-    # f = open("last.dat", 'wb')
-    # f.write(bytearray(mpu.memory[0x0009:0x0009+2]))
-    # f.close()
+    HERE = getWord(0x0007)
+    print("HERE: %04X" % HERE )
+
     f = open("last.dat", 'w')
     f.write( "; LATEST     \n")
     f.write( "LDA #$%02X   \n" % getByte(0x0009+0) )
@@ -168,12 +163,6 @@ if args.load:
 # Now we wait FORTH to signal us it has finished the compilation.
 # This happens when we save "1 into 0x0000"
 # we need to catch writes to 0x0000 and when that happens, signal back to this thread.
-
-# Once that is done, we need to extract the generated piece of dictionary, and save it as ".BYTE" code
-# So we can include it when build our code in stage 2.
-
-    # for that we need to know from where (start) to where (end)
-    # the computer has saved that for us at 0x0001 (2 bytes)
 
 while True:
     if not emu_queue.empty():
