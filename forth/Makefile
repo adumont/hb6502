@@ -1,6 +1,9 @@
 # build tools & options
 CL65 = cl65
-CLFLAGS  = -v -d -t none -O --cpu 65c02 -C $(LIB)/sbc.cfg -m $*.map
+CLFLAGS  = -v -d -t none -O --cpu 65c02 -C $(LIB)/sbc.cfg\
+  -m  $(basename $@).map\
+  -Ln $(basename $@).lbl
+
 HEXDUMP = hexdump
 HEXDUMP_ARGS = -v -e '1/1 "%02x " "\n"'
 XXD = xxd
@@ -15,24 +18,36 @@ ifdef LINKING
   OPT:=$(OPT) --asm-define LINKING
 endif
 
+.DEFAULT_GOAL := run
 
-%.hex: %.bin
-	$(HEXDUMP) $(HEXDUMP_ARGS) $< > $@
+### STAGE 1
 
-%.bin: %.s #$(LIB)/interrupt.s $(LIB)/vectors.s $(LIB)/copydata.s
-	$(CL65) $(CLFLAGS) $(OPT) -Ln $*.lbl -o $@ $^
-	@echo
-	@if [ -z "$(ACIA)" ]; \
-	then echo Run with: ./py65forth.py -r $@ ;\
-	else echo "Flash with: minipro -p AT28C256 -w $@" ;\
-       echo "   or with: ../programmer/eeprom.py flash $@" ;\
-	fi
+# Builds forth-stage1.bin
+%-stage1.bin: %.s
+	$(CL65) $(CLFLAGS) -o $@ $<
 
-%.h: %.bin
-	#cp $< /tmp/rom.bin
-	#( cd /tmp; $(XXD) $(XXD_ARGS) rom.bin ) > $@
-	xxd -i $< | sed -e "s/unsigned char $*_bin\[\]/const byte rom_bin\[\] PROGMEM/" > $@
-	cp $@ ../mega/rom.h
+# Builds the 3 .dat files, cross-compiling th bootstrap.f code
+%.dat: forth-stage1.bin bootstrap.f
+	./xcompiler.py -r forth-stage1.bin -l bootstrap.f
+
+### STAGE 2
+
+# At the moment, LINKING <=> STAGE2
+# TODO: replace with STAGE1 flag and invert logic (ifdef => ifndef)
+
+# Builds the emulator image, using LINKING flag!
+forth-emu.bin: forth.s rom.dat ram.dat last.dat
+	$(CL65) $(CLFLAGS) --asm-define LINKING -o $@ $<
+
+# Builds the hw image (using ACIA flag!)
+forth-hw.bin: forth.s rom.dat ram.dat last.dat
+	$(CL65) $(CLFLAGS) --asm-define ACIA --asm-define LINKING -o $@ $<
+
+run: forth-emu.bin
+	./py65forth.py -r $<
+
+flash: forth-hw.bin
+	minipro -p AT28C256 -w $<
 
 clean:
-	-rm -f lib/*.o *.o *.hex *.map *.bin *.h *.lbl
+	-rm -f lib/*.o *.o *.hex *.map *.bin *.h *.lbl *.dat
