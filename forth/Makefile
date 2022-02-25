@@ -4,19 +4,7 @@ CLFLAGS  = -v -d -t none -O --cpu 65c02 -C $(LIB)/sbc.cfg\
   -m  $(basename $@).map\
   -Ln $(basename $@).lbl
 
-HEXDUMP = hexdump
-HEXDUMP_ARGS = -v -e '1/1 "%02x " "\n"'
-XXD = xxd
-XXD_ARGS = -i
 LIB=lib
-
-ifdef ACIA
-  OPT:=$(OPT) --asm-define ACIA
-endif
-
-ifdef LINKING
-  OPT:=$(OPT) --asm-define LINKING
-endif
 
 .DEFAULT_GOAL := run
 
