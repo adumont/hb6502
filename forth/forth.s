@@ -1617,63 +1617,59 @@ defword "FIND",,
 	JMP do_DROP
 @not_comma:
 @nxt_word:
-; store W+2 in G1 (G1 points to the counted str)
-	CLC
-	LDA W
-	ADC #HDR_OFFSET_STR
-	STA G1
-	LDA W+1		; replace with BCC skip / INC G1+1 ?
-	ADC #0		;
-	STA G1+1	;
-
-; compare length
-	LDA (G1)	; load current dictionay word's length
-	TAY			; save A in Y
-	AND #HIDDEN_FLAG
-	BNE @advance_w	; Hidden word! skip it
-
-	TYA			; restore A (current dictionay word's length)
-	AND #$1F		; remove flags (3 MSB)
-	CMP 2,X		; compare to len on stack (1byte)
-	BNE @advance_w	; not same length, advance to next word
-; same length: compare str
-	; G1+1 --> G1 (now points to STR, not length)
-	CLC
-	INC G1
-	BNE @skip
-	INC G1+1
-@skip:	
-	TAY		; we previously loaded LEN in A --> Y
-	JSR STRCMP
-	BEQ @found
-
-; not found: look for next word in
-; dictionnary
-
+  LDY #2
+  LDA (W),Y ; load Length
+  AND #$1F    ; remove flags (3 MSB)
+  CMP 2,X   ; compare to len on stack (1byte)
+  BEQ @same_length
+  ; not same length, advance to next word
 @advance_w:
-	; W points to the previous entry
-	; (W) -> W
-	LDA (W)
-	STA 0,X ; we store it there temporarily
-	LDY #1
-	LDA (W),Y
-	STA W+1
-	LDA 0,X
-	STA W
-	BNE @nxt_word
-	LDA W+1
-	BNE @nxt_word
-	; here: not found :(, we put 00 on stack and exit
-	STZ 4,x
-	STZ 5,x
-	JMP do_DROP
-	
-@found:	; ADDR is W -> TOS
-	LDA W
-	STA 4,X
-	LDA W+1
-	STA 5,X
-	JMP do_DROP
+  ; W points to the previous entry
+  ; (W) -> W
+  LDA (W)
+  STA 0,X ; we store it there temporarily
+  LDY #1
+  LDA (W),Y
+  STA W+1
+  LDA 0,X
+  STA W
+  BNE @nxt_word
+  LDA W+1
+  BNE @nxt_word
+  ; here: not found :(, we put 00 on stack and exit
+  STZ 4,x
+  STZ 5,x
+  JMP do_DROP
+
+@same_length:
+; same length: compare str
+
+  ; we previously loaded LEN in A --> Y (for STRCMP)
+  TAY
+
+  ; Before calling STRCMP,
+  ; we store W+3 in G1 (G1 now points to the counted str)
+  ; W + 3 --> G1 (now points to STR, not length)
+  SEC
+  LDA W
+  ADC #HDR_OFFSET_STR
+  STA G1
+  LDA W+1   ; replace with BCC skip / INC G1+1 ?
+  ADC #0    ;
+  STA G1+1  ;
+
+  JSR STRCMP
+  ; BNE: not found: look for next word in
+  ; dictionnary
+  BNE @advance_w
+  ; Found!
+
+@found: ; ADDR is W -> TOS
+  LDA W
+  STA 4,X
+  LDA W+1
+  STA 5,X
+  JMP do_DROP
 
 defword "SPACE",,
 ; Print a space		( -- )
