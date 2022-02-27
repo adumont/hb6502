@@ -1619,6 +1619,12 @@ defword "FIND",,
 @nxt_word:
   LDY #2
   LDA (W),Y ; load Length
+
+  TAY
+  AND #HIDDEN_FLAG
+  BNE @advance_w	; Hidden word! skip it
+  TYA
+
   AND #$1F    ; remove flags (3 MSB)
   CMP 2,X   ; compare to len on stack (1byte)
   BEQ @same_length
