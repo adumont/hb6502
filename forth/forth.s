@@ -33,19 +33,11 @@ __word_0 = 0
 	.ident (.sprintf("__word_%u", __word_last + 1)):
 
 	.addr .ident(.sprintf("__word_%u", __word_last))
-	; this ifblank cascading can probably be enhanced...
+
 	.ifnblank strname
-		.ifnblank flags
-			CString strname, flags
-		.else
-			CString strname
-		.endif
+		CString strname, flags
 	.else
-		.ifnblank flags
-			CString label, flags
-		.else
-			CString label
-		.endif
+		CString label, flags
 	.endif
 
 	__word_last .set __word_last + 1
