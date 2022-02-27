@@ -1331,8 +1331,8 @@ noheader "STAR_SKIP_DO"
 defword "PLUS_LOOP","+LOOP",IMMEDIATE_FLAG
 ;  : +LOOP LIT, *LOOP , ; IMMEDIATE " ;
 	JMP do_COLON
+	.ADDR do_COMPILE, do_STAR_PLUS_LOOP
 call_from_do_LOOP:
-	.ADDR do_COMPILE, do_STAR_LOOP
 	.ADDR do_COMMA
 
 ; support for ?DO
@@ -1966,17 +1966,86 @@ noheader "STAR_DO"
 defword "LOOP",,IMMEDIATE_FLAG
 ;  : LOOP LIT, 1 LIT, *LOOP , ; IMMEDIATE
 	JMP do_COLON
-	.ADDR do_COMPILE, do_PUSH1
-	.ADDR do_JUMP, call_from_do_LOOP	; we fallback into +LOOP
-	; it's a small penalty at compile time, but code is more compact in ROM
+	.ADDR do_BREAK
+	.ADDR do_COMPILE, do_STAR_LOOP
+	.ADDR do_JUMP, call_from_do_LOOP
 
 noheader "STAR_LOOP"
 ; ( INC -- )
-; Used by LOOP, +LOOP, takes the increment on the stack
+; Used by LOOP, takes NO arguments on the stack (we know the increment is 1)
+
+; Previously, *LOOP and *+LOOP were the same. LOOP was just inserting a PUSH1 before calling *LOOP. Now I have differentiated both. In a normal LOOP, we don't need to PUSH1 , so we save 2 bytes in the dictionary (and it's a bit faster), also *LOOP already knows that the increment it 1.
 
 ; *LOOP should be followed by [ADDR], so IP points to ADDR
 ; where ADDR is the word after DO
 ; *LOOP will either run it (ie. jump back to DO) or bypass it (ie. leaving the DO LOOP)
+
+	; Save X in Y
+	TXA
+	TAY
+
+	; Transfer SP to X
+	TSX
+	; END and I (of DO/LOOP) are on the 6502 stack, after transfering S to X
+	; we can now address them like that:
+	; $104,X $103,X [ END ]
+	; $102,X $101,X [  I  ]
+
+	; I++
+	CLC
+	LDA $101,X
+	ADC #1
+	STA $101,X
+	BCC @skip
+	INC $102,X
+@skip:
+
+from_STAR_PLUS_LOOP:
+	; Compare I to END
+	LDA $102,X	; HI I ; we can skip that line, as $102,X is in A already!
+	CMP $104,X	; HI END
+	BNE :+
+	LDA $101,X	; LO I
+	CMP $103,X	; LO END
+:	BCC @loop_again
+
+; Here we exit the LOOP
+	; Remove I and END from 6502 Hw Stack
+	INX	; INX is only 2 cycles, vs PLA 4 cycles
+	INX
+	INX
+	INX
+	TXS
+	; Restore X from Y
+	TYA
+	TAX
+
+	; Skip over the [ADDR]
+	; IP+2 --> IP
+	CLC
+	LDA IP
+	ADC #2		; A<-A+2
+	STA IP
+	BCC :+
+	INC IP+1
+:	JMP NEXT
+
+@loop_again:
+	; Restore X from Y
+	TYA
+	TAX
+
+	; IP just happen to point to [ADDR]!
+	; now we call JUMP
+	JMP do_JUMP
+
+noheader "STAR_PLUS_LOOP"
+; ( INC -- )
+; Used by LOOP, +LOOP, takes the increment on the stack
+
+; *+LOOP should be followed by [ADDR], so IP points to ADDR
+; where ADDR is the word after DO
+; *+LOOP will either run it (ie. jump back to DO) or bypass it (ie. leaving the DO LOOP)
 
 	; Copy INC (on ToS) to G1
 	LDA 2,X
@@ -1987,9 +2056,9 @@ noheader "STAR_LOOP"
 	; Drop INC from ToS
 	INX
 	INX
-	; Save X to G2
+	; Save X in Y
 	TXA
-	STA G2
+	TAY
 
 	TSX
 	; END and I (of DO/LOOP) are on the 6502 stack, after transfering S to X
@@ -2006,43 +2075,8 @@ noheader "STAR_LOOP"
 	ADC $102,X
 	STA $102,X
 
-	; Compare I to END
-	; LDA $102,X	; HI I ; we can skip that line, as $102,X is in A already!
-	CMP $104,X	; HI END
-	BNE :+
-	LDA $101,X	; LO I
-	CMP $103,X	; LO END
-:	BCC @loop_again
-
-; Here we exit the LOOP
-	; Remove I and END from 6502 Hw Stack
-	INX	; INX is only 2 cycles, vs PLA 4 cycles
-	INX
-	INX
-	INX
-	TXS
-	; Restore X from G2
-	LDA G2
-	TAX
-
-	; Skip over the [ADDR]
-	; IP+2 --> IP
-	CLC
-	LDA IP
-	ADC #2		; A<-A+2
-	STA IP
-	BCC :+
-	INC IP+1
-:	JMP NEXT
-
-@loop_again:
-	; Restore X from G2
-	LDA G2
-	TAX
-
-	; IP just happen to point to [ADDR]!
-	; now we call JUMP
-	JMP do_JUMP
+	; the end is ine STAR_LOOP (it was the same code, so I branch to it)
+	BRA from_STAR_PLUS_LOOP
 
 defword "ROT",,
 ; ( x y z -- y z x )
