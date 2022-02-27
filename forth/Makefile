@@ -25,19 +25,29 @@ stage1: rom.dat ram.dat last.dat
 # At the moment, LINKING <=> STAGE2
 # TODO: replace with STAGE1 flag and invert logic (ifdef => ifndef)
 
+## For the Emulator
+
 # Builds the emulator image, using LINKING flag!
 forth-emu.bin: forth.s rom.dat ram.dat last.dat
 	$(CL65) $(CLFLAGS) --asm-define LINKING -o $@ $<
+
+emu: forth-emu.bin
+
+run: forth-emu.bin
+	./py65forth.py -r $<
+
+## For the HW 6502 computer
 
 # Builds the hw image (using ACIA flag!)
 forth-hw.bin: forth.s rom.dat ram.dat last.dat
 	$(CL65) $(CLFLAGS) --asm-define ACIA --asm-define LINKING -o $@ $<
 
-run: forth-emu.bin
-	./py65forth.py -r $<
+hw: forth-hw.bin
 
 flash: forth-hw.bin
 	minipro -p AT28C256 -w $<
+
+## HELP
 
 help:
 	@echo "usage: make [run | flash]"
