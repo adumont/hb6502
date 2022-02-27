@@ -10,7 +10,9 @@
   - [BEGIN WHILE REPEAT](#begin-while-repeat)
 - [DO Loops](#do-loops)
   - [DO LOOP](#do-loop)
-  - [?DO LOOP](#do-loop-1)
+  - [DO +LOOP](#do-loop-1)
+  - [?DO LOOP](#do-loop-2)
+  - [?DO +LOOP](#do-loop-3)
 - [Defining words](#defining-words)
   - [CREATE example](#create-example)
   - [CREATE DOES> example](#create-does-example)
@@ -92,8 +94,8 @@ ok SEE T
 0735 8BBA -           |
 0737 8CD4 DUP         |
 0739 878D 0=          |
-073B 8B14 0BR     ----+   Conditional branching back to BEGIN
-073D 072D 072D
+073B 8B14 0BR         |   Conditional branching back to BEGIN
+073D 072D 072D    ----+
 073F 8125 EXIT
 ok 
 ```
@@ -113,8 +115,8 @@ ok SEE T
 0837 0841 0841     |   |
 0839 8230 LIT      |   |
 083B 3333 3333     |   |
-083D 8B6D JUMP  ---|---+  Repeat: jump to begin
-083F 0831 0831     |
+083D 8B6D JUMP     |   | Repeat: jump to begin
+083F 0831 0831  ---|---+
 0841 8230 LIT   <--+
 0843 4444 4444 
 0845 8125 EXIT
@@ -126,46 +128,71 @@ ok
 ## DO LOOP
 
 ```
-ok : T 1111 -ROT DO I . CR LOOP 2222 ;
+ok : T BEFORE DO INSIDE LOOP AFTER ;
 ok SEE T
-07E5 8108 COLON
-07E7 8230 LIT
-07E9 1111 1111
-07EB 8BF3 -ROT
-07ED 8A6D *DO           *DO initializes DO/LOOP control flow
-07EF 8292 I       <---+
-07F1 8C32 .           |
-07F3 8A23 CR          |
-07F5 819B 1           |
-07F7 8A90 *LOOP   ----+ *LOOP branches back to start of loop code
-07F9 07EF 07EF 
-07FB 8230 LIT
-07FD 2222 2222
-07FF 8125 EXIT
-ok 
+02F3 81FE COLON
+02F5 02B7 BEFORE
+02F7 8B6B *DO              Initializes DO/LOOP control flow
+02F9 02D2 INSIDE   <---+
+02FB 8B90 *LOOP        | *LOOP branches back to start of loop code
+02FD 02F9 02F9     ----+ 
+02FF 02C4 AFTER
+0301 821B EXIT
+ok
+```
+
+## DO +LOOP
+
+```
+ok : T BEFORE DO INSIDE 4 +LOOP AFTER ;
+ok SEE T
+0321 81FE COLON
+0323 02B7 BEFORE
+0325 8B6B *DO            Initializes DO/LOOP control flow
+0327 02D2 INSIDE   <---+
+0329 8327 LIT          |
+032B 0004 0004         |
+032D 8BCB *+LOOP       | *+LOOP branches back to start of loop code
+032F 0327 0327     ----+
+0331 02C4 AFTER
+0333 821B EXIT
 ```
 
 ## ?DO LOOP
 
 ```
-ok : T 1111 -ROT ?DO I . CR LOOP 2222 ;
+ok : T BEFORE ?DO INSIDE LOOP AFTER ;
 ok SEE T 
-0806 8108 COLON
-0808 8230 LIT
-080A 1111 1111 
-080C 8BF3 -ROT
-080E 8699 *?DO  --+     Conditional branch over the ?DO/LOOP
-0810 0820 0820    |
-0812 8A6D *DO     |     Initializes DO/LOOP control flow
-0814 8292 I     <-|---+
-0816 8C32 .       |   |
-0818 8A23 CR      |   |
-081A 819B 1       |   |
-081C 8A90 *LOOP --|---+ *LOOP branches back to start of the loop code
-081E 0814 0814    |
-0820 8230 LIT   <-+ 
-0822 2222 2222 
-0824 8125 EXIT
+033A 81FE COLON
+033C 02B7 BEFORE
+033E 8797 *?DO   ---+    Conditional branch over the ?DO/LOOP 
+0340 034A 034A      |
+0342 8B6B *DO       |    Initializes DO/LOOP control flow
+0344 02D2 INSIDE <--|--+
+0346 8B90 *LOOP     |  |
+0348 0344 0344   ---|--+ *LOOP branches back to start of the loop code 
+034A 02C4 AFTER  <--+
+034C 821B EXIT
+ok
+```
+
+## ?DO +LOOP
+
+```
+ok : T BEFORE ?DO INSIDE 4 +LOOP AFTER ;
+ok SEE T 
+0353 81FE COLON
+0355 02B7 BEFORE
+0357 8797 *?DO   ---+    Conditional branch over the ?DO/LOOP  
+0359 0367 0367      |
+035B 8B6B *DO       |    Initializes DO/LOOP control flow
+035D 02D2 INSIDE <--|--+
+035F 8327 LIT       |  |
+0361 0004 0004      |  |
+0363 8BCB *+LOOP    |  | *+LOOP branches back to start of loop code 
+0365 035D 035D   ---|--+
+0367 02C4 AFTER  <--+
+0369 821B EXIT
 ok
 ```
 
