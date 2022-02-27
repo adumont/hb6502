@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import time
 import curses
 import threading
@@ -24,7 +23,7 @@ parser.add_argument('-l','--logfile', help='filename of log', default=None)
 parser.add_argument('-s','--symbols', help='symbols file', default="forth-emu.lbl")
 args = parser.parse_args()
 
-stats = open("/tmp/stats", "w")  # a=append mode
+# stats = open("/tmp/stats", "w")  # a=append mode
 
 locale.setlocale(locale.LC_ALL, '')
 code = locale.getpreferredencoding()
@@ -63,7 +62,7 @@ addr_IP          = addr_W -2
 addr_G2          = addr_IP-2
 addr_G1          = addr_G2-2
 addr_DP          = addr_G1-2
-addr_DTOP        = addr_DP-2
+addr_DTOP = addr_DP-2
 
 addr_LATEST 	= getLabelAddr("LATEST")
 addr_MODE       = getLabelAddr("MODE")
@@ -93,38 +92,25 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
     def load(memory, start_address, bytes):
         memory[start_address:start_address + len(bytes)] = bytes
 
+    def getByte(address):
+        return mpu.memory[address]
 
     def putc(address, value):
         if not started:
             return
-        # try:
-        #     if value==0x08:
-        #         sys.stdout.write(chr(value))
-        #         sys.stdout.write(' ')
-        #     sys.stdout.write(chr(value))
-        #     win.addch(chr(value))
-        # except UnicodeEncodeError: # Python 3
-        #     sys.stdout.write("?")
-        # sys.stdout.flush()
-        if value==0x08:
-            win.addch(chr(value))
-            win.addch(' ')
         win.addch(chr(value))
         win.noutrefresh()
+        curses.doupdate()
 
     def getc(address):
         if queue.empty():
             return 0
         else:
-            c=queue.get()
-            return c
-
-
-    def getByte(address):
-        return mpu.memory[address]
+            return queue.get()
 
     def getWord(address):
         return mpu.memory[address] + 256*mpu.memory[address+1]
+
 
     def disass_pane(mode, instr, syms):
         dbgwin.addstr(0,10, "Cycles: %d" % mpu.processorCycles )
@@ -145,15 +131,11 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
         if logfile:
             logfile.write(" | ".join([log_registers, log_forth_reg1, curr_instr]) + "\n")
 
-        stats.write("%10d %s\n" % ( mpu.processorCycles, curr_instr ) )
-
         if mode == 1: #step-by-step mode
             # these registers will only be updated in step-by-step mode
             dbgwin.addstr(0, 0, "PC: %04X" % mpu.pc )
 
             dbgwin.addstr(2,0, log_registers )
-
-            # dbgwin.addstr(4,0, "LINE: %04X ROW: %02X COL: %02X " % ( getWord(addr_LINE), getByte(addr_ROW), getByte(addr_COL) ) )
 
             log_forth_reg2 = "G1: %04X  G2: %04X" % ( getWord(addr_G1), getWord(addr_G2) )
             dbgwin.addstr(6,4, log_forth_reg1 )
@@ -237,6 +219,7 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
     mpu.pc=getWord(mpu.RESET)
 
     started=True
+    debug=False
 
     delay=0
     # delay=1
@@ -256,9 +239,12 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
             queue_step.put(1)
 
         if not queue_step.empty():
-            mode_step = queue_step.get()
-            
-            run_next_step = 1
+            msg = queue_step.get()
+            if msg == 2:
+                debug = not debug
+            else:
+                mode_step = msg
+                run_next_step = 1
 
         if mode_step == 1 and run_next_step == 0:
             continue
@@ -266,17 +252,18 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
         if mode_step == 1:
             run_next_step = 0
 
-        stats.write("%d %04X" % ( mpu.pc, mpu.processorCycles ) )
+        # stats.write("%d %04X" % ( mpu.pc, mpu.processorCycles ) )
 
         mpu.step()
 
-        # any key pressed?
-        if mpu.memory[0x0200] == 0 and not queue.empty():
-            mpu.memory[0x0200]=1
-            mpu.memory[0x0201]=queue.get()
-            nmi()
+        # # any key pressed?
+        # if mpu.memory[getc_addr] == 0 and not queue.empty():
+        #     mpu.memory[getc_addr]=1
+        #     mpu.memory[getc_addr]=queue.get()
+        #     nmi()
 
-        disass_pane(mode_step, instr, syms)
+        if debug:
+            disass_pane(mode_step, instr, syms)
 
         curses.doupdate()
         time.sleep(delay)
@@ -313,6 +300,7 @@ def main(stdscr):
     # instantiate a small window to hold computer screen
     cpuwin = curses.newwin(30,40,0,0)
     cpuwin.bkgd(' ',curses.color_pair(3))
+    cpuwin.scrollok(True)
 
     # instantiate a small window to hold computer screen
     dbgwin = curses.newwin(30,38,0,42)
@@ -345,6 +333,8 @@ def main(stdscr):
         if key == 0x152:    # Page DOWN
             # Enter step by step mode
             queue_step.put(1)
+        elif key == 0x153:    # Page UP
+            queue_step.put(2) # Toggle debug
         elif key == 0x168:    # End key
             # Continuous execution
             queue_step.put(0)
