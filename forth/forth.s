@@ -1254,7 +1254,19 @@ defword "NUMBER",,
 ; Reset error flag (no error by default)
 	STZ ERROR
 
-; Load Base into X
+; Read first char, If it's a valid number prefix,
+; we jump to the corresponding branch to set force the base
+	LDA (W),Y
+	CMP #'#'
+	BEQ @prefixed_base10
+	CMP #'$'
+	BEQ @prefixed_base16
+	CMP #'%'
+	BEQ @prefixed_base2
+	CMP #'o'
+	BEQ @prefixed_base8
+
+; Otherwise, load BASE into X
 	PHX	; save X on the stack
 	LDX BASE
 
@@ -1299,6 +1311,24 @@ defword "NUMBER",,
 	LDA #1
 	STA ERROR
 	BRA @drop
+
+; branches where we set teh base from the prefix:
+@prefixed_base2:
+	LDX #2
+	INY
+	BRA @read_digit
+@prefixed_base8:
+	LDX #8
+	INY
+	BRA @read_digit
+@prefixed_base10:
+	LDX #10
+	INY
+	BRA @read_digit
+@prefixed_base16:
+	LDX #16
+	INY
+	BRA @read_digit
 
 ; Multiply G2 by BASE, results in G2
 mulG2xBASE:
