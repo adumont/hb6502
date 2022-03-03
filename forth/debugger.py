@@ -21,6 +21,7 @@ parser.add_argument('-r','--rom', help='binary rom file', default="forth-emu.bin
 parser.add_argument('-a','--addr', help='address to load to', default=0x8000)
 parser.add_argument('-l','--logfile', help='filename of log', default=None)
 parser.add_argument('-s','--symbols', help='symbols file', default="forth-emu.lbl")
+parser.add_argument('-b','--breakpoint', help='set breakpoint (symbol)', default="do_BREAK")
 args = parser.parse_args()
 
 # stats = open("/tmp/stats", "w")  # a=append mode
@@ -235,7 +236,7 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
     run_next_step = 0
 
     while not exit_event.is_set():
-        if mpu.pc == getLabelAddr("do_BREAK") : # breakpoint
+        if mpu.pc == getLabelAddr(args.breakpoint) or mpu.pc == getLabelAddr("do_BREAK"): # breakpoint
             queue_step.put(1)
 
         if not queue_step.empty():
