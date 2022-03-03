@@ -131,6 +131,9 @@ RES_vec:
 	LDA #>BOOT_PRG
 	STA BOOTP+1
 
+	LDA #$10 ; $10= d16 Hexadecimal Base
+	STA BASE
+
 .ifdef LINKING
 	; set the OK flag
 	sta OK
@@ -336,6 +339,33 @@ commitN:
 	.ADDR do_JUMP, loop1
 
 ;------------------------------------------------------
+
+defword "BASE",,
+        LDA #<BASE
+        STA 0,X
+        LDA #>BASE
+        STA 1,X
+        JMP DEX2_NEXT
+
+defword "OCT",,
+        LDA #$08
+        STA BASE
+        JMP NEXT
+
+defword "BIN",,
+        LDA #$02
+        STA BASE
+        JMP NEXT
+
+defword "DEC",,
+        LDA #$0A
+        STA BASE
+        JMP NEXT
+
+defword "HEX",,
+        LDA #$10
+        STA BASE
+        JMP NEXT
 
 defword "_BP","_BP",
 	LDA #<BP
@@ -1213,49 +1243,176 @@ defword "NUMBER",,
 	STA W
 	LDA 5,X
 	STA W+1
-; G1 <- LEN
+; G1 <- LEN, length of the string to parse
 	LDA 2,X
 	STA G1
-; G2 <-- 0000
+; G2 <-- 0000 (Will be the result)
 	STZ G2
 	STZ G2+1
-; Y <-- 0, index
+; Y <-- 0, index into the string to parse
 	LDY #0
 ; Reset error flag (no error by default)
 	STZ ERROR
 
+; Load Base into X
+	PHX	; save X on the stack
+	LDX BASE
+
+	; we skip the first "multiply G2 by BASE", as atm G2 is 0 anyway
+	BRA @read_digit
+
 @next:
+	JSR mulG2xBASE
+
+@read_digit:
+; We read the next digit, and get it in A
 	LDA (W),Y
 	JSR nibble_asc_to_value
 	BCS @err
 	
-	ORA G2
+; We add the Digit (in A) to the Number (in G2)
+	CLC
+	ADC G2
 	STA G2
+	LDA G2+1
+	ADC #0
+	STA G2+1
 	
 	INY
 	CPY G1	; Y = LEN ? --> end
-	BEQ @go
-; <<4
-	ASL G2
-	ROL G2+1
-	ASL G2
-	ROL G2+1
-	ASL G2
-	ROL G2+1
-	ASL G2
-	ROL G2+1
-	BRA @next
-@go:
+	BNE @next
+
 ; leave results G2 on the stack
+	; Restore X
+	PLX
+
 	LDA G2
 	STA 4,X
 	LDA G2+1
 	STA 5,X
-	BRA @drop
-@err:	
+@drop:
+	JMP do_DROP
+@err:
+	; Restore X
+	PLX
+
 	LDA #1
 	STA ERROR
-@drop:	JMP do_DROP
+	BRA @drop
+
+; Multiply G2 by BASE, results in G2
+mulG2xBASE:
+	CPX #$10
+	BEQ @base16
+	CPX #$A
+	BEQ @base10
+	CPX #$2
+	BEQ @base2
+	CPX #$8
+	BEQ @base8
+@base16:
+	ASL G2
+	ROL G2+1
+@base8:
+	ASL G2
+	ROL G2+1
+	ASL G2
+	ROL G2+1
+@base2:
+	ASL G2
+	ROL G2+1
+	RTS
+
+@base10:
+	; Multiply G2 by 10
+	; G2 *= 2
+	ASL G2
+	ROL G2+1
+	; we temporarily use BCD variable to store a copy of G2
+	LDA G2
+	STA BCD
+	LDA G2+1
+	STA BCD+1
+	; G2 *= 2
+	ASL G2
+	ROL G2+1
+	; G2 *= 2
+	ASL G2
+	ROL G2+1
+	; G2 <-- G1 + G2
+	CLC
+	LDA BCD
+	ADC G2
+	STA G2
+	LDA BCD+1
+	ADC G2+1
+	STA G2+1
+	RTS
+
+defword "DIV10","/10",
+; Divide number by DECIMAL 10!!
+; copy number in ToS to LONG1 in scratch area
+	LDA 3,X
+	STA LONG1
+	LDA 2,X
+	STA LONG1+1
+	STZ LONG1+2
+	STZ LONG1+3
+; Divide by 10
+	JSR divide_by_10
+; copy result to ToS
+	LDA LONG2+1
+	STA 2,X
+	LDA LONG2
+	STA 3,X
+; end
+	JMP NEXT
+
+divide_by_10:
+; Divide LONG1 by 10, leave in LONG2
+
+; clear result area (LONG2)
+	stz LONG2+3
+	stz LONG2+2
+	stz LONG2+1
+	stz LONG2+0
+; start dividing by 10:
+	jsr halveLONG1
+	ldy #4
+@again:
+	jsr halveLONG1
+	jsr halveLONG1
+	jsr halveLONG1
+	jsr addLONG1toLONG2
+	jsr halveLONG1
+	jsr addLONG1toLONG2
+	dey
+	bne @again
+	RTS
+
+halveLONG1:
+	; halves LONG1 in place
+	LSR LONG1
+	ROR LONG1+1
+	ROR LONG1+2
+	ROR LONG1+3
+	RTS
+
+addLONG1toLONG2:
+	CLC
+	LDA LONG2+3
+	ADC LONG1+3
+	STA LONG2+3
+	LDA LONG2+2
+	ADC LONG1+2
+	STA LONG2+2
+	LDA LONG2+1
+	ADC LONG1+1
+	STA LONG2+1
+	LDA LONG2+0
+	ADC LONG1+0
+	STA LONG2+0
+	RTS
 
 defword "INPUT",,
 	JSR getline
@@ -1966,7 +2123,6 @@ noheader "STAR_DO"
 defword "LOOP",,IMMEDIATE_FLAG
 ;  : LOOP LIT, 1 LIT, *LOOP , ; IMMEDIATE
 	JMP do_COLON
-	.ADDR do_BREAK
 	.ADDR do_COMPILE, do_STAR_LOOP
 	.ADDR do_JUMP, call_from_do_LOOP
 
@@ -2723,6 +2879,7 @@ MODE:	.res 1	; <>0 Execute, 0 compile
 BOOT:	.res 1	; <>0 Boot, 0 not boot anymore
 SEPR:	.res 1	; Separator for parsing input
 BOOTP:	.res 2	; pointer to BOOTstrap code
+BASE:	.res 1	; Base for number conversion
 ERROR:	.res 1	; Error when converting number
 INP_LEN: .res 1	; Length of the text in the input buffer
 INPUT:	.res 128	; CMD string (extend as needed, up to 256!)
@@ -2736,6 +2893,8 @@ TO_ROM:   .res 1	; flag that indicate if we're compiling to ROM
 
 BIN = SCRATCH
 BCD = SCRATCH+2
+LONG1 = SCRATCH		; Two long (4bytes) numbers in scratch area.
+LONG2 = SCRATCH+4	; both are used in divide_by_10
 
 RAM_BLOCK_DEST:	.res (end_ram_image-start_ram_image)
 

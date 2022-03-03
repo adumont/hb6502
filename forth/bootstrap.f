@@ -139,6 +139,52 @@ _BP BP !
   -LOCALS
 ;
 
+\ Base Numbers
+
+\ Only positive numbers ( 0 instead of >D for signed doubles... problem with FFFF)
+: /MOD SWAP 0 ROT UM/MOD ;
+
+: MOD /MOD DROP ;
+: / /MOD NIP ;
+
+: < - 0< ;
+
+: U. ( u -- )
+   RECURSIVE
+   \ BREAK
+   BASE @ /MOD    ( width rem quot )
+   ?DUP IF        ( if quotient <> 0 then )
+      U.          ( print the quotient )
+   THEN
+
+   ( print the remainder )
+   DUP A < IF
+      30    ( decimal digits 0..9 )
+   ELSE
+      A -    ( hex and beyond digits A..Z )
+      41
+   THEN
+   +
+   EMIT
+;
+
+\ Redefine .S with BASE support (only positive numbers for now! )
+: .S
+  10 BASE @ = IF
+    .S
+  ELSE
+    DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK U. SPACE LOOP CR THEN DROP
+  THEN
+;
+
+\ redefine . with BASE support (only positive numbers for now! )
+: .
+  10 BASE @ = IF
+    .
+  ELSE
+    U. SPACE
+  THEN
+;
 
 MARKER
 \ PRMP
