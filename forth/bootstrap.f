@@ -14,6 +14,12 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : ' WORD FIND >CFA ;
 : [,] , ; IMMEDIATE 
 
+\ Comparison operators ( a b -- f )
+: < - 0< ;
+: <= < 0= ;
+: > SWAP < ;
+: >= SWAP <= ;
+
 \ LIT, is an alias for COMPILE, it's shorter ;)
 : IF LIT, 0BR HERE HERE++ ; IMMEDIATE
 : THEN HERE SWAP ! ; IMMEDIATE
@@ -146,8 +152,6 @@ _BP BP !
 
 : MOD /MOD DROP ;
 : / /MOD NIP ;
-
-: < - 0< ;
 
 : U. ( u -- )
    RECURSIVE
