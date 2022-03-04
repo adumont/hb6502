@@ -1380,14 +1380,14 @@ mulG2xBASE:
 	RTS
 
 defword "DIV10","/10",
-; Divide number by DECIMAL 10!!
+; Divide number by DECIMAL 10
 ; copy number in ToS to LONG1 in scratch area
 	LDA 3,X
-	STA LONG1
+	STA LONG1	; HI
 	LDA 2,X
-	STA LONG1+1
-	STZ LONG1+2
-	STZ LONG1+3
+	STA LONG1+1	; LO
+	STZ LONG1+2	;  0
+	STZ LONG1+3	;  0
 ; Divide by 10
 	JSR divide_by_10
 ; copy result to ToS
@@ -1400,9 +1400,15 @@ defword "DIV10","/10",
 
 divide_by_10:
 ; Divide LONG1 by 10, leave in LONG2
-
+; Implementation of the algorithm is unefficient. TODO: rewrite.
+; LONG1 and LONG2 format is [HI][LO],[00][00] (2 bytes integer part, 2 bytes of fractional part for precision)
+	; First, add 1 to LONG1 integer part
+	; Deemed necesary to avoid error in 10% of cases otherwise (for ex. 10/10 would give 0)
+	INC LONG1+1
+	BNE :+
+	INC LONG1+0
 ; clear result area (LONG2)
-	stz LONG2+3
+:	stz LONG2+3
 	stz LONG2+2
 	stz LONG2+1
 	stz LONG2+0
