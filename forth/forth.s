@@ -1254,6 +1254,9 @@ defword "NUMBER",,
 ; Reset error flag (no error by default)
 	STZ ERROR
 
+; We save X because we're going to use it to store the base
+	PHX	; save X on the stack
+
 ; Read first char, If it's a valid number prefix,
 ; we jump to the corresponding branch to set force the base
 	LDA (W),Y
@@ -1267,7 +1270,6 @@ defword "NUMBER",,
 	BEQ @prefixed_base8
 
 ; Otherwise, load BASE into X
-	PHX	; save X on the stack
 	LDX BASE
 
 	; we skip the first "multiply G2 by BASE", as atm G2 is 0 anyway
