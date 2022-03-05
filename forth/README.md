@@ -6,11 +6,13 @@
 	- [Direct Threaded Code](#direct-threaded-code)
 	- [Stacks](#stacks)
 	- [Anatomy of compiled words](#anatomy-of-compiled-words)
-- [Try it!](#try-it)
+	- [Numbers and base](#numbers-and-base)
+- [Try it live!](#try-it-live)
 	- [Examples](#examples)
 - [How to build](#how-to-build)
 	- [Build for the hardware](#build-for-the-hardware)
 	- [Build for py65 simulator](#build-for-py65-simulator)
+	- [Run in the setp by step debugger](#run-in-the-setp-by-step-debugger)
 - [References](#references)
 
 # Introduction
@@ -227,18 +229,30 @@ Implementation is 100% made in FORTH in the bootstrap code (see [hb6502@d76eaec]
 
 See [this page](doc/anatomy.md) to see the anatomy different examples of compiled words.
 
-# Try it!
+## Numbers and base
+
+You can change the base using `DEC`, `BIN`, `OCT` or `HEX`. By default, system starts in `HEX`.
+
+The current base is stored in `BASE` (you can retrieve it using `BASE @`).
+
+While in any BASE, you can always input numbers using a prefix to force a different base:
+- `#` decimal, for example: `#12`
+- `$` hexadecimal, for example:  `$FF`
+- `o` octal, for example: `o1017`
+- `%` binary, for example: `%101100`
+
+Notice: only base 2, 8, 10 and 16 are supported.
+
+# Try it live!
 
 You can use my Forth here [Alex Forth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).  
 
 Notice:
-- It's not ANS Forth, but my own incomplete and free implementation.
+- It's not ANS Forth, but my own incomplete and free implementation
 - At this moment, it only supports integers Math
-- The base for all numbers is hexadecimal
-- Comments \ and ( ) are not supported
 - Words are case sensitive! (all default words defined in CAPS, for example SWAP, DUP, DROP... )
 - There is NO stack underflow/overflow checking at all. So you can easily mess everything :). Don't worry. Just reset and start again!
-- Android user, on mobile I find some keyboard mess with Repl.it. Try disabling all keyboard predictions and auto-typing features.
+- Android user, on mobile I find some keyboard mess with Repl.it. Try disabling all keyboard predictions and auto-typing features
 
 ## Examples
 
@@ -247,7 +261,7 @@ Here are some very simple examples. For more advanced example and tecniques, see
 ### Hello world
 
 ```
-S( Hello World!) TYPE CRLF
+.( Hello World!) CR
 ```
 
 This should output this on a new line:
@@ -333,13 +347,18 @@ This will compute Fib(n) where n is a single cell integer.
 
 : fib DUP IF  0 1 ROT 1 DO next-fib LOOP SWAP  ELSE 0 THEN DROP ;
 
+DEC
+
 9 fib .
-22
+34
+
+24 fib .
+46368
 ```
 
-Remember the base is 16, so all numbers are hexadecimal. Indeed Fib(9)=$22=34.
-
 Notice how we do not need to use recursion!
+
+24th Fibonacci number is the biggest we can compute with 16bit integers.
 
 ### Fibonacci Sequence (Double Version)
 
@@ -399,7 +418,6 @@ minicom -D /dev/ttyUSB0 -b 9600
 Minicom config file (~/.minirc.dfl)
 
 ```
-# Machine-generated file - use setup menu in minicom to change parameters.
 pu port             /dev/ttyUSB0
 pu baudrate         115200
 pu rtscts           No 
@@ -417,7 +435,7 @@ make forth.bin
 
 ### Options of the emulator
 
-The py65forth emulator will load the forth.bin rom by default. It's possible to load a different rom using `-r`, also to a different base address using `-a`.
+The py65forth emulator will load the forth-emu.bin rom by default. It's possible to load a different rom using `-r`, also to a different base address using `-a`.
 
 The user can also specify a FORTH source file to load at boot time using the `-l` option.
 
@@ -431,6 +449,29 @@ optional arguments:
   -l LOAD, --load LOAD  forth program to load
 ```
 
+## Run in the setp by step debugger
+
+```
+$ ./debugger.py -h
+usage: debugger.py [-h] [-r ROM] [-a ADDR] [-l LOGFILE] [-s SYMBOLS]
+                   [-b BREAKPOINT]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -r ROM, --rom ROM     binary rom file
+  -a ADDR, --addr ADDR  address to load to
+  -l LOGFILE, --logfile LOGFILE
+                        filename of log
+  -s SYMBOLS, --symbols SYMBOLS
+                        symbols file
+  -b BREAKPOINT, --breakpoint BREAKPOINT
+                        set breakpoint (symbol)
+```
+
+Keys in debugger:
+- END key will start/resume the continuous execution
+- PAGE-UP: will active the debug pane, showing some more info.
+- PAGE-DOWN will run instruction by instruction
 
 # References
 
