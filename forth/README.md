@@ -449,7 +449,7 @@ optional arguments:
   -l LOAD, --load LOAD  forth program to load
 ```
 
-## Run in the setp by step debugger
+## Step by step debugger
 
 ```
 $ ./debugger.py -h
