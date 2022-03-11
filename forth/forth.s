@@ -333,9 +333,17 @@ cleanStack:  ; ( addr len n )
 commitN:
 	; ( n )
 	; Add number to the word we are defining
+	.ADDR do_DUP			; ( n n )
+	.ADDR do_LIT, $FF00 	; ( n n FF00 )
+	.ADDR do_AND			; ( n hi ) only keep high nibble
+	.ADDR do_0BR, @commitN8b	; if hi nibble was 0 then we commit a byte, more compact
+@commitN16b:
 	.ADDR do_COMPILE, do_LIT	; first add "LIT" ( n )
-	.ADDR do_COMMA			; add n to word (  )
-
+	.ADDR do_COMMA				; add n to word (  )
+	.ADDR do_JUMP, loop1
+@commitN8b:
+	.ADDR do_COMPILE, do_CLIT	; first add "CLIT" ( n )
+	.ADDR do_CCOMMA				; add n to word (  )
 	.ADDR do_JUMP, loop1
 
 ;------------------------------------------------------
