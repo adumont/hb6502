@@ -1666,7 +1666,8 @@ defword "EQZ","0=",
 	LDA 2,X
 	ORA 3,X
 	BEQ @true
-@false:	STZ 2,X
+@false:
+	STZ 2,X
 	STZ 3,X
 	JMP NEXT
 @true:
@@ -2369,6 +2370,27 @@ defword "EMIT",,
 	; char is on stack
 	LDA 2,X
 	JSR putc
+	JMP do_DROP
+
+defword "ULESS","U<",
+; U< ( n1 n2 -- flag ), unsigned comparison
+	; First compare HI byte
+	LDA 5,X
+	CMP 3,X
+	BCC @true
+	BNE @false
+	; HI byte were the same, compare LO byte
+	LDA 4,X
+	CMP 2,X
+	BCC @true
+@false:
+	STZ 5,X
+	STZ 4,X
+	JMP do_DROP
+@true:
+	LDA #$FF
+	STA 5,X
+	STA 4,X
 	JMP do_DROP
 
 defword "JUMP",,
