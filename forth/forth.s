@@ -73,13 +73,13 @@ HDR_OFFSET_STR = 2
 .segment  "CODE"
 
 RES_vec:
-   	CLD             ; clear decimal mode
-    	LDX #$FF
-    	TXS             ; set the stack pointer
+	CLD             ; clear decimal mode
+	LDX #$FF
+	TXS             ; set the stack pointer
 	STX MODE	; set MODE to FF
 	STX BOOT	; set BOOT to FF
-    	LDX #DTOP
-    	CLI
+	LDX #DTOP
+	CLI
 
 .ifdef ACIA
 	JSR acia_init
@@ -348,31 +348,31 @@ commitN:
 ;------------------------------------------------------
 
 defword "BASE",,
-        LDA #<BASE
-        STA 0,X
-        LDA #>BASE
-        STA 1,X
-        JMP DEX2_NEXT
+	LDA #<BASE
+	STA 0,X
+	LDA #>BASE
+	STA 1,X
+	JMP DEX2_NEXT
 
 defword "OCT",,
-        LDA #$08
-        STA BASE
-        JMP NEXT
+	LDA #$08
+	STA BASE
+	JMP NEXT
 
 defword "BIN",,
-        LDA #$02
-        STA BASE
-        JMP NEXT
+	LDA #$02
+	STA BASE
+	JMP NEXT
 
 defword "DEC",,
-        LDA #$0A
-        STA BASE
-        JMP NEXT
+	LDA #$0A
+	STA BASE
+	JMP NEXT
 
 defword "HEX",,
-        LDA #$10
-        STA BASE
-        JMP NEXT
+	LDA #$10
+	STA BASE
+	JMP NEXT
 
 defword "_BP","_BP",
 	LDA #<BP
@@ -974,47 +974,50 @@ noheader "STAR_UM_DIV_MOD"
 ; From: How to divide a 32-bit dividend by a 16-bit divisor.
 ; By Garth Wilson (wilsonmines@dslextreme.com), 9 Sep 2002.    
 ; SRC: http://www.6502.org/source/integers/ummodfix/ummodfix.htm
-        SEC
-        LDA     4,X     ; Subtract hi cell of dividend by
-        SBC     2,X     ; divisor to see if there's an overflow condition.
-        LDA     5,X
-        SBC     3,X
-        BCS     @oflo   ; Branch if /0 or overflow.
+	SEC
+	LDA     4,X     ; Subtract hi cell of dividend by
+	SBC     2,X     ; divisor to see if there's an overflow condition.
+	LDA     5,X
+	SBC     3,X
+	BCS     @oflo   ; Branch if /0 or overflow.
 
-        LDA     #$11    ; Loop 17 times
-        STA     0,X     ; Use 0,X as loop counter
-@loop:  ROL     6,X     ; Rotate dividend lo cell left one bit.
-        ROL     7,X
-        DEC     0,X     ; Decrement loop counter.
-        BEQ     @fin    ; If we're done, then branch to .fin
-        ROL     4,X     ; Otherwise rotate dividend hi cell left one bit.
-        ROL     5,X
-        STZ     G1
-        ROL     G1      ; Rotate the bit carried out of above into G1.
+	LDA     #$11    ; Loop 17 times
+	STA     0,X     ; Use 0,X as loop counter
+@loop:
+	ROL     6,X     ; Rotate dividend lo cell left one bit.
+	ROL     7,X
+	DEC     0,X     ; Decrement loop counter.
+	BEQ     @fin    ; If we're done, then branch to .fin
+	ROL     4,X     ; Otherwise rotate dividend hi cell left one bit.
+	ROL     5,X
+	STZ     G1
+	ROL     G1      ; Rotate the bit carried out of above into G1.
 
-        SEC
-        LDA     4,X     ; Subtract dividend hi cell minus divisor.
-        SBC     2,X
-        STA     G1+1    ; Put result temporarily in G1+1 (lo byte)
-        LDA     5,X
-        SBC     3,X
-        TAY             ; and Y (hi byte).
-        LDA     G1      ; Remember now to bring in the bit carried out above.
-        SBC     #0
-        BCC     @loop
+	SEC
+	LDA     4,X     ; Subtract dividend hi cell minus divisor.
+	SBC     2,X
+	STA     G1+1    ; Put result temporarily in G1+1 (lo byte)
+	LDA     5,X
+	SBC     3,X
+	TAY             ; and Y (hi byte).
+	LDA     G1      ; Remember now to bring in the bit carried out above.
+	SBC     #0
+	BCC     @loop
 
-        LDA     G1+1    ; If that didn't cause a borrow,
-        STA     4,X     ; make the result from above to
-        STY     5,X     ; be the new dividend hi cell
-        BRA     @loop   ; and then brach up
+	LDA     G1+1    ; If that didn't cause a borrow,
+	STA     4,X     ; make the result from above to
+	STY     5,X     ; be the new dividend hi cell
+	BRA     @loop   ; and then brach up
 
-@oflo:  LDA     #$FF    ; If overflow or /0 condition found,
-        STA     4,X     ; just put FFFF in both the remainder
-        STA     5,X
-        STA     6,X     ; and the quotient.
-        STA     7,X
+@oflo:
+	LDA     #$FF    ; If overflow or /0 condition found,
+	STA     4,X     ; just put FFFF in both the remainder
+	STA     5,X
+	STA     6,X     ; and the quotient.
+	STA     7,X
 
-@fin:   JMP     do_DROP  ; When you're done, show one less cell on data stack
+@fin:
+	JMP     do_DROP  ; When you're done, show one less cell on data stack
 
 defword "LBRAC","[",IMMEDIATE_FLAG
 ; ( -- ) switch to EXECUTE/IMMEDIATE mode
@@ -1290,7 +1293,7 @@ defword "NUMBER",,
 	LDA (W),Y
 	JSR nibble_asc_to_value
 	BCS @err
-	
+
 ; We add the Digit (in A) to the Number (in G2)
 	CLC
 	ADC G2
@@ -1298,7 +1301,7 @@ defword "NUMBER",,
 	LDA G2+1
 	ADC #0
 	STA G2+1
-	
+
 	INY
 	CPY G1	; Y = LEN ? --> end
 	BNE @next
@@ -1823,65 +1826,65 @@ defword "FIND",,
 	JMP do_DROP
 @not_comma:
 @nxt_word:
-  LDY #2
-  LDA (W),Y ; load Length
+	LDY #2
+	LDA (W),Y ; load Length
 
-  TAY
-  AND #HIDDEN_FLAG
-  BNE @advance_w	; Hidden word! skip it
-  TYA
+	TAY
+	AND #HIDDEN_FLAG
+	BNE @advance_w	; Hidden word! skip it
+	TYA
 
-  AND #$1F    ; remove flags (3 MSB)
-  CMP 2,X   ; compare to len on stack (1byte)
-  BEQ @same_length
-  ; not same length, advance to next word
+	AND #$1F    ; remove flags (3 MSB)
+	CMP 2,X   ; compare to len on stack (1byte)
+	BEQ @same_length
+	; not same length, advance to next word
 @advance_w:
-  ; W points to the previous entry
-  ; (W) -> W
-  LDA (W)
-  STA 0,X ; we store it there temporarily
-  LDY #1
-  LDA (W),Y
-  STA W+1
-  LDA 0,X
-  STA W
-  BNE @nxt_word
-  LDA W+1
-  BNE @nxt_word
-  ; here: not found :(, we put 00 on stack and exit
-  STZ 4,x
-  STZ 5,x
-  JMP do_DROP
+	; W points to the previous entry
+	; (W) -> W
+	LDA (W)
+	STA 0,X ; we store it there temporarily
+	LDY #1
+	LDA (W),Y
+	STA W+1
+	LDA 0,X
+	STA W
+	BNE @nxt_word
+	LDA W+1
+	BNE @nxt_word
+	; here: not found :(, we put 00 on stack and exit
+	STZ 4,x
+	STZ 5,x
+	JMP do_DROP
 
 @same_length:
 ; same length: compare str
 
-  ; we previously loaded LEN in A --> Y (for STRCMP)
-  TAY
+	; we previously loaded LEN in A --> Y (for STRCMP)
+	TAY
 
-  ; Before calling STRCMP,
-  ; we store W+3 in G1 (G1 now points to the counted str)
-  ; W + 3 --> G1 (now points to STR, not length)
-  SEC
-  LDA W
-  ADC #HDR_OFFSET_STR
-  STA G1
-  LDA W+1   ; replace with BCC skip / INC G1+1 ?
-  ADC #0    ;
-  STA G1+1  ;
+	; Before calling STRCMP,
+	; we store W+3 in G1 (G1 now points to the counted str)
+	; W + 3 --> G1 (now points to STR, not length)
+	SEC
+	LDA W
+	ADC #HDR_OFFSET_STR
+	STA G1
+	LDA W+1   ; replace with BCC skip / INC G1+1 ?
+	ADC #0    ;
+	STA G1+1  ;
 
-  JSR STRCMP
-  ; BNE: not found: look for next word in
-  ; dictionnary
-  BNE @advance_w
-  ; Found!
+	JSR STRCMP
+	; BNE: not found: look for next word in
+	; dictionnary
+	BNE @advance_w
+	; Found!
 
 @found: ; ADDR is W -> TOS
-  LDA W
-  STA 4,X
-  LDA W+1
-  STA 5,X
-  JMP do_DROP
+	LDA W
+	STA 4,X
+	LDA W+1
+	STA 5,X
+	JMP do_DROP
 
 defword "SPACE",,
 ; Print a space		( -- )
@@ -2682,12 +2685,12 @@ getline:
 @bkspace:
 	CPY #0		; start of line?
 	BEQ @next	; do nothing
-  LDA #BKSPACE
+	LDA #BKSPACE
 	JSR putc	; echo char
 	DEY		; else: Y--
 	BRA @next
 @break:
-  BRK
+	BRK
 	BRA @next
 @finish:
 	STY INP_LEN
@@ -2950,6 +2953,6 @@ USER_BASE:
 ;    *=  $FFFA
 .segment  "VECTORS"	
 
-    .addr   NMI_vec     ; NMI vector
-    .addr   RES_vec     ; RESET vector
-    .addr   IRQ_vec     ; IRQ vector
+	.addr   NMI_vec     ; NMI vector
+	.addr   RES_vec     ; RESET vector
+	.addr   IRQ_vec     ; IRQ vector
