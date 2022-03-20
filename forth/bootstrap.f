@@ -140,6 +140,8 @@ _BP BP !
     x @ y!
     y .   \ // TODO handle LITSTR (dump str and skip over it)
 
+    \ TODO: Handle CLIT (only one byte data embbeded)
+
     \\ what if it is a JUMP? should we follow it? (I think yes)
 
     y >NAME CR
@@ -160,7 +162,7 @@ _BP BP !
 : U. ( u -- )
    RECURSIVE
    \ BREAK
-   BASE @ /MOD    ( width rem quot )
+   BASE C@ /MOD    ( width rem quot )
    ?DUP IF        ( if quotient <> 0 then )
       U.          ( print the quotient )
    THEN
@@ -178,7 +180,8 @@ _BP BP !
 
 \ Redefine .S with BASE support (only positive numbers for now! )
 : .S
-  10 BASE @ = IF
+  \ BREAK
+  10 BASE C@ = IF
     .S
   ELSE
     DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK U. SPACE LOOP CR THEN DROP
@@ -187,7 +190,8 @@ _BP BP !
 
 \ redefine . with BASE support (only positive numbers for now! )
 : .
-  10 BASE @ = IF
+  \ BREAK
+  10 BASE C@ = IF
     .
   ELSE
     U. SPACE
