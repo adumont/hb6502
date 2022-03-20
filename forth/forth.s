@@ -70,7 +70,6 @@ HIDDEN_FLAG = $40
 ; 2 bytes after the Header's addr
 HDR_OFFSET_STR = 2	
 
-;	*= $8000
 .segment  "CODE"
 
 RES_vec:
@@ -2917,7 +2916,6 @@ BOOT_PRG:
 	; keep outside the ifdef/endif, as we always want to end the BOOT_PRG with $00
 	.BYTE " ", $00
 
-;	*= $0200
 .segment  "BSS"
 
 LATEST:	.res 2	; Store the latest ADDR of the Dictionary
