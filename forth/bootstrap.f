@@ -18,10 +18,10 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : ' WORD FIND >CFA ;
 : [,] , ; IMMEDIATE 
 
-\ Comparison operators ( a b -- f )
+\ Comparison operators ( a b -- f ) for signed cells
 : < - 0< ;
-: <= < 0= ;
 : > SWAP < ;
+: <= > 0= ;
 : >= SWAP <= ;
 
 \ LIT, is an alias for COMPILE, it's shorter ;)
@@ -53,7 +53,7 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : 2>R R> -ROT SWAP >R >R >R ;
 : 2R> R> R> R> SWAP ROT >R ;
 
-: DU< D- NIP 0< ;
+: D< D- NIP 0< ; \ Signed double less
 : M+ >D D+ ;
 
 : DNEG SWAP NOT SWAP NOT 1 0 D+ ;
