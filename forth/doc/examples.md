@@ -42,10 +42,7 @@ The defining word `STRING` gives the string a name in the dictionary.and commits
 The runtime behavior leaves the addr of a counted string on the stack suitable to store in an cells array for example. After eventually use COUNT TYPE to print it.
 
 ```
-: STRING
-CREATE
-HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE
-;
+: STRING CREATE HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE ;
 ```
 
 Example:
