@@ -14,7 +14,7 @@ LIB=lib
 %-stage1.bin: %.s
 	$(CL65) $(CLFLAGS) -o $@ $<
 
-# Builds the 3 .dat files, cross-compiling th bootstrap.f code
+# Builds the 3 .dat files, cross-compiling the bootstrap.f code
 %.dat: forth-stage1.bin bootstrap.f
 	./xcompiler.py -r forth-stage1.bin -l bootstrap.f
 
@@ -35,6 +35,9 @@ emu: forth-emu.bin
 
 run: forth-emu.bin
 	./py65forth.py -r $<
+
+debug: forth-emu.bin
+	./debugger.py -r $<
 
 ## For the HW 6502 computer
 
