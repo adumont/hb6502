@@ -1,8 +1,8 @@
 # AlexFORTH Examples
 
 - [AlexFORTH Examples](#alexforth-examples)
-  - [Comparison operators](#comparison-operators)
   - [Stack dump](#stack-dump)
+  - [Strings](#strings)
   - [User input](#user-input)
   - [FORTH Decompiler](#forth-decompiler)
   - [Debugging & Tracing](#debugging--tracing)
@@ -10,17 +10,6 @@
   - [Free Memory](#free-memory)
 
 This page collects some random unclassified examples and code snippets of AlexFORTH code, and shows how to do some advanced things.
-
-## Comparison operators
-
-```forth
-\ Comparison operators
-\ ( a b -- f )
-: < - 0< ;
-: > SWAP < ;
-: <= > 0= ;
-: >= SWAP <= ;
-```
 
 ## Stack dump
 
@@ -41,6 +30,31 @@ We put 1, 2 and 3 on the stack. `SDUMP` will dump it as hex bytes.
 ok 1 2 3
 ok SDUMP
 00F0 03 00 02 00 01 00 ok 
+```
+
+
+## Strings
+
+### Store strings in the dictionary
+
+The defining word `STRING` gives the string a name in the dictionary.and commits the string in the dictionary.
+
+The runtime behavior leaves the addr of a counted string on the stack suitable to store in an cells array for example. After eventually use COUNT TYPE to print it.
+
+```
+: STRING
+CREATE
+HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE
+;
+```
+
+Example:
+
+```
+S( ABCDEF) STRING TEST
+TEST COUNT TYPE CR
+ABCDEF
+ok
 ```
 
 ## User input
