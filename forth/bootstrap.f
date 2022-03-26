@@ -16,7 +16,10 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : 0< 8000 AND ; \ ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 : IMMEDIATE LAST SETIMM ; \	; sets the latest word IMMEDIATE
 : ' WORD FIND >CFA ;
-: [,] , ; IMMEDIATE 
+: ['] ' LIT, LIT , ; IMMEDIATE
+: [,] , ; IMMEDIATE \ take an XT on ToS, commit to dict
+
+: +! SWAP OVER @ + SWAP ! ;
 
 \ Comparison operators ( a b -- f ) for signed cells
 : < - 0< ;
@@ -100,6 +103,8 @@ _BP BP !
 : IS POSTPONE TO ; IMMEDIATE
 
 : .( [ ' S( , ] ?EXEC IF TYPE ELSE LIT, TYPE THEN ; IMMEDIATE
+
+: STRING CREATE HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE ;
 
 : FREE BP @ 2+ HERE - DEC. .( BYTES FREE) CR ;
 
