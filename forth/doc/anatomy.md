@@ -1,6 +1,9 @@
 # Anatomy of compiled words
 
 - [Anatomy of compiled words](#anatomy-of-compiled-words)
+- [Literals](#literals)
+  - [String literal](#string-literal)
+  - [Char literal](#char-literal)
 - [Conditionals](#conditionals)
   - [IF THEN](#if-then)
   - [IF ELSE THEN](#if-else-then)
@@ -27,6 +30,43 @@ The output of `SEE` produces 3 columns:
 ```
 ADDR VALUE NAME
 0860 082F  HEAD
+```
+
+# Literals
+
+## String literal
+
+This example shows how a word with a string literal and a char-literal are compiled:
+
+```
+ok : T .( HelloWorld) CHAR " EMIT ;
+ok SEE T
+02AD 8263 COLON
+02AF 88BE LITSTR "HelloWorld"
+02BC 8451 COUNT
+02BE 8B57 TYPE
+02C0 88A6 CLIT 22 
+02C3 8DCB EMIT
+02C5 8280 EXIT
+ok T
+HelloWorld"ok 
+```
+
+## Char literal
+
+```
+: T CHAR " EMIT 2 3 + . ;
+
+ok SEE T
+02CC 8263 COLON
+02CE 88A6 CLIT 22 
+02D1 8DCB EMIT
+02D3 88A6 CLIT 02 
+02D6 88A6 CLIT 03 
+02D9 8E5E +
+02DB 9829 .
+02DD 8280 EXIT
+ok 
 ```
 
 # Conditionals
