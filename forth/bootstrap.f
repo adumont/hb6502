@@ -104,7 +104,8 @@ _BP BP !
 
 : .( [ ' S( , ] ?EXEC IF TYPE ELSE LIT, TYPE THEN ; IMMEDIATE
 
-: STRING CREATE HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE ;
+: STRING CREATE HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE ; \ Example: S( Alex) STRING NAME
+: CHAR ?EXEC IF KEY ELSE LIT, CLIT KEY C, THEN ; IMMEDIATE \ Example: CHAR " EMIT
 
 : FREE BP @ 2+ HERE - DEC. .( BYTES FREE) CR ;
 
@@ -127,10 +128,10 @@ _BP BP !
 \ Print the name or the ADDR if not found
 : >NAME ( XT -- )
   DUP >HDR
-  DUP IF
+  ?DUP IF
     .NAME 2DROP
   ELSE
-    DROP .
+    .
   THEN
 ;
 
@@ -143,15 +144,22 @@ _BP BP !
   BEGIN
     x .
     x @ y!
-    y .   \ // TODO handle LITSTR (dump str and skip over it)
-
-    \ TODO: Handle CLIT (only one byte data embbeded)
-
-    \\ what if it is a JUMP? should we follow it? (I think yes)
-
-    y >NAME CR
+    y .
+    y >NAME
     x 2+ x!
-    y LIT EXIT =
+    y ['] CLIT = IF
+      SPACE x C@ C. CR
+      x 1+ x!
+    ELSE
+      y ['] LITSTR = IF
+      x DUP COUNT DUP -ROT
+      SPACE CHAR " EMIT TYPE CHAR " EMIT CR
+      1+ + x!
+      ELSE
+        CR
+      THEN
+    THEN
+    y ['] EXIT =
   UNTIL
   -LOCALS
 ;
