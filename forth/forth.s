@@ -61,7 +61,7 @@ DP	= G1-2		; Data/Dictionary Pointer: Store the latest ADDR of next free space i
 DTOP	= DP-2		; Stack TOP
 BKSPACE = $08 ; BACKSPACE = CTRL+BCKSPACE in LINUX (Python)
 MAX_LEN = $80		; Input Buffer MAX length, $80= 128 bytes
-BP   = $4000 - 2	; top of LOCALS stack (grows down). Right below the HW addr block
+BP   = $4000		; top of LOCALS stack (grows down). Right below the HW addr block
 
 IMMEDIATE_FLAG = $80
 HIDDEN_FLAG = $40

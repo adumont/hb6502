@@ -73,8 +73,8 @@ _BP BP !
 
 >ROM
 
-: LOCALS  BP @ DUP ROT 2* - DUP -ROT ! BP ! ;
-: -LOCALS BP DUP @ @ SWAP ! ;   \ ( n -- ) Dellocates n local variables
+: LOCALS  1+ BP @ DUP ROT 2* - DUP -ROT ! BP ! ; \ ( n -- ) Allocates n local variables
+: -LOCALS BP DUP @ @ SWAP ! ;  \ Dellocates n local variables
 
 : L@ BP @ + @ ; \  ; ( n -- value) helper word to get local var n
 : L! BP @ + ! ; \  ; ( n -- value) helper word to save to local var n
@@ -87,7 +87,8 @@ _BP BP !
 
 : RECURSIVE REVEAL ; IMMEDIATE
 
-: DUMP SWAP DUP . DO I C@ C. LOOP ; \ ( addr1 addr2 -- ) dumps memory from addr1 to addr2
+: DUMP SWAP DUP . ?DO I C@ C. LOOP ; \ ( addr1 addr2 -- ) dumps memory from addr1 to addr2
+: .LDUMP BP @ 4000 DUMP ; \ dump local stack
 
 : .NAME DUP 2+ DUP C@ DUP 40 AND >R 1F AND SWAP 
   1+ SWAP TYPE R> IF SPACE 2A EMIT THEN ;
