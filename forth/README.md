@@ -7,24 +7,28 @@
 	- [Stacks](#stacks)
 	- [Anatomy of compiled words](#anatomy-of-compiled-words)
 	- [Numbers and base](#numbers-and-base)
+- [Two stages compilation](#two-stages-compilation)
+	- [Source code organization](#source-code-organization)
+	- [Two stages compilation process](#two-stages-compilation-process)
+	- [Pros and cons](#pros-and-cons)
 - [Try it live!](#try-it-live)
 	- [Examples](#examples)
 - [How to build](#how-to-build)
 	- [Build for the hardware](#build-for-the-hardware)
 	- [Build for py65 simulator](#build-for-py65-simulator)
-	- [Run in the setp by step debugger](#run-in-the-setp-by-step-debugger)
+	- [Step by step debugger](#step-by-step-debugger)
 - [References](#references)
 
 # Introduction
 
-This page is about my own implementation of FORTH for my Homebrew 6502 SBC.
+This page is about AlexForth, my own implementation of FORTH for my Homebrew 6502 SBC.
 
 ![](./imgs/Forth.png)
 
 To develop this FORTH I have started with Kowalsky 6502 simulator, as it helped me debugging the 6502 code step by step, while introspecting registers and ram. I've been maintaining two paralel versions of the code, which hopefully should be aligned:
 
-- `forth00.asm` is the source for Kowalsky 6502 simulator, with no macro for the words header for example.
-- `forth.s` is the source for ca65 assembler. this is the source that is used to build forth.bin either for simulation in py65 or to flash onto the real hardware eeprom.
+- `forth00.asm` was the source initial source I worked on, suitable to run in the Kowalsky 6502 simulator, with no macro for the words header for example.
+- Now AlexForth source code is divided into two files, see [Source code organization](#source-code-organization).
 
 # Implementation notes
 
@@ -243,9 +247,47 @@ While in any BASE, you can always input numbers using a prefix to force a differ
 
 Notice: only base 2, 8, 10 and 16 are supported.
 
+# Two stages compilation
+
+## Source code organization
+
+AlexFORTH source code is split into two files, to facilitate a two stages compilation process:
+- `forth.s`: main source, written mostly in 65C02 assembly language. It's compiled using ca65. It contains:
+  - the source for the inner interpreter: `NEXT`, `COLON` (aka ENTER) and `SEMI` (aka EXIT)
+  - assembly code for primitive words, like `0`, `DUP`, `SWAP`...
+  - many secondary words are also defined in this source file, in hand-compiled FORTH form, like `;`, `ALLOT`...
+  - the outter interpreter also hand-compiled in this file (see `forth_prog` label)
+  - macro to create words header and linking/threading the dictionary, like `CString`, `defword` and `noheader`
+  - defines to tweak the compilation process and allow a different behaviour wether we are in Stage 1 (building for the host) or Stage 2 (building for the end target)
+- `bootstrap.f`: this file written in AlexFORTH contains the definition of more words that will be added to AlexFORTH core dictionary during compilation. This file allow for extending AlexFORTH by simply writing FORTH code.
+
+## Two stages compilation process
+
+AlexForth compilation is a two-stages compilation:
+- In Stage 1:
+  - The `forth.s` source code is compiled (`forth-stage1.bin`) for being run in an 6502 emulator on the host system (`xcompiler`).
+  - `xcompiler` will run `forth-stage1.bin` on the host computer, in a 6502 emulator, and interpret and compile the bootstrap code, generating the dictionary in a memory space that corresponds to the target's ROM memory space (exception for any variables defined in bootstrap code, will go in a memory space that corresponds to the target's RAM memory space)
+  - Once reaching the end of the bootstrap code compilation, `xcompiler` will extracts ROM's and RAM's dictionary as binary images.
+- In Stage 2:
+  - The `forth.s` file is compiled again, but this time embedding the RAM and ROM binary images extracted in Stage 1, thus generating a single `forth-hw.bin` binary image, suitable to be flashed in the target 65C02 hardware computer (or run in a target 65C02 emulator)
+
+[This document](https://raw.githubusercontent.com/adumont/hb6502/main/forth/doc/AlexFORTH_two_stages_compilation.pdf) contains some diagrams further illustrating the 2 stages compilation process.
+
+Note: I sometimes refer to  this two stages compilation process as "cross-compilation" (hence the name `xcompiler`) but I'm not sure that's the right term. I also wonder if that should be rather named "meta-compilation" instead. Feel free to give me feedback on this.
+It make sense to me to call this cross-compilation because the final target image is generated on a host computer (with a different architecture) using the `xcompiler`. It only happens to be a convenience that `xcompiler` actually runs the same code to interpret and compile itself... making it a self/endocompilation, the result being a binary image suitable to run on the target system.
+
+## Pros and cons
+
+This two stages compilation process enables:
+- Almost-instant boot time, as there's no bootstrap code compilation happening every boot,
+- Reducing the ROM footprint (compiled code is smaller than FORTH code)
+- Reducing RAM footprint freeing RAM for user application (because all the system dictionary is in ROM)
+
+The cost of the two stages compilation is a slower compilation time, as it needs to compile the bootstrap code to generate the rom image, each time there's any change to the bootstrap code (As I build using make this is automated.)
+
 # Try it live!
 
-You can use my Forth here [Alex Forth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).  
+You can use my Forth here [AlexForth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).  
 
 Notice:
 - It's not ANS Forth, but my own incomplete and free implementation
@@ -407,15 +449,12 @@ Code here: [Cellular Automaton in (my) FORTH](https://gist.github.com/adumont/5e
 
 Instructions to build and flash the forth.bin for the Homebrew (hardware) version:
 
-```
-ACIA=1 make forth.bin
+- `make hw` will build the `forth-hw.bin` image for the target 6502 hardware computer
+- `make flash` will flash the `forth-hw.bin` to the AT28C256 eeprom using minipro
 
-../programmer/eeprom.py flash forth.bin
+You can then use `minicom -D /dev/ttyUSB0 -b 115200` or any other serial terminal program to connect to the computer (using an FTDI USP adapter).
 
-minicom -D /dev/ttyUSB0 -b 9600
-```
-
-Minicom config file (~/.minirc.dfl)
+Minicom config file (~/.minirc.dfl):
 
 ```
 pu port             /dev/ttyUSB0
@@ -427,11 +466,9 @@ pu rtscts           No
 
 Instructions to build and run the forth.bin in the py65 simulator:
 
-```
-make forth.bin
-
-./py65forth.py
-```
+- `make emu` will build the `forth-emu.bin` image suitable for the 6502 emulator
+- `make` or `make run` will run the `forth-emu.bin` in the emulator
+- `make debug` will run the `forth-emu.bin` in the step by step debugger
 
 ### Options of the emulator
 
