@@ -276,7 +276,8 @@ AlexForth compilation is a two-stages compilation:
 ![](./imgs/stage1.2.svg)
 - In **Stage 2**:
   - The `forth.s` file is compiled again, but this time embedding the RAM and ROM binary images extracted in Stage 1, thus generating a single `forth-hw.bin` binary image, suitable to be flashed in the target 65C02 hardware computer (or run in a target 65C02 emulator
-  <img src="./imgs/stage2.1.svg" width="500">
+
+  <center><img src="./imgs/stage2.1.svg" width="500"></center>
 
   - At runtime, the RAM binary image (containing variables) is copied into RAM:
 ![](./imgs/stage2.2.svg)
