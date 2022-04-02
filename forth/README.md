@@ -9,6 +9,7 @@
 	- [Numbers and base](#numbers-and-base)
 - [Two stages compilation](#two-stages-compilation)
 	- [Source code organization](#source-code-organization)
+	- [One stage compilation process](#one-stage-compilation-process)
 	- [Two stages compilation process](#two-stages-compilation-process)
 	- [Pros and cons](#pros-and-cons)
 - [Try it live!](#try-it-live)
@@ -265,6 +266,16 @@ AlexFORTH source code is split into two files, to facilitate a two stages compil
   - defines to tweak the compilation process and allow a different behaviour wether we are in Stage 1 (building for the host) or Stage 2 (building for the end target)
 - `bootstrap.f`: this file written in AlexFORTH contains the definition of more words that will be added to AlexFORTH core dictionary during compilation. This file allow for extending AlexFORTH by simply writing FORTH code.
 
+## One stage compilation process
+
+Previous versions of AlexFORTH had the bootstrap code embedded as string into forth.s, and it was built using a one stage compilation process. As a result, the bootstrap code was interpreted and compiled (into RAM) upon every boot of the system: 
+
+![](./imgs/1stage.svg)
+
+This was both time consuming, wasting several seconds at each boot, and wasting ROM and RAM.
+
+Nowadays, AlexForth benefits of a two stages compilation process, decribed below.
+
 ## Two stages compilation process
 
 AlexForth compilation is a two-stages compilation:
@@ -276,16 +287,16 @@ AlexForth compilation is a two-stages compilation:
 ![](./imgs/stage1.2.svg)
 - In **Stage 2**:
   - The `forth.s` file is compiled again, but this time embedding the RAM and ROM binary images extracted in Stage 1, thus generating a single `forth-hw.bin` binary image, suitable to be flashed in the target 65C02 hardware computer (or run in a target 65C02 emulator
+  
   <img src="./imgs/stage2.1.svg" width="500">
 
   - At runtime, the RAM binary image (containing variables) is copied into RAM:
 ![](./imgs/stage2.2.svg)
 
-
 [This document](https://raw.githubusercontent.com/adumont/hb6502/main/forth/doc/AlexFORTH_two_stages_compilation.pdf) contains some diagrams further illustrating the 2 stages compilation process.
 
-Note: I sometimes refer to  this two stages compilation process as "cross-compilation" (hence the name `xcompiler`) but I'm not sure that's the right term. I also wonder if that should be rather named "meta-compilation" instead. Feel free to give me feedback on this.
-It make sense to me to call this cross-compilation because the final target image is generated on a host computer (with a different architecture) using the `xcompiler`. It only happens to be a convenience that `xcompiler` actually runs the same code to interpret and compile itself... making it a self/endocompilation, the result being a binary image suitable to run on the target system.
+**Note**: I sometimes refer to  this two stages compilation process as "cross-compilation" (hence the name `xcompiler`) but I'm not sure that's the right term. I also wonder if that should rather be called "meta-compilation" instead. Feel free to give me feedback on this.
+It makes sense to me to call this cross-compilation because the final target image is generated on a host computer (with a different architecture) using the `xcompiler`. It only happens to be a convenience that `xcompiler` actually runs the same code to interpret and compile itself (in an emulator of the target architecture)... making it a self/endo-compilation, the result being a binary image suitable to run on the target system.
 
 ## Pros and cons
 
