@@ -23,12 +23,16 @@
 
 This page is about AlexForth, my own implementation of FORTH for my Homebrew 6502 SBC.
 
-![](./imgs/Forth.png)
+![](./imgs/Forth.png) *(screenshot taken in Cool Retro Term)*
 
-To develop this FORTH I have started with Kowalsky 6502 simulator, as it helped me debugging the 6502 code step by step, while introspecting registers and ram. I've been maintaining two paralel versions of the code, which hopefully should be aligned:
+To develop this FORTH I have started with Kowalsky 6502 simulator, as it helped me debugging the 6502 code step by step, while introspecting registers and ram. 
+
+I've then maintained two paralel versions of the code:
 
 - `forth00.asm` was the source initial source I worked on, suitable to run in the Kowalsky 6502 simulator, with no macro for the words header for example.
-- Now AlexForth source code is divided into two files, see [Source code organization](#source-code-organization).
+- Now AlexForth source code is divided into two files `forth.s` and `bootstrap.f`, see [Source code organization](#source-code-organization).
+
+Note: `forth00.asm` source is old and not aligned any more with `forth.s`. I leave it here as it can be useful to run it in Kowalsky 6502 simulator.
 
 # Implementation notes
 
@@ -264,12 +268,18 @@ AlexFORTH source code is split into two files, to facilitate a two stages compil
 ## Two stages compilation process
 
 AlexForth compilation is a two-stages compilation:
-- In Stage 1:
+- In **Stage 1**:
   - The `forth.s` source code is compiled (`forth-stage1.bin`) for being run in an 6502 emulator on the host system (`xcompiler`).
   - `xcompiler` will run `forth-stage1.bin` on the host computer, in a 6502 emulator, and interpret and compile the bootstrap code, generating the dictionary in a memory space that corresponds to the target's ROM memory space (exception for any variables defined in bootstrap code, will go in a memory space that corresponds to the target's RAM memory space)
+![](./imgs/stage1.1.svg)
   - Once reaching the end of the bootstrap code compilation, `xcompiler` will extracts ROM's and RAM's dictionary as binary images.
-- In Stage 2:
+![](./imgs/stage1.2.svg)
+- In **Stage 2**:
   - The `forth.s` file is compiled again, but this time embedding the RAM and ROM binary images extracted in Stage 1, thus generating a single `forth-hw.bin` binary image, suitable to be flashed in the target 65C02 hardware computer (or run in a target 65C02 emulator)
+![](./imgs/stage2.1.svg)
+  - At runtime, the RAM binary image (containing variables) is copied into RAM:
+![](./imgs/stage2.2.svg)
+
 
 [This document](https://raw.githubusercontent.com/adumont/hb6502/main/forth/doc/AlexFORTH_two_stages_compilation.pdf) contains some diagrams further illustrating the 2 stages compilation process.
 
