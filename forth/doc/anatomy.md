@@ -246,7 +246,7 @@ First we decompile CREATE. Then we use CREATE to define a new variable MYVAR, an
 ok SEE CREATE
 855E 8170 COLON
 8560 8525 CODE
-8562 84D2 84D2 
+8562 84D2 *COMMIT_JMP 	; Compiles a JMP ($4C)
 8564 826F COMPILE
 8566 8170 COLON
 8568 826F COMPILE
@@ -267,7 +267,7 @@ ok SEE MYVAR          |
 0853 AA55 AA55        / Data cells
 ```
 
-Notice how by defaul
+Notice how by default, the action exectuted by *CREATED will be to jump to EXIT. In the next [CREATE DOES> example](#create-does-example) we'll see how `DOES>` can change this default behaviour.
 
 ## CREATE DOES> example
 
