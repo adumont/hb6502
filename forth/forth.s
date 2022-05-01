@@ -2395,14 +2395,14 @@ defword "ULESS","U<",
 defword "JUMP",,
 ; (IP) points to literal address to jump to
 ; instead of next instruction ;)
-	; we push the addr to the Return Stack
 	LDY #1
 	LDA (IP),y
-	PHA
+	TAY
 	LDA (IP)
-	PHA
-	; and jump to do_SEMI to handle the rest ;)
-	JMP do_SEMI
+	STA IP
+	TYA
+	STA IP+1
+	JMP NEXT
 
 defword "HEREPP","HERE++",
 ; advance HERE by 1 cell (HERE+2 -> HERE)
