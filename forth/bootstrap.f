@@ -49,7 +49,6 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : NIP SWAP DROP ;
 : PICK 1+ 2* SP@ + @ ;
 : DEPTH DTOP SP@ - 2/ ;
-: .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CR THEN DROP ;
 
 : 2SWAP >R -ROT R> -ROT ;
 : 2ROT >R >R 2SWAP R> R> 2SWAP ;
@@ -66,10 +65,19 @@ HERE 5 !        \ we save the start of RAM area at 0005
 
 : * UM* DROP ;
 
+: VALUE CREATE , DOES> @ ;
+: CONSTANT VALUE ;
+: TO ' 7 + ?EXEC IF ! ELSE LIT, LIT , LIT, ! THEN ; IMMEDIATE
+: DEFER CREATE 0 , DOES> @ EXEC ;
+: POSTPONE ' , ; IMMEDIATE
+: IS POSTPONE TO ; IMMEDIATE
+
 >RAM
 
 VARIABLE BP \ ; defines BP variable (Base Pointer)
 _BP BP !
+
+0 VALUE SIGNED \ change to non-0 for signed output
 
 >ROM
 
@@ -95,13 +103,6 @@ _BP BP !
 : WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . 
   .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 = 
   IF 2DROP EXIT THEN DROP 0 THEN SWAP REPEAT 2DROP ;
-
-: VALUE CREATE , DOES> @ ;
-: CONSTANT VALUE ;
-: TO ' 7 + ?EXEC IF ! ELSE LIT, LIT , LIT, ! THEN ; IMMEDIATE
-: DEFER CREATE 0 , DOES> @ EXEC ;
-: POSTPONE ' , ; IMMEDIATE
-: IS POSTPONE TO ; IMMEDIATE
 
 : .( [ ' S( , ] ?EXEC IF TYPE ELSE LIT, TYPE THEN ; IMMEDIATE
 
@@ -192,25 +193,22 @@ _BP BP !
    EMIT
 ;
 
-\ Redefine .S with BASE support (only positive numbers for now! )
-: .S
-  \ BREAK
-  10 BASE C@ = IF
-    .S
-  ELSE
-    DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK U. SPACE LOOP CR THEN DROP
-  THEN
-;
-
-\ redefine . with BASE support (only positive numbers for now! )
 : .
-  \ BREAK
+  SIGNED IF
+    DUP 0< IF
+      CHAR - EMIT
+      NEG
+    THEN
+  THEN
+
   10 BASE C@ = IF
     .
   ELSE
     U. SPACE
   THEN
 ;
+
+: .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CR THEN DROP ;
 
 MARKER
 \ PRMP
