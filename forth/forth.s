@@ -152,9 +152,6 @@ RES_vec:
 	BNE :-
 skip_copy_ram_block:
 
-	; clear the PRT0 flag (print leading 0)
-	stz PRT0
-
 ; This is a Direct Threaded Code based FORTH
 	
 entry_point:
@@ -467,27 +464,6 @@ defword "RP_STORE","RP!",
 	TAX		; and transfer to X
 	TXS		; then to SP
 	LDX G1	; finally restore X from G1
-	JMP do_DROP
-
-defword "DECPRINT","DEC.",
-; ( n -- )
-; Print the number in decimal form
-	LDA 2,x
-	STA BIN+0
-	LDA 3,x
-	STA BIN+1
-	JSR hex16toBCD
-	LDY #5
-	STY PRT0	; 6 digits, so 6-1=5 where we don't want to print leading 0
-	LDA BCD+2
-	JSR print_byte
-	LDA BCD+1
-	JSR print_byte
-	LDA BCD+0
-	JSR print_byte
-	STZ PRT0	; reset the PRT0 flag
-	LDA #' '
-	JSR putc
 	JMP do_DROP
 
 defword "COLON",,
@@ -2811,19 +2787,12 @@ print_byte:
 	; fallthrough to print_nibble
 
 print_nibble:
-	BNE :+
-	; digit is a 0
-	DEC PRT0
-	BPL :++		; PRT0>0 --> we don't print it
-:	STZ PRT0	; digit wasn't 0, so we clear PRT0 flag
 	CMP #$0A
 	BCC @skip
 	ADC #$66
 @skip:
 	EOR #$30
 	JMP putc
-:
-	RTS
 
 nibble_asc_to_value:
 ; converts a char representing a hex-digit (nibble)
@@ -2848,32 +2817,6 @@ nibble_asc_to_value:
 @less:
 	AND #$0F
 	CLC
-	RTS
-
-hex16toBCD:
-; http://www.6502.org/source/integers/hex2dec-more.htm
-; expect  a 16-bit HEX number in BIN+{0,1}
-; returns a 24-bit BCD number in BCD+{0,1,2}
-	SED			; Switch to decimal mode
-	STZ BCD+0	; we erase the result area
-	STZ BCD+1
-	STZ BCD+2
-	LDY #16		; The number of source bits
-@cnvbit:
-	ASL BIN+0	; Shift out one bit
-	ROL BIN+1
-	LDA BCD+0	; And add into result
-	ADC BCD+0
-	STA BCD+0
-	LDA BCD+1	; propagating any carry
-	ADC BCD+1
-	STA BCD+1
-	LDA BCD+2	; ... thru whole result
-	ADC BCD+2
-	STA BCD+2
-	DEY			; And repeat for next bit
-	BNE @cnvbit
-	CLD			; Back to binary
 	RTS
 
 ; Interrupts routines
@@ -2946,14 +2889,12 @@ INP_LEN: .res 1	; Length of the text in the input buffer
 INPUT:	.res 128	; CMD string (extend as needed, up to 256!)
 INP_IDX: .res 1	; Index into the INPUT Buffer (for reading it with KEY)
 OK:		.res 1	; 1 -> show OK prompt
-PRT0:	.res 1	; flag we use to know if we print leading zeros. <0 we print the 0, otherwise we don't
 SCRATCH: .res 8	; 8 bytes we can use in routines...
 HERE_RAM: .res 2	; these variable will be used by >ROM / >RAM
 HERE_ROM: .res 2	; to save/restore the HERE value (when cross compiling)
 TO_ROM:   .res 1	; flag that indicate if we're compiling to ROM
 
-BIN = SCRATCH
-BCD = SCRATCH+2
+BCD = SCRATCH
 LONG1 = SCRATCH		; Two long (4bytes) numbers in scratch area.
 LONG2 = SCRATCH+4	; both are used in divide_by_10
 
