@@ -2519,10 +2519,6 @@ defword "PUSH0","0",
 	STZ 1,x
 	JMP DEX2_NEXT
 
-defword "LIT_COMMA_ALIAS", "LIT,"
-; this is an alias for COMPILE, shorter, so it occupies less space in the bootstrap code in ROM
-	JMP compile_addr
-
 defword "CSTORE","C!",
 ; C! ( value ADDR -- )
 	; copy the address to W

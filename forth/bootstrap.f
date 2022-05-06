@@ -16,7 +16,7 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : 0< 8000 AND ; \ ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
 : IMMEDIATE LAST SETIMM ; \	; sets the latest word IMMEDIATE
 : ' WORD FIND >CFA ;
-: ['] ' LIT, LIT , ; IMMEDIATE
+: ['] ' COMPILE LIT , ; IMMEDIATE
 : [,] , ; IMMEDIATE \ take an XT on ToS, commit to dict
 
 : +! SWAP OVER @ + SWAP ! ;
@@ -27,20 +27,20 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : <= > 0= ;
 : >= SWAP <= ;
 
-\ LIT, is an alias for COMPILE, it's shorter ;)
-: IF LIT, 0BR HERE HERE++ ; IMMEDIATE
+\ COMPILE is an alias for COMPILE, it's shorter ;)
+: IF COMPILE 0BR HERE HERE++ ; IMMEDIATE
 : THEN HERE SWAP ! ; IMMEDIATE
-: ELSE LIT, JUMP HERE HERE++ SWAP HERE SWAP ! ; IMMEDIATE
+: ELSE COMPILE JUMP HERE HERE++ SWAP HERE SWAP ! ; IMMEDIATE
 
 : BEGIN HERE ; IMMEDIATE
-: AGAIN LIT, JUMP , ; IMMEDIATE
+: AGAIN COMPILE JUMP , ; IMMEDIATE
 
-: UNTIL LIT, 0BR , ; IMMEDIATE
+: UNTIL COMPILE 0BR , ; IMMEDIATE
 
 : ( BEGIN KEY 29 = UNTIL ; IMMEDIATE \ ; now we can use ( ) inline comments!
 
-: WHILE LIT, 0BR HERE HERE++ ; IMMEDIATE
-: REPEAT LIT, JUMP SWAP , HERE SWAP ! ; IMMEDIATE
+: WHILE COMPILE 0BR HERE HERE++ ; IMMEDIATE
+: REPEAT COMPILE JUMP SWAP , HERE SWAP ! ; IMMEDIATE
 
 : >D DUP 0< 0= 0= ; \ ; Extends signed cell into signed double (0= 0= will convert any non 0 into FFFF)
 
@@ -67,7 +67,7 @@ HERE 5 !        \ we save the start of RAM area at 0005
 
 : VALUE CREATE , DOES> @ ;
 : CONSTANT VALUE ;
-: TO ' 7 + ?EXEC IF ! ELSE LIT, LIT , LIT, ! THEN ; IMMEDIATE
+: TO ' 7 + ?EXEC IF ! ELSE COMPILE LIT , COMPILE ! THEN ; IMMEDIATE
 : DEFER CREATE 0 , DOES> @ EXEC ;
 : POSTPONE ' , ; IMMEDIATE
 : IS POSTPONE TO ; IMMEDIATE
@@ -104,10 +104,10 @@ _BP BP !
   .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 = 
   IF 2DROP EXIT THEN DROP 0 THEN SWAP REPEAT 2DROP ;
 
-: .( [ ' S( , ] ?EXEC IF TYPE ELSE LIT, TYPE THEN ; IMMEDIATE
+: .( [ ' S( , ] ?EXEC IF TYPE ELSE COMPILE TYPE THEN ; IMMEDIATE
 
 : STRING CREATE HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE ; \ Example: S( Alex) STRING NAME
-: CHAR ?EXEC IF KEY ELSE LIT, CLIT KEY C, THEN ; IMMEDIATE \ Example: CHAR " EMIT
+: CHAR ?EXEC IF KEY ELSE COMPILE CLIT KEY C, THEN ; IMMEDIATE \ Example: CHAR " EMIT
 
 : FREE BASE C@ BP @ 2+ HERE - #10 BASE C! . .( BYTES FREE) CR BASE C! ;
 
