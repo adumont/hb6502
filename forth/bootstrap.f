@@ -27,7 +27,6 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : <= > 0= ;
 : >= SWAP <= ;
 
-\ COMPILE is an alias for COMPILE, it's shorter ;)
 : IF COMPILE 0BR HERE HERE++ ; IMMEDIATE
 : THEN HERE SWAP ! ; IMMEDIATE
 : ELSE COMPILE JUMP HERE HERE++ SWAP HERE SWAP ! ; IMMEDIATE
