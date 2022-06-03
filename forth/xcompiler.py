@@ -141,6 +141,8 @@ def cpuThread(ch, queue, emu_queue):
     f.write( "STA DP+1     \n" )
     f.close()
 
+    print(mpu.processorCycles, "clock cycles")
+
     # Signal main thread it's the end
     emu_queue.put(1)
 
