@@ -100,9 +100,9 @@ STR ASK$
 ### Ask for numbers
 
 ```forth
-: ASK# ( -- N ) \ returns the number on the stack
+: ASK# ( -- N F ) \ returns the number on the stack
   0A PARSE  ( ADDR LEN )
-  NUMBER    ( N )
+  NUMBER    ( N F )
 ;
 
 : TEST#
@@ -111,8 +111,12 @@ STR ASK$
     .( What's your age? )
     \ Ask for the answer and return the number on the stack
     ASK#
-    \ Reply using the number
-    .( Your age is ) . CR
+    IF 
+      \ Reply using the number
+      .( Your age is ) . CR
+    ELSE
+      DROP .( Error: not a number) CR
+    THEN
   LOOP
 ;
 ```
