@@ -275,13 +275,24 @@ compile:
 numscan:
 	.ADDR do_DROP ; ( addr len )
 	.ADDR do_2DUP ; 2DUP ( addr len addr len )
-	.ADDR do_NUMBER ; ( addr len n ) n or garbage if ERROR
+	.ADDR do_NUMBER ; ( addr len n flag )
 
-	.ADDR do_LIT, ERROR  ; ( addr len n Addr )
-	.ADDR do_CFETCH	; ( addr len n Error )
-	.ADDR do_0BR, cleanStack ; 0 -> no error => clean stack & loop
+	.ADDR do_0BR, numberError ; 0 -> no error => clean stack & loop
 
-; Error: ( addr len n )
+numberParsed:  ; ( addr len n )
+	.ADDR do_NROT, do_2DROP ; ( n )
+
+	; here we have the number N on the stack.
+	; are we in compilation mode?
+
+	.ADDR do_STATE   ; ( n MODE ) 0: compile, 1 execute
+
+	.ADDR do_0BR, commitN ; Mode = 0 --> CommitN to new word
+	; if not 0, continue loop (N already on the stack)
+
+	.ADDR do_JUMP, loop1
+
+numberError:	; Error: ( addr len n )
 	.ADDR do_DROP ; ( addr len )
 	.ADDR do_TYPE ; ( -- ) print the unknown word
 	.ADDR do_LIT, WHAT_STR
@@ -304,19 +315,6 @@ removeW:
 	.ADDR do_LAST, do_FETCH ; LATEST @ @
 	.ADDR do_LATEST, do_STORE           ; LATEST !
 	.ADDR do_JUMP, executeMode ; back to execute mode and reset input buffer
-
-cleanStack:  ; ( addr len n )
-	.ADDR do_NROT, do_2DROP ; ( n )
-
-	; here we have the number N on the stack.
-	; are we in compilation mode?
-
-	.ADDR do_STATE   ; ( n MODE ) 0: compile, 1 execute
-
-	.ADDR do_0BR, commitN ; Mode = 0 --> CommitN to new word
-	; if not 0, continue loop (N already on the stack)
-
-	.ADDR do_JUMP, loop1
 
 commitN:
 	; ( n )
@@ -1274,15 +1272,21 @@ defword "NUMBER",,
 	STA 4,X
 	LDA G2+1
 	STA 5,X
-@drop:
-	JMP do_DROP
+
+	; leave a non 0 value on the stack
+	TXA	; X isn't 0, we don't care the value really. we put it in A
+	STA 2,X	; we also don't care the value in 3,X
+	JMP NEXT
+
 @err:
 	; Restore X
 	PLX
 
-	LDA #1
-	STA ERROR
-	BRA @drop
+	; we leave a 0000 on ToS --> error
+	STZ 3,X
+	STZ 2,X
+
+	JMP NEXT
 
 ; branches where we set teh base from the prefix:
 @prefixed_base2:
