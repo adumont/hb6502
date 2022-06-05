@@ -16,7 +16,7 @@ LIB=lib
 
 # Builds the 3 .dat files, cross-compiling the bootstrap.f code
 %.dat: forth-stage1.bin bootstrap.f
-	./xcompiler.py -r forth-stage1.bin -l bootstrap.f
+	./xcompiler.py -r forth-stage1.bin -l bootstrap.f -s forth-stage1.lbl
 
 stage1: rom.dat ram.dat last.dat
 
