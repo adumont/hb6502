@@ -10,6 +10,8 @@ HERE 5 !        \ we save the start of RAM area at 0005
 >ROM
 \ ----------------------------
 
+: UNDEF LAST @ LATEST ! ; \ undefine last word
+
 : ? @ . ;
 : = - 0= ;
 : NEG NOT 1+ ; \ ( N -- -N ) Negate N (returns -N)
