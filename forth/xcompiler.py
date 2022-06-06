@@ -144,7 +144,13 @@ def cpuThread(ch, queue, emu_queue):
 
         header = getWord(addr_LATEST)
         while True:
-            l = getByte(header+2) & 0x1F
+            l = getByte(header+2) # get length & flags
+
+            if l & 0x40: # Hidden word, skip!
+                header = getWord(header)
+                continue
+
+            l = l &  0x1F # length, no flags
             str = getCountedStr(header+2, l)
 
             if str == word:
