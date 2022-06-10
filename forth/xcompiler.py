@@ -86,18 +86,6 @@ def cpuThread(ch, queue, emu_queue):
     def load(memory, start_address, bytes):
         memory[start_address:start_address + len(bytes)] = bytes
 
-    # def putc(address, value):
-        # if not started:
-        #     return
-        # try:
-        #     if value==0x08:
-        #         sys.stdout.write(chr(value))
-        #         sys.stdout.write(' ')
-        #     sys.stdout.write(chr(value))
-        # except UnicodeEncodeError: # Python 3
-        #     sys.stdout.write("?")
-        # sys.stdout.flush()
-
     def getc(address):
         while queue.empty():
             pass
@@ -274,10 +262,8 @@ if args.load:
 # Now we wait FORTH to signal us it has finished the compilation.
 # This happens when we save "1 into 0x0000"
 # we need to catch writes to 0x0000 and when that happens, signal back to this thread.
+while emu_queue.empty():
+    pass
 
-while True:
-    if not emu_queue.empty():
-        print("CPU signaled end of compilation!")
-        break
-
+print("CPU signaled end of compilation!")
 quit(emu_queue.get())
