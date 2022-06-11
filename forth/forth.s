@@ -1735,61 +1735,6 @@ defword "FIND",,
 	LDA LATEST+1
 	STA W+1
 
-	lda BOOT			; Shortcuts are only available in BOOT mode
-	beq @nxt_word		; after boot mode, I disable them.
-						; shortcuts made it impossible to redefine those words
-
-; shortcuts in FIND for ":" and ";"
-	LDA 2,X
-	CMP #1
-	BNE @nxt_word
-; 1 char word. here we test if the word is ":"
-	LDA (G2)
-	CMP #':'
-	BNE @not_colon
-	; word is ":"
-	LDA #<h_FCOLON
-	STA 4,X
-	LDA #>h_FCOLON
-	STA 5,X
-	JMP do_DROP
-@not_colon:
-	CMP #';'
-	BNE @not_semi
-	; word is ";"
-	LDA #<h_SEMICOLON
-	STA 4,X
-	LDA #>h_SEMICOLON
-	STA 5,X
-	JMP do_DROP
-@not_semi:
-	CMP #'@'
-	BNE @not_fetch
-	; word is "@"
-	LDA #<h_FETCH
-	STA 4,X
-	LDA #>h_FETCH
-	STA 5,X
-	JMP do_DROP
-@not_fetch:
-	CMP #'!'
-	BNE @not_store
-	; word is "!"
-	LDA #<h_STORE
-	STA 4,X
-	LDA #>h_STORE
-	STA 5,X
-	JMP do_DROP
-@not_store:
-	CMP #','
-	BNE @not_comma
-	; word is ","
-	LDA #<h_COMMA
-	STA 4,X
-	LDA #>h_COMMA
-	STA 5,X
-	JMP do_DROP
-@not_comma:
 @nxt_word:
 	LDY #2
 	LDA (W),Y ; load Length
