@@ -1796,6 +1796,102 @@ defword "FIND",,
 	STA 5,X
 	JMP do_DROP
 
+defword "FDOT","F.",
+; get number sign and print "-" if needed
+	LDA 5,X
+	BPL :+
+	; print a - sign
+	LDA #'-'
+	JSR putc
+:
+; print first digit
+	LDA 4,X
+	PHA	; save A for 2nd nibble
+	LSR	; here we shift right
+	LSR	; to get HI nibble
+	LSR
+	LSR
+	JSR print_nibble
+; print a dot '.'
+	LDA #'.'
+	JSR putc
+; print second digit
+	PLA
+	AND #$0F ; LO nibble
+	; fallthrough to print_nibble
+	JSR print_nibble
+; print 2 next digits
+	LDA 3,X
+	JSR print_byte
+; print last 2 digits
+	LDA 2,X
+	JSR print_byte
+; print an 'e'
+	LDA #'e'
+	JSR putc
+; load exponent again
+	LDA 5,X
+	AND #%01000000
+	BEQ :+
+	; print a - sign
+	LDA #'-'
+	JSR putc
+:
+	LDA 5,X
+	AND #%00111111
+	JSR hex8toBCD
+	LDA HTD_OUT
+	JSR print_byte
+; Drop two cells
+	INX
+	INX
+	JMP do_DROP
+
+hex8toBCD:
+; Only for the exponent, 6 bits only, so we don't use HTD_OUT+1 
+; (max is 63 so 1 byte BCD)
+; Adapted from http://6502.org/source/integers/hex2dec.htm
+; A       = Hex input number (gets put into HTD_IN)
+; HTD_OUT = 1s & 10s output byte
+
+	CLD				; (Make sure it's not in decimal mode for the
+	STA HTD_IN		; ADCs below.)
+	STZ HTD_OUT		; (NMOS 6502 will need LDA #0, STA ...)
+	; STZ HTD_OUT+1
+	LDY #8
+
+@htd1:
+	ASL HTD_IN
+	ROL HTD_OUT
+	; ROL HTD_OUT+1
+
+	DEY				; The shifting will happen 5 times.  After
+	BEQ @htd3		; the last shift, you don't check for digits of
+					; 5 or more.
+	LDA HTD_OUT
+	AND #$F
+	CMP #5
+	BMI @htd2
+
+	CLC
+	LDA HTD_OUT
+	ADC #3
+	STA HTD_OUT
+
+@htd2:
+	LDA HTD_OUT
+	CMP #50H
+	BMI @htd1
+
+	CLC
+	ADC #30H
+	STA HTD_OUT
+
+	BRA @htd1		; NMOS 6502 can use JMP.
+
+@htd3:
+	RTS
+
 defword "SPACE",,
 ; Print a space		( -- )
 	LDA #' '
@@ -2830,6 +2926,8 @@ TO_ROM:   .res 1	; flag that indicate if we're compiling to ROM
 BCD = SCRATCH
 LONG1 = SCRATCH		; Two long (4bytes) numbers in scratch area.
 LONG2 = SCRATCH+4	; both are used in divide_by_10
+HTD_IN = SCRATCH
+HTD_OUT = SCRATCH+1
 
 RAM_BLOCK_DEST:	.res (end_ram_image-start_ram_image)
 
