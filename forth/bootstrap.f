@@ -99,10 +99,10 @@ _BP BP !
 : DUMP SWAP DUP . ?DO I C@ C. LOOP ; \ ( addr1 addr2 -- ) dumps memory from addr1 to addr2
 : .LDUMP BP @ 4000 DUMP ; \ dump local stack
 
-: .NAME DUP 2+ DUP C@ DUP 40 AND >R 1F AND SWAP 
+: .NAME DUP 2+ DUP C@ DUP 40 AND >R 1F AND SWAP
   1+ SWAP TYPE R> IF SPACE 2A EMIT THEN ;
-: WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . 
-  .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 = 
+: WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA .
+  .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 =
   IF 2DROP EXIT THEN DROP 0 THEN SWAP REPEAT 2DROP ;
 
 : .( [ ' S( , ] ?EXEC IF TYPE ELSE COMPILE TYPE THEN ; IMMEDIATE
@@ -210,6 +210,161 @@ _BP BP !
 : FREE BASE C@ BP @ 2+ HERE - DEC . .( BYTES FREE) CR BASE C! ;
 
 : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CR THEN DROP ;
+
+\ FLOATS
+
+: FVAR CREATE #10 ALLOT ;
+: .SIGN      ; \ Sign 1 byte
+: .MANT 1+   ; \ Mantisa 4 bytes BCD
+: .EXPS 8 + ; \ Exponent sign 1 byte
+: .EXP  9 + ; \ Exponent 1 byte
+
+: F!
+  3 LOCALS
+  x! \ float structrure addr
+  y!
+  z!
+  \ store sign
+  z 0< IF 1 ELSE 0 THEN x .SIGN C!
+  \ store exponent sign
+  z 2* 0< IF 1 ELSE 0 THEN x .EXPS C!
+  \ store exponent
+  z <> %00111111 AND x .EXP C!
+  \ store mantisa
+  x .MANT x! \ x now contains MANT addr
+  z $FF AND
+  DUP 2/ 2/ 2/ 2/ x C!
+  $0F AND x 1+ C!
+
+  y <> $FF AND
+  DUP 2/ 2/ 2/ 2/ x 2+ C!
+  $0F AND x 3 + C!
+
+  y $FF AND
+  DUP 2/ 2/ 2/ 2/ x 4 + C!
+  $0F AND x 5 + C!
+
+  0 x 6 + C!
+  -LOCALS
+;
+
+: F@
+  1 LOCALS x!
+  x .EXP C@ %00111111 AND
+  x .EXPS C@ IF  %01000000 OR THEN
+  x .SIGN C@ IF  %10000000 OR THEN
+  <>
+  x .MANT x! \ x now contains MANT addr
+
+  x C@ 2* 2* 2* 2* OR
+  x 1+ C@ OR
+
+  x 2+  C@ 2* 2* 2* 2*
+  x 3 + C@ OR <>
+
+  x 4 + C@ 2* 2* 2* 2* OR
+  x 5 + C@ OR
+
+  -LOCALS
+;
+
+: FSEXP@ \ return the signed exponent of a float (8 bit 2's complement )
+  ( 'float -- signed_exp )
+  DUP .EXP C@ SWAP .EXPS C@ IF NEG THEN
+;
+
+: FSEXP! \ stores the signed exponent back to a float var
+  ( signed_exp 'float )
+  SWAP
+  DUP 0< IF 1 SWAP NEG ELSE 0 SWAP THEN
+  -ROT OVER .EXPS C! .EXP C!
+;
+
+: F>>
+  1 LOCALS x!
+  0 ( 0 )
+  x .MANT ( 0 'mant )
+  DUP DUP 1+ ( 0 'mant 'mant 'mant+1 )
+  6 ( 0 'mant 'mant 'mant+1 6 )
+  CMOVE ( 0 'mant )
+  C! ( )
+  \ increment exponent
+  x DUP FSEXP@ 1+ SWAP FSEXP!
+  -LOCALS
+;
+
+: F<<
+  1 LOCALS x!
+  x .MANT DUP 1+ ( 'mant 'mant+1 )
+  HERE ( 'mant 'mant+1 here )
+  6 CMOVE
+  HERE SWAP 6 CMOVE
+  0 x 7 + C!
+
+  \ decrement exponent
+  x DUP FSEXP@ 1 - SWAP FSEXP!
+  -LOCALS
+;
+
+: FALIGN ( x y -- ) \ too var floats addr
+  \ TODO: this is not efficient. if there's more than 6 of diff between the exponents
+  \ we'll loose all the significant digits and do F>>'s for nothing!
+  4 LOCALS
+  y! x!
+  x FSEXP@ z! \ x's signed exponent
+  y FSEXP@ t! \ y's signed exponent
+  z t = IF EXIT THEN
+  z t < IF
+    \ we need to raise x's exponent z to t
+    t z - 0 DO x F>> LOOP
+  ELSE
+    \ we need to lower x's exponent z to t
+    z t - 0 DO y F>> LOOP
+  THEN
+  -LOCALS
+;
+
+: FRMANT+ ( 'x 'y -- addr carry ) \ add mantissas of 2 float registers x y, leave the 7 digits in t
+  3 LOCALS y! x!
+  0 z! \ carry
+  8 0 DO
+    x .MANT 7 I - + C@
+    y .MANT 7 I - + C@
+    +
+    z +
+    DUP 9 > IF
+      6 +
+      1 z!
+      F AND \ we remove the carry from the byte
+    ELSE
+      0 z!
+    THEN
+    HERE 7 I - + C! \ store the resulting digit in HERE+7-I
+  LOOP
+  \ returns addr and carry
+  HERE z
+  -LOCALS
+;
+
+>RAM
+\ 2 temp float registers
+FVAR TMPF1
+FVAR TMPF2
+>ROM
+
+: F+ ( f1 f2 )
+  TMPF2 F!
+  TMPF1 F!
+  TMPF1 TMPF2 FALIGN
+  TMPF1 TMPF2 FRMANT+ ( addr carry )
+  SWAP ( carry addr )
+  TMPF2 .MANT 7 CMOVE
+  IF \ carry is 1?
+  TMPF2 F>>
+  1 TMPF2 .MANT C! \ store the carry in the mantissa
+  THEN
+  TMPF2 F@
+;
 
 >RAM
 MARKER

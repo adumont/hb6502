@@ -1796,6 +1796,16 @@ defword "FIND",,
 	STA 5,X
 	JMP do_DROP
 
+defword "XLOHI","<>",
+; exchange the LO and HI bytes of the word on ToS
+	LDA 2,X
+	TAY
+	LDA 3,X
+	STA 2,X
+	TYA
+	STA 3,X
+	JMP NEXT
+
 defword "FDOT","F.",
 ; get number sign and print "-" if needed
 	LDA 5,X
@@ -1831,14 +1841,23 @@ defword "FDOT","F.",
 	JSR putc
 ; load exponent again
 	LDA 5,X
+	TAY
 	AND #%01000000
-	BEQ :+
+	BEQ @load_exp
+; exponent is negative
 	; print a - sign
 	LDA #'-'
 	JSR putc
-:
-	LDA 5,X
+	; ; We negate it to get the positive exponent
+	; TYA	; restore exponent byte
+	; ORA #%10000000
+	; EOR #$FF
+	; INA
+	; BRA @print_exp
+@load_exp:
+	TYA	; restore exponent byte
 	AND #%00111111
+@print_exp:
 	JSR hex8toBCD
 	LDA HTD_OUT
 	JSR print_byte
@@ -1848,7 +1867,7 @@ defword "FDOT","F.",
 	JMP do_DROP
 
 hex8toBCD:
-; Only for the exponent, 6 bits only, so we don't use HTD_OUT+1 
+; Only for the exponent, 6 bits only, so we don't use HTD_OUT+1
 ; (max is 63 so 1 byte BCD)
 ; Adapted from http://6502.org/source/integers/hex2dec.htm
 ; A       = Hex input number (gets put into HTD_IN)
@@ -2928,6 +2947,11 @@ LONG1 = SCRATCH		; Two long (4bytes) numbers in scratch area.
 LONG2 = SCRATCH+4	; both are used in divide_by_10
 HTD_IN = SCRATCH
 HTD_OUT = SCRATCH+1
+
+F1M = SCRATCH		; Float Mantisa 1
+F1E = G1
+F2M = SCRATCH+4		; Float Mantisa	2
+F2E = G1+1
 
 RAM_BLOCK_DEST:	.res (end_ram_image-start_ram_image)
 
