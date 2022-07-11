@@ -75,6 +75,9 @@ addr_INPUT      = getLabelAddr("INPUT")
 addr_INP_IDX    = getLabelAddr("INP_IDX")
 addr_OK         = getLabelAddr("OK")
 
+addr_custom_breakpoint = getLabelAddr(args.breakpoint)
+addr_do_BREAK = getLabelAddr("do_BREAK")
+
 getc_addr=0xF004
 putc_addr=0xF001
 
@@ -236,7 +239,7 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
     run_next_step = 0
 
     while not exit_event.is_set():
-        if mpu.pc == getLabelAddr(args.breakpoint) or mpu.pc == getLabelAddr("do_BREAK"): # breakpoint
+        if mpu.pc == addr_custom_breakpoint or mpu.pc == addr_do_BREAK: # breakpoint
             queue_step.put(1)
 
         if not queue_step.empty():
