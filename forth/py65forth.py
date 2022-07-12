@@ -15,6 +15,7 @@ from py65.utils import console
 
 # Argument parsing
 parser = argparse.ArgumentParser()
+parser.add_argument('-e','--exec', help='sentence to execute in Forth')
 parser.add_argument('-r','--rom', help='binary rom file', default="forth.bin")
 parser.add_argument('-a','--addr', help='address to load to', default=0x8000)
 parser.add_argument('-l','--load', help='forth program to load')
@@ -129,6 +130,12 @@ def main(stdscr):
     t=threading.Thread( target=cpuThread, args=("", queue, int_queue))
     t.daemon = True
     t.start()
+
+    if args.exec:
+        for c in args.exec:
+            queue.put( ord(c) )
+        queue.put( ord('\n') )
+
 
     if args.load:
         f = open(args.load, 'r')
