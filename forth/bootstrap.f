@@ -51,6 +51,9 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : PICK 1+ 2* SP@ + @ ;
 : DEPTH DTOP SP@ - 2/ ;
 
+: MIN ( a b -- min ) 2DUP < IF DROP ELSE NIP THEN ;
+: MAX ( a b -- max ) 2DUP < IF NIP ELSE DROP THEN ;
+
 : 2SWAP >R -ROT R> -ROT ;
 : 2ROT >R >R 2SWAP R> R> 2SWAP ;
 : 2>R R> -ROT SWAP >R >R >R ;
@@ -213,11 +216,11 @@ _BP BP !
 
 \ FLOATS
 
-: FVAR CREATE #10 ALLOT ;
+: FREG CREATE 7 ALLOT ; \ 7 bytes per float register
 : .SIGN      ; \ Sign 1 byte
 : .MANT 1+   ; \ Mantisa 4 bytes BCD
-: .EXPS 8 + ; \ Exponent sign 1 byte
-: .EXP  9 + ; \ Exponent 1 byte
+: .EXPS 5 +  ; \ Exponent sign 1 byte
+: .EXP  6 +  ; \ Exponent 1 byte
 
 : F!
   3 LOCALS
@@ -231,20 +234,13 @@ _BP BP !
   \ store exponent
   z <> %00111111 AND x .EXP C!
   \ store mantisa
-  x .MANT x! \ x now contains MANT addr
   z $FF AND
-  DUP 2/ 2/ 2/ 2/ x C!
-  $0F AND x 1+ C!
+  x 1+ C!
 
-  y <> $FF AND
-  DUP 2/ 2/ 2/ 2/ x 2+ C!
-  $0F AND x 3 + C!
+  x 2+
+  y <> OVER !
 
-  y $FF AND
-  DUP 2/ 2/ 2/ 2/ x 4 + C!
-  $0F AND x 5 + C!
-
-  0 x 6 + C!
+  0 SWAP 2+ C!
   -LOCALS
 ;
 
@@ -254,16 +250,10 @@ _BP BP !
   x .EXPS C@ IF  %01000000 OR THEN
   x .SIGN C@ IF  %10000000 OR THEN
   <>
-  x .MANT x! \ x now contains MANT addr
+  x 1+ SWAP OVER
+  C@ OR
 
-  x C@ 2* 2* 2* 2* OR
-  x 1+ C@ OR
-
-  x 2+  C@ 2* 2* 2* 2*
-  x 3 + C@ OR <>
-
-  x 4 + C@ 2* 2* 2* 2* OR
-  x 5 + C@ OR
+  SWAP 1+ @ <>
 
   -LOCALS
 ;
@@ -280,35 +270,19 @@ _BP BP !
   -ROT OVER .EXPS C! .EXP C!
 ;
 
-: F>>
-  1 LOCALS x!
-  0 ( 0 )
-  x .MANT ( 0 'mant )
-  DUP DUP 1+ ( 0 'mant 'mant 'mant+1 )
-  6 ( 0 'mant 'mant 'mant+1 6 )
-  CMOVE ( 0 'mant )
-  C! ( )
+: F>> ( addr )
+  DUP .MANT BCDSR
   \ increment exponent
-  x DUP FSEXP@ 1+ SWAP FSEXP!
-  -LOCALS
+  DUP FSEXP@ 1+ SWAP FSEXP!
 ;
 
-: F<<
-  1 LOCALS x!
-  x .MANT DUP 1+ ( 'mant 'mant+1 )
-  HERE ( 'mant 'mant+1 here )
-  6 CMOVE
-  HERE SWAP 6 CMOVE
-  0 x 7 + C!
-
-  \ decrement exponent
-  x DUP FSEXP@ 1 - SWAP FSEXP!
-  -LOCALS
+: F<< ( addr )
+  DUP .MANT BCDSL
+  \ increment exponent
+  DUP FSEXP@ 1 - SWAP FSEXP!
 ;
 
-: FALIGN ( x y -- ) \ too var floats addr
-  \ TODO: this is not efficient. if there's more than 6 of diff between the exponents
-  \ we'll loose all the significant digits and do F>>'s for nothing!
+: FALIGN ( x y -- ) \ too float register addr
   4 LOCALS
   y! x!
   x FSEXP@ z! \ x's signed exponent
@@ -316,54 +290,152 @@ _BP BP !
   z t = IF EXIT THEN
   z t < IF
     \ we need to raise x's exponent z to t
-    t z - 0 DO x F>> LOOP
+    t z -
+    8 MIN
+    0 DO x F>> LOOP
   ELSE
     \ we need to lower x's exponent z to t
-    z t - 0 DO y F>> LOOP
+    z t -
+    8 MIN
+    0 DO y F>> LOOP
   THEN
-  -LOCALS
-;
-
-: FRMANT+ ( 'x 'y -- addr carry ) \ add mantissas of 2 float registers x y, leave the 7 digits in t
-  3 LOCALS y! x!
-  0 z! \ carry
-  8 0 DO
-    x .MANT 7 I - + C@
-    y .MANT 7 I - + C@
-    +
-    z +
-    DUP 9 > IF
-      6 +
-      1 z!
-      F AND \ we remove the carry from the byte
-    ELSE
-      0 z!
-    THEN
-    HERE 7 I - + C! \ store the resulting digit in HERE+7-I
-  LOOP
-  \ returns addr and carry
-  HERE z
   -LOCALS
 ;
 
 >RAM
-\ 2 temp float registers
-FVAR TMPF1
-FVAR TMPF2
+\ 2 temporary float registers
+FREG FR1
+FREG FR2
 >ROM
 
 : F+ ( f1 f2 )
-  TMPF2 F!
-  TMPF1 F!
-  TMPF1 TMPF2 FALIGN
-  TMPF1 TMPF2 FRMANT+ ( addr carry )
-  SWAP ( carry addr )
-  TMPF2 .MANT 7 CMOVE
-  IF \ carry is 1?
-  TMPF2 F>>
-  1 TMPF2 .MANT C! \ store the carry in the mantissa
+  \ store both flots in floats register FR1 and FR2
+  FR2 F!
+  FR1 F!
+  \ align both floats (to max exponent)
+  FR1 FR2 FALIGN
+  \ check the sign of both F1 and F2
+  FR1 .SIGN C@
+  FR2 .SIGN C@
+  XOR IF
+    \ F1 and F2 are different sign, we substract the mantissas
+
+    \ find which one is bigger!
+    FR1 1+
+    FR2 1+
+    FRM>? IF
+      \ F1 is bigger
+      FR1 1+ FR2 1+ FRM-
+      \ deal with the carry - HOW
+      DROP
+
+      \ keep the sign of F1
+      FR1 .SIGN C@ FR2 .SIGN C!
+    ELSE
+      \ F2 is bigger
+      FR2 1+ FR1 1+ FRM-
+
+      \ for some reason, result is in FR1, so we need to copy from FR1 to FR2... ugly hack
+      FR1 1+ FR2 1+ 4 CMOVE
+      \ deal with the carry - HOW
+      DROP
+
+      \ keep the sign of F2
+      \ FR2 .SIGN C@ FR2 .SIGN C! \ no need to do this
+    THEN
+
+    \ we need to F<< FR2 as long as 1rst digit is 0
+    BEGIN
+      FR2 1+ C@ F0 AND 0=
+    WHILE
+      FR2 F<<
+    REPEAT
+
+  ELSE
+    \ F1 and F2 are same sign, we add the mantissas
+    FR1 1+ FR2 1+ FRM+ ( carry )
+    IF \ carry is 1?
+      FR2 F>>
+      FR2 FRM1! \ store the carry in the mantissa
+    THEN
   THEN
-  TMPF2 F@
+  FR2 F@
+;
+
+: FNEG ( f -- -f )
+  SWAP DUP 0< IF
+    7FFF AND \ clear the negative bit
+  ELSE
+    8000 OR \ set the negative bit
+  THEN
+  SWAP
+;
+
+: F- ( f1 f2 ) FNEG F+ ;
+
+: DBG
+  .( FR1: ) FR1 DUP 7 + DUMP .(  .M: ) FR1 .MANT . CR
+  .( FR2: ) FR2 DUP 7 + DUMP .(  .M: ) FR2 .MANT . CR
+;
+
+: TEST
+.( ADDITION ) CR
+  .(  9 -1 F+ => )
+  0090 0000
+  8010 0000
+  F+ F. CR
+
+  .( -9  1 F+ => )
+  8090 0000
+  0010 0000
+  F+ F. CR
+
+  .( -9 -1 F+ => )
+  8090 0000
+  8010 0000
+  F+ F. CR
+
+  .(  9  1 F+ => )
+  0090 0000
+  0010 0000
+  F+ F. CR
+
+CR .( SUBSTRACTION ) CR
+  .(  9 -1 F- => )
+  0090 0000
+  8010 0000
+  F- F. CR
+
+  .( -9  1 F- => )
+  8090 0000
+  0010 0000
+  F- F. CR
+
+  .( -9 -1 F- => )
+  8090 0000
+  8010 0000
+  F- F. CR
+
+  .(  9  1 F- => )
+  0090 0000
+  0010 0000
+  F- F. CR
+
+  .(  15  10 F- => )
+  0115 0000
+  0110 0000
+  F- F. CR
+
+  .(  9.0  9.1 F- => )
+  0090 0000
+  0091 0000
+  F- F. CR
+
+  .(  9.1  9.0 F- => )
+  0091 0000
+  0090 0000
+  F- F.
+
 ;
 
 >RAM

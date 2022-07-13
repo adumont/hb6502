@@ -551,6 +551,72 @@ defword "DTWICE","D2*",
 	ROL 3,X
 	JMP NEXT
 
+head_bcd_shift:
+; addr from ToS into register W
+	LDA 2,X
+	STA W
+	LDA 3,X
+	STA W+1
+
+; copy 4 BCD bytes into G1-G2
+	LDY #0
+@next1:
+	LDA (W),Y
+	STA G1,Y
+	INY
+	CPY #4
+	BNE @next1
+
+	LDY #4
+
+	RTS
+
+defword "BCDSR",,
+; ( addr -- )
+; BCD shift right (shift by 1 nibble to the right a BCD number at addr)
+; BCD float is 4 bytes long at addr+0 to addr+3
+	JSR head_bcd_shift
+
+@oneMoreShift:
+
+	LSR G1
+	ROR G1+1
+	ROR G1+2
+	ROR G1+3
+
+	DEY
+	BNE @oneMoreShift
+
+tail_bcd_shift:	; we also call it from BCDSL
+; copy 4 BCD bytes from G1-G2 to it's old place
+	LDY #0
+@next3:
+	LDA G1,Y
+	STA (W),Y
+	INY
+	CPY #4
+	BNE @next3
+
+	JMP do_DROP
+
+defword "BCDSL",,
+; ( addr -- )
+; BCD shift left (shift by 1 nibble to the left a BCD number at addr)
+; BCD float is 4 bytes long at addr+0 to addr+3
+	JSR head_bcd_shift
+
+@oneMoreShift:
+
+	ASL G1+3
+	ROL G1+2
+	ROL G1+1
+	ROL G1
+
+	DEY
+	BNE @oneMoreShift
+
+	JMP tail_bcd_shift
+
 defword "UHALF","U2/",
 ; ( u -- u/2 )
 ; u is an unsigned cell
@@ -1806,6 +1872,142 @@ defword "XLOHI","<>",
 	STA 3,X
 	JMP NEXT
 
+defword "FRM1STORE","FRM1!",
+; ( 'f2 -- )
+	; put 'f2 in G2
+	LDA 2,X
+	STA G2
+	LDA 3,X
+	STA G2+1
+
+	; put a 1 on the first nibble (usually after a carry happened)
+	LDY #1
+	LDA (G2),Y
+	ORA #$10
+	STA (G2),Y
+
+	JMP do_DROP
+
+
+head_bcp_addsub:
+	; put 'f1 in G1
+	LDA 4,X
+	STA G1
+	LDA 5,X
+	STA G1+1
+	; put 'f2 in G2
+	LDA 2,X
+	STA G2
+	LDA 3,X
+	STA G2+1
+
+	; drop
+	INX
+	INX
+	; drop
+	INX
+	INX
+
+	RTS
+
+
+defword "FRMPLUS","FRM+",
+; BCD Add mantissas of two Floats Registers
+; ( 'm1 'm2 -- carry ) addresses of the mantissas of two float registers
+	JSR head_bcp_addsub
+
+	; BCD addition of G1 and G2 into G2
+	; I tried doing a loop (Y=3 to 0, but DEY was messing with the carry)
+	LDY #3
+	SED ; set decimal flag
+	CLC ; clear carry
+
+	LDA (G1),Y
+	ADC (G2),Y
+	STA (G2),Y
+
+	DEY
+	LDA (G1),Y
+	ADC (G2),Y
+	STA (G2),Y
+
+	DEY
+	LDA (G1),Y
+	ADC (G2),Y
+	STA (G2),Y
+
+	DEY
+	LDA (G1),Y
+	ADC (G2),Y
+	STA (G2),Y
+
+	CLD ; clear decimal flag
+
+	BCC @no_carry
+; carry is 1
+	JMP do_PUSH1
+@no_carry:
+	JMP do_PUSH0
+
+defword "FRMMINUS","FRM-",
+; BCD substract mantissas of two Floats Registers
+; ( 'm1 'm2 -- carry ) addresses of the mantissas of two float registers
+	JSR head_bcp_addsub
+
+	; BCD addition of G1 and G2 into G2
+	; I tried doing a loop (Y=3 to 0, but DEY was messing with the carry)
+	LDY #3
+	SED ; set decimal flag
+	SEC ; clear carry
+
+	LDA (G1),Y
+	SBC (G2),Y
+	STA (G2),Y
+
+	DEY
+	LDA (G1),Y
+	SBC (G2),Y
+	STA (G2),Y
+
+	DEY
+	LDA (G1),Y
+	SBC (G2),Y
+	STA (G2),Y
+
+	DEY
+	LDA (G1),Y
+	SBC (G2),Y
+	STA (G2),Y
+
+	CLD ; clear decimal flag
+
+	BCC @no_carry
+; carry is 1
+	JMP do_PUSH1
+@no_carry:
+	JMP do_PUSH0
+
+
+defword "FRMGTQ","FRM>?",
+; Compare the mantissa of 2 floats registers
+; ( 'm1 'm2 -- carry ) addresses of the mantissas of two float registers
+	JSR head_bcp_addsub
+
+	LDY #0
+@again:
+	LDA (G1),Y
+	CMP (G2),Y
+	BEQ @next
+	BCS @true
+	JMP do_FALSE
+
+@next:
+	INY
+	BRA @again
+
+@true:
+	JMP do_TRUE
+
 defword "FDOT","F.",
 ; get number sign and print "-" if needed
 	LDA 5,X
@@ -2947,11 +3149,6 @@ LONG1 = SCRATCH		; Two long (4bytes) numbers in scratch area.
 LONG2 = SCRATCH+4	; both are used in divide_by_10
 HTD_IN = SCRATCH
 HTD_OUT = SCRATCH+1
-
-F1M = SCRATCH		; Float Mantisa 1
-F1E = G1
-F2M = SCRATCH+4		; Float Mantisa	2
-F2E = G1+1
 
 RAM_BLOCK_DEST:	.res (end_ram_image-start_ram_image)
 
