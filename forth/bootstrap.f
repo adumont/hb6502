@@ -96,11 +96,21 @@ _BP BP !
 : z 6 L@ ; : z! 6 L! ;
 : t 8 L@ ; : t! 8 L! ;
 
+\ Allocates a new n-bytes frame in the heap (top of RAM)
+\ first cell is a pointer to the previous frame
+\ next n-bytes are allocated for user data
+: HEAP ( n -- )
+  BP @ DUP ROT 2+ -
+  DUP -ROT ! BP !
+;
+
+: 'HEAP BP @ 2+ ; \ returns the address of the start of the heap frame's data
+: -HEAP -LOCALS ;
 
 : RECURSIVE REVEAL ; IMMEDIATE
 
 : DUMP SWAP DUP . ?DO I C@ C. LOOP ; \ ( addr1 addr2 -- ) dumps memory from addr1 to addr2
-: .LDUMP BP @ 4000 DUMP ; \ dump local stack
+: HDUMP BP @ DUP 2+ SWAP @ DUMP ; \ dump the heap/locals area (1 frame, only data, not the frame pointer)
 
 : .NAME DUP 2+ DUP C@ DUP 40 AND >R 1F AND SWAP
   1+ SWAP TYPE R> IF SPACE 2A EMIT THEN ;
