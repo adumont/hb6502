@@ -372,6 +372,36 @@ FREG FR2
   FR2 F@
 ;
 
+: F2* \ doubles a float
+  #7 HEAP \ allocate space for 1 float register in heap (7 bytes)
+  'HEAP F! \ unpack the float in heap
+  'HEAP .MANT
+  BCD2* \ call the primitive to duplicate the mantissa, retuns carry
+  IF \ carry is 1?
+    'HEAP F>>
+    'HEAP FRM1! \ store the carry in the mantissa
+  THEN
+  'HEAP F@ \ repack the float and leave it on the stack
+  -HEAP
+;
+
+: F2/ \ divide a float by 2
+  #7 HEAP \ allocate space for 1 float register in heap (7 bytes)
+  'HEAP F! \ unpack the float in heap
+  'HEAP .MANT
+  BCD2/ \ call the primitive to halve- the mantissa
+
+  \ we need to F<< the float as long as 1rst digit is 0
+  BEGIN
+    'HEAP .MANT C@ F0 AND 0=
+  WHILE
+    'HEAP F<<
+  REPEAT
+
+  'HEAP F@ \ repack the float and leave it on the stack
+  -HEAP
+;
+
 : FNEG ( f -- -f )
   SWAP DUP 0< IF
     7FFF AND \ clear the negative bit

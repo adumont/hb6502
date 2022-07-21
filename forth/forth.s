@@ -2010,6 +2010,90 @@ defword "FRMGTQ","FRM>?",
 @true:
 	JMP do_TRUE
 
+defword "BCD_HALVE", "BCD2/",
+; ( 'mantissa -- )
+; takes an addr on ToS of where is the mantissa
+; algorithm to halve a BCD: LSR.
+; If And $80 -> sbc #$30, if AND #$08 -> sbc #$03
+	; put 'mantissa address in W register
+	LDA 2,X
+	STA W
+	LDA 3,X
+	STA W+1
+
+	PHX		; save X
+	PHP		; save carry
+
+	LDY #0
+@next:
+	PLP		; restore carry
+	LDA (W),Y
+	LSR
+	PHP		; save carry
+
+	TAX		; save A
+	AND #$80
+	BEQ @loNibble
+	TXA
+	SEC
+	SBC #$30
+	TAX
+
+@loNibble:
+	TXA
+	AND #$08
+	TXA
+	BEQ @continue
+	SEC
+	SBC #$03
+
+@continue:
+	STA (W),y	; save the halved byte
+
+	INY
+	CPY #4
+	BNE @next
+
+	PLP		; restore carry (we just need to pull this byte off the stack)
+	PLX		; restore X
+	; ends by dropping the 'mantissa's addr
+	JMP do_DROP
+
+defword "BCD_TWICE", "BCD2*",
+; ( 'mantissa -- carry )
+; takes an addr on ToS of where is the mantissa
+; multiplies the BCD mantissa by 2 (by addition)
+; returns the carry on ToS (0,1)
+	; put 'mantissa address in W register
+	LDA 2,X
+	STA W
+	LDA 3,X
+	STA W+1
+	; drop 'mantissa
+	INX
+	INX
+	; now we iterate over the bytes, starting by least significant
+	SED		; decimal mode
+	CLC		; clear carry
+	LDY #3
+	PHP
+@next:
+	PLP			; restore carry
+	LDA (W),Y
+	ADC (W),Y
+	STA (W),Y
+	PHP			; save carry
+	DEY
+	CPY #$FF
+	BNE @next
+
+	PLP			; restore carry
+	CLD			; end decimal mode (after restoring flags!)
+	BCC @zero
+	JMP do_PUSH1
+@zero:
+	JMP do_PUSH0
+
 defword "FDOT","F.",
 ; get number sign and print "-" if needed
 	LDA 5,X
