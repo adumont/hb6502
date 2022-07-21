@@ -1987,7 +1987,6 @@ defword "FRMMINUS","FRM-",
 @no_carry:
 	JMP do_PUSH0
 
-
 defword "FRMGTQ","FRM>?",
 ; Compare the mantissa of 2 floats registers
 ; ( 'm1 'm2 -- carry ) addresses of the mantissas of two float registers
@@ -1999,10 +1998,13 @@ defword "FRMGTQ","FRM>?",
 	CMP (G2),Y
 	BEQ @next
 	BCS @true
+@false:
 	JMP do_FALSE
 
 @next:
 	INY
+	CPY #4
+	BEQ @false
 	BRA @again
 
 @true:
