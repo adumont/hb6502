@@ -232,6 +232,7 @@ _BP BP !
 : .EXPS 5 +  ; \ Exponent sign 1 byte
 : .EXP  6 +  ; \ Exponent 1 byte
 
+\ low level F! , should be renamed _F!
 : F!
   3 LOCALS
   x! \ float structrure addr
@@ -254,6 +255,7 @@ _BP BP !
   -LOCALS
 ;
 
+\ low level F@ , should be renamed _F@
 : F@
   1 LOCALS x!
   x .EXP C@ %00111111 AND
@@ -273,26 +275,48 @@ _BP BP !
   DUP .EXP C@ SWAP .EXPS C@ IF NEG THEN
 ;
 
-: FSEXP! \ stores the signed exponent back to a float var
+: FSEXP! \ stores the signed exponent back to a float reg
   ( signed_exp 'float )
   SWAP
   DUP 0< IF 1 SWAP NEG ELSE 0 SWAP THEN
   -ROT OVER .EXPS C! .EXP C!
 ;
 
-: F>> ( addr )
+\ low level F>>
+: _F>> ( addr )
   DUP .MANT BCDSR
   \ increment exponent
   DUP FSEXP@ 1+ SWAP FSEXP!
 ;
 
-: F<< ( addr )
+: _F<< ( addr )
   DUP .MANT BCDSL
   \ increment exponent
   DUP FSEXP@ 1 - SWAP FSEXP!
 ;
 
-: FALIGN ( x y -- ) \ too float register addr
+\ High level F>>
+: F>>
+  7 HEAP
+  'HEAP >R
+  R@ F!  \ unpack the float from stack to heap
+  R@ _F>>
+  R> F@  \ repack the float from heap to stack
+  -HEAP
+;
+
+\ High level F<<
+: F<<
+  7 HEAP
+  'HEAP >R
+  R@ F!  \ unpack the float from stack to heap
+  R@ _F<<
+  R> F@  \ repack the float from heap to stack
+  -HEAP
+;
+
+\ low level "float align" (to max exp)
+: _FALIGN ( x y -- ) \ too float register addr
   4 LOCALS
   y! x!
   x FSEXP@ z! \ x's signed exponent
@@ -302,12 +326,12 @@ _BP BP !
     \ we need to raise x's exponent z to t
     t z -
     8 MIN
-    0 DO x F>> LOOP
+    0 DO x _F>> LOOP
   ELSE
     \ we need to lower x's exponent z to t
     z t -
     8 MIN
-    0 DO y F>> LOOP
+    0 DO y _F>> LOOP
   THEN
   -LOCALS
 ;
@@ -318,35 +342,36 @@ FREG FR1
 FREG FR2
 >ROM
 
-: F+ ( f1 f2 )
-  \ store both flots in floats register FR1 and FR2
-  FR2 F!
-  FR1 F!
+\ low level _F+
+: _F+
+  ( 'f1 'f2 -- ) \ leaves the result in 'f2
+  2 LOCALS
+  y! x!
   \ align both floats (to max exponent)
-  FR1 FR2 FALIGN
+  x y _FALIGN
   \ check the sign of both F1 and F2
-  FR1 .SIGN C@
-  FR2 .SIGN C@
+  x .SIGN C@
+  y .SIGN C@
   XOR IF
     \ F1 and F2 are different sign, we substract the mantissas
 
     \ find which one is bigger!
-    FR1 1+
-    FR2 1+
+    x 1+
+    y 1+
     FRM>? IF
       \ F1 is bigger
-      FR1 1+ FR2 1+ FRM-
+      x 1+ y 1+ FRM-
       \ deal with the carry - HOW
       DROP
 
       \ keep the sign of F1
-      FR1 .SIGN C@ FR2 .SIGN C!
+      x .SIGN C@ y .SIGN C!
     ELSE
       \ F2 is bigger
-      FR2 1+ FR1 1+ FRM-
+      y 1+ x 1+ FRM-
 
       \ for some reason, result is in FR1, so we need to copy from FR1 to FR2... ugly hack
-      FR1 1+ FR2 1+ 4 CMOVE
+      x y!
       \ deal with the carry - HOW
       DROP
 
@@ -354,22 +379,37 @@ FREG FR2
       \ FR2 .SIGN C@ FR2 .SIGN C! \ no need to do this
     THEN
 
-    \ we need to F<< FR2 as long as 1rst digit is 0
+    \ we need to _F<< FR2 as long as 1rst digit is 0
     BEGIN
-      FR2 1+ C@ F0 AND 0=
+      y 1+ C@ F0 AND 0=
     WHILE
-      FR2 F<<
+      y _F<<
     REPEAT
 
   ELSE
     \ F1 and F2 are same sign, we add the mantissas
-    FR1 1+ FR2 1+ FRM+ ( carry )
+    x 1+ y 1+ FRM+ ( carry )
     IF \ carry is 1?
-      FR2 F>>
-      FR2 FRM1! \ store the carry in the mantissa
+      y _F>>
+      y FRM1! \ store the carry in the mantissa
     THEN
   THEN
-  FR2 F@
+  -LOCALS
+;
+
+\ high level F+
+: F+ ( f1 f2 ) \ takes two unpacked floats
+  #14 HEAP \ reserves space for 2 unpacked floats
+  'HEAP >R
+  R@ 7 + F! \ unpack float f2 at 'heap+7
+  R@ F!     \ unpack float f1 there at 'heap
+
+  R@ DUP 7 +
+  _F+
+
+  \ result in f2
+  R> 7 + F@ \ repack f2
+  -HEAP
 ;
 
 : F2* \ doubles a float
@@ -378,7 +418,7 @@ FREG FR2
   'HEAP .MANT
   BCD2* \ call the primitive to duplicate the mantissa, retuns carry
   IF \ carry is 1?
-    'HEAP F>>
+    'HEAP _F>>
     'HEAP FRM1! \ store the carry in the mantissa
   THEN
   'HEAP F@ \ repack the float and leave it on the stack
@@ -391,17 +431,50 @@ FREG FR2
   'HEAP .MANT
   BCD2/ \ call the primitive to halve- the mantissa
 
-  \ we need to F<< the float as long as 1rst digit is 0
+  \ we need to _F<< the float as long as 1rst digit is 0
   BEGIN
     'HEAP .MANT C@ F0 AND 0=
   WHILE
-    'HEAP F<<
+    'HEAP _F<<
   REPEAT
 
   'HEAP F@ \ repack the float and leave it on the stack
   -HEAP
 ;
 
+\ Low level Float right justify! (move digits all to the most right)
+\ being the low level version, we use 4 bytes precision
+: _FRJ 
+  >R
+  BEGIN
+    R@ 4 + C@ 0F AND 0=
+  WHILE
+    R@ _F>>
+  REPEAT
+  R> DROP
+;
+
+\ High level Float right justify! (move digits all to the most right)
+\ TODO: is it ever needed at all?
+: FRJ
+  \ problem here is in the float register on the heap we have 4 byte mantissa
+  \ but once repacked we have only 3 byte mantissa...
+  \ multiplication should be in the heap from start to finish
+  #7 HEAP \ allocate space for 1 float register in heap (7 bytes)
+  'HEAP F! \ unpack the float in heap
+
+  \ we need to _F<< the float as long as 1rst digit is 0
+  BEGIN
+    'HEAP 3 + C@ 0F AND 0=
+  WHILE
+    'HEAP _F>>
+  REPEAT
+
+  'HEAP F@ \ repack the float and leave it on the stack
+  -HEAP
+;
+
+\ high level FNEG
 : FNEG ( f -- -f )
   SWAP DUP 0< IF
     7FFF AND \ clear the negative bit
@@ -411,6 +484,7 @@ FREG FR2
   SWAP
 ;
 
+\ High level F-
 : F- ( f1 f2 ) FNEG F+ ;
 
 : DBG
