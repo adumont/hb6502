@@ -412,26 +412,32 @@ FREG FR2
   -HEAP
 ;
 
-\ high level F2* doubles a float
-: F2* ( f -- f*2 )
-  #7 HEAP \ allocate space for 1 float register in heap (7 bytes)
-  'HEAP >R \ keep 'heap in R as a temp variable
-  R@ F! \ unpack the float in heap
+\ low level F2* doubles a float
+: _F2* ( 'f  -- )
+  >R
   R@ .MANT
   BCD2* \ call the primitive to duplicate the mantissa, retuns carry
   IF \ carry is 1?
     R@ _F>>
     R@ FRM1! \ store the carry in the mantissa
   THEN
+  R> DROP
+;
+
+\ high level F2* doubles a float
+: F2* ( f -- f*2 )
+  #7 HEAP \ allocate space for 1 float register in heap (7 bytes)
+  'HEAP >R \ keep 'heap in R as a temp variable
+  R@ F! \ unpack the float in heap
+  R@ _F2* \ call low level _F2*
   R> F@ \ repack the float and leave it on the stack
   -HEAP
 ;
 
-\ high level F2/ (divide float by 2)
-: F2/ ( f -- f/2 )
-  #7 HEAP \ allocate space for 1 float register in heap (7 bytes)
-  'HEAP >R \ keep 'heap in R as a temp variable
-  R@ F! \ unpack the float in heap
+\ low level F2/ (divide float by 2)
+: _F2/ ( 'f -- )
+  >R
+
   R@ .MANT
   BCD2/ \ call the primitive to halve- the mantissa
 
@@ -442,6 +448,15 @@ FREG FR2
     R@ _F<<
   REPEAT
 
+  R> DROP
+;
+
+\ high level F2/ (divide float by 2)
+: F2/ ( f -- f/2 )
+  #7 HEAP \ allocate space for 1 float register in heap (7 bytes)
+  'HEAP >R \ keep 'heap in R as a temp variable
+  R@ F! \ unpack the float in heap
+  R@ _F2/ \ call low level _F2/
   R> F@ \ repack the float and leave it on the stack
   -HEAP
 ;
