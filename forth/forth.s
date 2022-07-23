@@ -2022,13 +2022,14 @@ defword "BCD_HALVE", "BCD2/",
 	STA W+1
 
 	PHX		; save X
+	CLC		; clear carry first
 	PHP		; save carry
 
 	LDY #0
 @next:
 	PLP		; restore carry
 	LDA (W),Y
-	LSR
+	ROR
 	PHP		; save carry
 
 	TAX		; save A
@@ -2042,12 +2043,14 @@ defword "BCD_HALVE", "BCD2/",
 @loNibble:
 	TXA
 	AND #$08
-	TXA
 	BEQ @continue
+	TXA
 	SEC
 	SBC #$03
+	TAX
 
 @continue:
+	TXA
 	STA (W),y	; save the halved byte
 
 	INY
