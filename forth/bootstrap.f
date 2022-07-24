@@ -255,28 +255,25 @@ _BP BP !
   -LOCALS
 ;
 
-\ low level F@ , should be renamed _F@
-: F@
-  1 LOCALS x!
-  x .EXP C@ %00111111 AND
-  x .EXPS C@ IF  %01000000 OR THEN
-  x .SIGN C@ IF  %10000000 OR THEN
-  <>
-  x 1+ SWAP OVER
-  C@ OR
-
-  SWAP 1+ @ <>
-
-  -LOCALS
+\ low level test Float equals to 0
+: _F0= ( 'f -- flag )
+  \ we only check if mantissa is 0
+  1+ DUP @
+  SWAP 2+ @
+  OR 0=
 ;
 
+\ low level Fetch Float Signed Exp, return the signed exponent from a low level float register
+\ TODO: rename to _FSEXP@
 : FSEXP@ \ return the signed exponent of a float (8 bit 2's complement )
   ( 'float -- signed_exp )
   DUP .EXP C@ SWAP .EXPS C@ IF NEG THEN
 ;
 
+\ low level Store Float Signed Exp, stores the signed exponent to a low level float register
+\ TODO: rename to _FSEXP!
 : FSEXP! \ stores the signed exponent back to a float reg
-  ( signed_exp 'float )
+  ( signed_exp 'float -- )
   SWAP
   DUP 0< IF 1 SWAP NEG ELSE 0 SWAP THEN
   -ROT OVER .EXPS C! .EXP C!
@@ -293,34 +290,6 @@ _BP BP !
   DUP .MANT BCDSL
   \ increment exponent
   DUP FSEXP@ 1 - SWAP FSEXP!
-;
-
-\ High level F>>
-: F>>
-  7 HEAP
-  'HEAP >R
-  R@ F!  \ unpack the float from stack to heap
-  R@ _F>>
-  R> F@  \ repack the float from heap to stack
-  -HEAP
-;
-
-\ High level F<<
-: F<<
-  7 HEAP
-  'HEAP >R
-  R@ F!  \ unpack the float from stack to heap
-  R@ _F<<
-  R> F@  \ repack the float from heap to stack
-  -HEAP
-;
-
-\ low level test Float equals to 0
-: _F0= ( 'f -- flag )
-  \ we only check if mantissa is 0
-  1+ DUP @
-  SWAP 2+ @
-  OR 0=
 ;
 
 \ low level "float align" (to max exp)
@@ -349,13 +318,6 @@ _BP BP !
   THEN
   -LOCALS
 ;
-
->RAM
-\ 2 temporary float registers
-FREG FR1
-FREG FR2
-FREG FR3
->ROM
 
 \ low level _F+
 : _F+
@@ -424,6 +386,62 @@ FREG FR3
   THEN
   -LOCALS
 ;
+
+\ low level F@ , should be renamed _F@
+: F@
+  7 HEAP 'HEAP    \ be careful as we use HEAP and LOCALS
+  2 LOCALS y! x!  \ LOCALS must be declared AFTER HEAP!
+
+  x .EXP C@ %00111111 AND
+  x .EXPS C@ IF  %01000000 OR THEN
+  x .SIGN C@ IF  %10000000 OR THEN
+  <>
+
+  \ take care of rounding if least significant byte is >50
+  x 4 + C@ $50 >=
+  IF
+    x y 7 CMOVE   \ copy x to y, fast, we have the signs and exponents
+    y 1+ 0 OVER ! \ erase y's mantissa 2 most significant bytes
+    2+ 1 SWAP !   \ place 1 in correct place in y's mantissa (3rd byte)
+    \ 0 x 4 + C!  \ erase least significant byte of x. Uncessary, we'd sum it to 0 and ignore afterwards
+    y x _F+
+  THEN
+
+  x 1+ SWAP OVER
+  C@ OR
+
+  SWAP 1+ @ <>
+
+  -LOCALS
+  -HEAP
+;
+
+\ High level F>>
+: F>>
+  7 HEAP
+  'HEAP >R
+  R@ F!  \ unpack the float from stack to heap
+  R@ _F>>
+  R> F@  \ repack the float from heap to stack
+  -HEAP
+;
+
+\ High level F<<
+: F<<
+  7 HEAP
+  'HEAP >R
+  R@ F!  \ unpack the float from stack to heap
+  R@ _F<<
+  R> F@  \ repack the float from heap to stack
+  -HEAP
+;
+
+>RAM
+\ 2 temporary float registers
+FREG FR1
+FREG FR2
+FREG FR3
+>ROM
 
 \ high level F+
 : F+ ( f1 f2 ) \ takes two unpacked floats
