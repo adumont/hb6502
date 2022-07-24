@@ -536,13 +536,22 @@ FREG FR3
 \ High level F-
 : F- ( f1 f2 ) FNEG F+ ;
 
+: locDBG
+  CR
+  .(   x: ) x DUP 7 + DUMP CR
+  .(   y: ) y DUP 7 + DUMP CR
+  .(   z: ) z DUP 7 + DUMP CR
+  .S CR
+  GETC DROP
+;
+
 : _F* ( f1 f2 f3 -- )
   \ multiply f1 x f2 leaving result in f3
   3 LOCALS \ f1 -> x, f2 -> y, f3 -> z
   z! y! x!
 
   \ flip y's sign if x's negative
-  x .SIGN IF
+  x .SIGN C@ IF
     y .SIGN C@ 1 XOR y .SIGN C!
   THEN
 
@@ -557,20 +566,23 @@ FREG FR3
   0 0 z F!
 
   \ if x or y are 0, we exit (z is already cleared so 0 is the correct result)
-  x _F0= y _F0= OR IF
+  x _F0= y _F0= OR
+  IF
     -LOCALS EXIT
   THEN
 
   BEGIN
-    x 1+ BCD2/  \ divide x by 2
-    x _F0= NOT
-  WHILE
-    y _F2*      \ multiply y by 2
     x 4 + C@ 1 AND \ test if x if odd
     IF
       y z _F+ \ Add y to z
     THEN
-  REPEAT
+
+    x 1+ BCD2/  \ divide x by 2
+    y _F2*      \ multiply y by 2
+
+    \ exit clause: x == 0
+    x _F0=
+  UNTIL
 
   -LOCALS
 ;
@@ -583,15 +595,22 @@ FREG FR3
   R@      \ 'f1
   DUP 7 + \ 'f2
   DUP 7 + \ 'f3
+
   _F*
 
   R> #14 + F@ \ repack result
   -HEAP
 ;
 
+\ high level Float SQuare
+: FSQ 2DUP F* ;
+
+: PI ( piFloat -- ) 0031 4159 ;
+
 : DBG
   .( FR1: ) FR1 DUP 7 + DUMP .(  .M: ) FR1 .MANT . CR
   .( FR2: ) FR2 DUP 7 + DUMP .(  .M: ) FR2 .MANT . CR
+  .( FR3: ) FR3 DUP 7 + DUMP .(  .M: ) FR3 .MANT . CR
 ;
 
 : TEST
