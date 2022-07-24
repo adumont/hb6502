@@ -491,19 +491,21 @@ FREG FR3
 
 \ Low level Float right justify! (move digits all to the most right)
 \ being the low level version, we use 4 bytes precision
-: _FRJ 
+: _FRJ ( 'f -- )
   >R
   BEGIN
     R@ 4 + C@ 0F AND 0=
   WHILE
     R@ _F>>
   REPEAT
-  R> DROP
+  \ we'll consider the mantissa as integer so we have to reduce the exp by 7:
+  R> DUP FSEXP@ 7 - SWAP FSEXP!
+  \ R> DROP
 ;
 
 \ High level Float right justify! (move digits all to the most right)
 \ TODO: is it ever needed at all?
-: FRJ
+: FRJ ( f -- f )
   \ problem here is in the float register on the heap we have 4 byte mantissa
   \ but once repacked we have only 3 byte mantissa...
   \ multiplication should be in the heap from start to finish
@@ -533,6 +535,59 @@ FREG FR3
 
 \ High level F-
 : F- ( f1 f2 ) FNEG F+ ;
+
+: _F* ( f1 f2 f3 -- )
+  \ multiply f1 x f2 leaving result in f3
+  3 LOCALS \ f1 -> x, f2 -> y, f3 -> z
+  z! y! x!
+
+  \ flip y's sign if x's negative
+  x .SIGN IF
+    y .SIGN C@ 1 XOR y .SIGN C!
+  THEN
+
+  \ we prepare x, right justify it (as integer). exponent is also adjusted accordingly
+  x _FRJ
+
+  \ add x' exponent to y's exponent
+  x FSEXP@ y FSEXP@ +
+  y FSEXP!
+
+  \ store 0 in z
+  0 0 z F!
+
+  \ if x or y are 0, we exit (z is already cleared so 0 is the correct result)
+  x _F0= y _F0= OR IF
+    -LOCALS EXIT
+  THEN
+
+  BEGIN
+    x 1+ BCD2/  \ divide x by 2
+    x _F0= NOT
+  WHILE
+    y _F2*      \ multiply y by 2
+    x 4 + C@ 1 AND \ test if x if odd
+    IF
+      y z _F+ \ Add y to z
+    THEN
+  REPEAT
+
+  -LOCALS
+;
+
+: F* ( f1 f2 -- f3 )
+  #21 HEAP 'HEAP >R
+  R@ 7 + F!
+  R@ F!
+
+  R@      \ 'f1
+  DUP 7 + \ 'f2
+  DUP 7 + \ 'f3
+  _F*
+
+  R> #14 + F@ \ repack result
+  -HEAP
+;
 
 : DBG
   .( FR1: ) FR1 DUP 7 + DUMP .(  .M: ) FR1 .MANT . CR
