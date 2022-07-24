@@ -315,10 +315,24 @@ _BP BP !
   -HEAP
 ;
 
+\ low level test Float equals to 0
+: _F0= ( 'f -- flag )
+  \ we only check if mantissa is 0
+  1+ DUP @
+  SWAP 2+ @
+  OR 0=
+;
+
 \ low level "float align" (to max exp)
 : _FALIGN ( x y -- ) \ too float register addr
   4 LOCALS
   y! x!
+
+  \ if x or y are 0, we exit, nothing to align
+  x _F0= y _F0= OR IF
+    -LOCALS EXIT
+  THEN
+
   x FSEXP@ z! \ x's signed exponent
   y FSEXP@ t! \ y's signed exponent
   z t = IF -LOCALS EXIT THEN
@@ -340,13 +354,27 @@ _BP BP !
 \ 2 temporary float registers
 FREG FR1
 FREG FR2
+FREG FR3
 >ROM
 
 \ low level _F+
 : _F+
   ( 'f1 'f2 -- ) \ leaves the result in 'f2
   2 LOCALS
+
   y! x!
+
+  \ if x == 0, then result already in y, exit
+  x _F0= IF
+    -LOCALS EXIT
+  THEN
+
+  \ if y == 0, then result already is x, copy x to y
+  y _F0= IF
+    x y 7 CMOVE
+    -LOCALS EXIT
+  THEN
+
   \ align both floats (to max exponent)
   x y _FALIGN
   \ check the sign of both F1 and F2
@@ -370,8 +398,8 @@ FREG FR2
       \ F2 is bigger
       y 1+ x 1+ FRM-
 
-      \ for some reason, result is in FR1, so we need to copy from FR1 to FR2... ugly hack
-      x y!
+      \ for some reason, result is in x, so we need to copy from x to y... ugly hack
+      x 1+ y 1+ 4 CMOVE
       \ deal with the carry - HOW
       DROP
 
