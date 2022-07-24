@@ -321,7 +321,7 @@ _BP BP !
   y! x!
   x FSEXP@ z! \ x's signed exponent
   y FSEXP@ t! \ y's signed exponent
-  z t = IF EXIT THEN
+  z t = IF -LOCALS EXIT THEN
   z t < IF
     \ we need to raise x's exponent z to t
     t z -
