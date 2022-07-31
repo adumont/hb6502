@@ -437,11 +437,20 @@ _BP BP !
   -HEAP
 ;
 
+:  MTABLE CREATE #16 ALLOT DOES> SWAP 2* 2* + ;
+
 >RAM
-\ 2 temporary float registers
+
+\ 3 temporary float registers
 FREG FR1
 FREG FR2
 FREG FR3
+
+\ used in Float division
+MTABLE MULTI
+0 MULTI VALUE 'MULTI \ base add of MULTI table
+0 VALUE DIGIT
+
 >ROM
 
 \ high level F+
@@ -623,6 +632,87 @@ FREG FR3
 
 \ high level Float SQuare
 : FSQ 2DUP F* ;
+
+\ Table of 2's powers up to 8
+CREATE T2^ 1 C, 2 C, 4 C, 8 C,
+
+: BT \ Build multiples table
+   FR2 1+
+   4 0
+   DO
+      I MULTI TUCK 4 CMOVE
+      I IF
+         DUP BCD2* DROP
+      THEN
+   LOOP DROP
+;
+
+\ compute next digit in float division
+: NEXTDIGIT
+   0 TO DIGIT
+   4 0 DO
+      3 I - >R
+      R@ MULTI FR1 1+ FRM>? 0=
+      IF
+         DIGIT R@ T2^ + C@ + TO DIGIT
+         R@ MULTI FR3 1+ 4 CMOVE \ copy the 2 MULTI to FR3 mantissa
+
+         FR1 1+ FR3 1+ FRM- DROP  \ substract, results in FR3's mantissa
+         FR3 1+ FR1 1+ 4 CMOVE    \ copy result back into FR1's mantissa
+      THEN
+      R> DROP
+   LOOP
+   FR1 1+ BCDSL
+;
+
+: STOREDIGIT ( addr -- )
+   \ stores the DIGIT in the mantissa at addr (displacing it to the left)
+   1+ >R
+   R@ BCDSL
+   R> 3 + DUP C@
+   DIGIT OR SWAP C!
+;
+
+: FINV
+  \ reserve 7 bytes for the result
+  7 HEAP
+
+  FR2 F!
+  0010 0 FR1 F! \ store 1 in FR1
+
+  \ copies FR2's sign to result
+  FR2 .SIGN C@ 'HEAP .SIGN  C!
+
+  FR1 _FRJ
+  FR2 _FRJ
+
+  \ build tables of multiples
+  BT
+
+  \ start with the exponent
+  FR2 FSEXP@
+
+  BEGIN
+    NEXTDIGIT
+    DIGIT 0=
+  WHILE
+    1+   \ While the division gives a 0, we reduce the exponent by 1
+  REPEAT
+
+  \ store the result's exponent
+  NEG 'HEAP FSEXP!
+
+  \ once we get here, DIGIT isn't 0 anymore --> first digit
+
+  'HEAP DUP STOREDIGIT
+  7 0 DO
+    DUP NEXTDIGIT STOREDIGIT
+  LOOP
+  DROP
+
+  'HEAP F@
+  -HEAP
+;
 
 : PI ( piFloat -- ) 0031 4159 ;
 
