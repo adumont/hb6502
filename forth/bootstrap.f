@@ -48,6 +48,7 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : UM+ 0 SWAP 0 D+ ;
 
 : NIP SWAP DROP ;
+: TUCK ( a b -- b a b ) SWAP OVER ;
 : PICK 1+ 2* SP@ + @ ;
 : DEPTH DTOP SP@ - 2/ ;
 
