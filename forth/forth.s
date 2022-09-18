@@ -141,16 +141,56 @@ RES_vec:
 	stz OK
 .endif
 
-	; Here we copy the RAM block image (from the compiled dictionary)
-	; to RAM
-	LDY #(end_ram_image-start_ram_image+1)
-	CPY #1
-	BEQ skip_copy_ram_block
-:	LDA start_ram_image-1,y
-	STA RAM_BLOCK_DEST-1,Y
-	DEY
-	BNE :-
-skip_copy_ram_block:
+; Here we copy the RAM block image (from the compiled dictionary)
+; to RAM
+; we use G1 as a pointer to the source (the data to be copied)
+;        G2 as a pointer to the dest. (where we will copy)
+
+	; initialize G1, with address of source (the data to be copied)
+	lda #<start_ram_image
+	sta G1
+	lda #>start_ram_image
+	sta G1+1
+
+	; initialize G2, with address of destination
+	lda #<RAM_BLOCK_DEST
+	sta G2
+	lda #>RAM_BLOCK_DEST
+	sta G2+1
+
+	ldy #0
+
+@next:
+	; Did we reach the end yet? Compare G1 with end_ram_image.
+	; end_ram_image is addr of the first byte AFTER the block. We do
+	; not want to copy it!
+	lda G1+1
+	cmp #(>end_ram_image)
+	bne @not_finished
+
+	lda G1
+	cmp #(<end_ram_image)
+	beq @finished
+
+@not_finished:
+
+	lda (G1),y
+	sta (G2),y
+
+; we increment both G1 and G2 by 1
+
+	; G1++
+	INC G1
+	BNE :+
+	INC G1+1
+:
+	; G2++
+	INC G2
+	BNE :+
+	INC G2+1
+:
+	bra @next
+@finished:
 
 ; This is a Direct Threaded Code based FORTH
 
@@ -906,7 +946,7 @@ shortcut_ccomma:
 	; Advance HERE by 1 byte
 	CLC
 	LDA DP
-	ADC #1	; TODO: I tried INC DP but it wasn't working... Why?
+	ADC #1	; TODO: I tried INC DP but it wasn't working... Why? --> use INC and BNE not BCC! INC doesn't set carry.
 	STA DP
 	BCC @skip
 	INC DP+1
@@ -2107,7 +2147,7 @@ noheader "STAR_LOOP"
 	; I++
 	CLC
 	LDA $101,X
-	ADC #1
+	ADC #1	; TODO: try INC and BNE not BCC! INC doesn't set carry.
 	STA $101,X
 	BCC @skip
 	INC $102,X
