@@ -178,6 +178,11 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
 
         dbgwin.noutrefresh()
 
+    def dumpMemory():
+        f = open("/tmp/memory", "wb")
+        for i in range(0x10000):
+            f.write(mpu.memory[i].to_bytes(1, 'big'))
+        f.close()
 
     def nmi():
         # triggers a NMI IRQ in the processor
@@ -246,6 +251,8 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
             msg = queue_step.get()
             if msg == 2:
                 debug = not debug
+            elif msg == 3:
+                dumpMemory()
             else:
                 mode_step = msg
                 run_next_step = 1
@@ -342,6 +349,9 @@ def main(stdscr):
         elif key == 0x168:    # End key
             # Continuous execution
             queue_step.put(0)
+        elif key == 0x10D:    # F5
+            msgwin.addstr(0,0, 'Dumping memory to /tmp/memory')
+            queue_step.put(3) # Dump all memory to file
         elif key == 0x1b:
             # escape key exits
             msgwin.erase()
@@ -362,7 +372,7 @@ def main(stdscr):
                 key=8
 
             queue.put(key)
-            
+
         msgwin.noutrefresh()
         curses.doupdate()
 
