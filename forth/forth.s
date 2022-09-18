@@ -1010,11 +1010,8 @@ defword "CCOMMA","C,",
 shortcut_ccomma:
 	STA (DP)
 	; Advance HERE by 1 byte
-	CLC
-	LDA DP
-	ADC #1	; TODO: I tried INC DP but it wasn't working... Why? --> use INC and BNE not BCC! INC doesn't set carry.
-	STA DP
-	BCC @skip
+	INC DP
+	BNE @skip
 	INC DP+1
 @skip:
 	JMP NEXT
@@ -2551,10 +2548,7 @@ noheader "STAR_LOOP"
 	; $102,X $101,X [  I  ]
 
 	; I++
-	CLC
-	LDA $101,X
-	ADC #1	; TODO: try INC and BNE not BCC! INC doesn't set carry.
-	STA $101,X
+	INC $101,X
 	BCC @skip
 	INC $102,X
 @skip:
