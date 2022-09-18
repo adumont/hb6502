@@ -203,6 +203,8 @@ def cpuThread(ch, queue, emu_queue):
     rom_end   = getWord(0x0003)
     print("  Starts: %04X" % rom_start )
     print("  End   : %04X" % rom_end   )
+    print("  Length: %d bytes" % int(rom_end-rom_start) )
+    print()
 
     f = open("rom.dat", 'wb')
     f.write(bytearray(mpu.memory[rom_start:rom_end]))
@@ -213,6 +215,8 @@ def cpuThread(ch, queue, emu_queue):
     ram_end   = getWord(0x0007)
     print("  Starts: %04X" % ram_start )
     print("  End   : %04X" % ram_end   )
+    print("  Length: %d bytes" % int(ram_end-ram_start) )
+    print()
 
     f = open("ram.dat", 'wb')
     f.write(bytearray(mpu.memory[ram_start:ram_end]))
