@@ -113,7 +113,7 @@ def cpuThread(ch, queue, emu_queue):
             print("FATAL: Word not found:",last_lookedup_word)
             print("COMPILATION ABORTED")
             emu_queue.put(CPU_EXIT_ERROR)
-            quit()
+            quit(1)
 
     def do_FIND():
         # Simulates FIND in python and bypasses our FORTH's FIND.
