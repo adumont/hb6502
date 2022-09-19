@@ -2143,7 +2143,7 @@ noheader "STAR_LOOP"
 
 	; I++
 	INC $101,X
-	BCC @skip
+	BNE @skip
 	INC $102,X
 @skip:
 
