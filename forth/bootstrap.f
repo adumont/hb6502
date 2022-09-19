@@ -227,8 +227,16 @@ _BP BP !
 
 \ FLOATS
 
+\ Low level Float Register encoding, 7 bytes
+\ 0   1  2  3  4   5   6   7
+\ [  ][  :  :  :  ][  ][  ]
+\    \ \_________/   \   +--> exponent
+\     \          \    +-----> exponent's sign (1: negative)
+\      \          +--> mantissa 4 bytes (BCD)
+\       +--> mantissa's sign (1: negative)
+
 : FREG CREATE 7 ALLOT ; \ 7 bytes per float register
-: .SIGN      ; \ Sign 1 byte
+: .SIGN      ; IMMEDIATE \ Sign 1 byte
 : .MANT 1+   ; \ Mantisa 4 bytes BCD
 : .EXPS 5 +  ; \ Exponent sign 1 byte
 : .EXP  6 +  ; \ Exponent 1 byte
@@ -246,10 +254,11 @@ _BP BP !
   \ store exponent
   z <> %00111111 AND x .EXP C!
   \ store mantisa
+  x .MANT
   z $FF AND
-  x 1+ C!
+  OVER C!
 
-  x 2+
+  1+
   y <> OVER !
 
   0 SWAP 2+ C!
@@ -259,7 +268,7 @@ _BP BP !
 \ low level test Float equals to 0
 : _F0= ( 'f -- flag )
   \ we only check if mantissa is 0
-  1+ DUP @
+  .MANT DUP @
   SWAP 2+ @
   OR 0=
 ;
@@ -347,11 +356,11 @@ _BP BP !
     \ F1 and F2 are different sign, we substract the mantissas
 
     \ find which one is bigger!
-    x 1+
-    y 1+
+    x .MANT
+    y .MANT
     FRM>? IF
       \ F1 is bigger
-      x 1+ y 1+ FRM-
+      x .MANT y .MANT FRM-
       \ deal with the carry - HOW
       DROP
 
@@ -359,10 +368,10 @@ _BP BP !
       x .SIGN C@ y .SIGN C!
     ELSE
       \ F2 is bigger
-      y 1+ x 1+ FRM-
+      y .MANT x .MANT FRM-
 
       \ for some reason, result is in x, so we need to copy from x to y... ugly hack
-      x 1+ y 1+ 4 CMOVE
+      x .MANT y .MANT 4 CMOVE
       \ deal with the carry - HOW
       DROP
 
@@ -372,14 +381,14 @@ _BP BP !
 
     \ we need to _F<< FR2 as long as 1rst digit is 0
     BEGIN
-      y 1+ C@ F0 AND 0=
+      y .MANT C@ F0 AND 0=
     WHILE
       y _F<<
     REPEAT
 
   ELSE
     \ F1 and F2 are same sign, we add the mantissas
-    x 1+ y 1+ FRM+ ( carry )
+    x .MANT y .MANT FRM+ ( carry )
     IF \ carry is 1?
       y _F>>
       y FRM1! \ store the carry in the mantissa
@@ -399,16 +408,16 @@ _BP BP !
   <>
 
   \ take care of rounding if least significant byte is >50
-  x 4 + C@ $50 >=
+  x .MANT 3 + C@ $50 >=
   IF
     x y 7 CMOVE   \ copy x to y, fast, we have the signs and exponents
-    y 1+ 0 OVER ! \ erase y's mantissa 2 most significant bytes
+    y .MANT 0 OVER ! \ erase y's mantissa 2 most significant bytes
     2+ 1 SWAP !   \ place 1 in correct place in y's mantissa (3rd byte)
     \ 0 x 4 + C!  \ erase least significant byte of x. Uncessary, we'd sum it to 0 and ignore afterwards
     y x _F+
   THEN
 
-  x 1+ SWAP OVER
+  x .MANT SWAP OVER
   C@ OR
 
   SWAP 1+ @ <>
@@ -522,7 +531,7 @@ MTABLE MULTI
 : _FRJ ( 'f -- )
   >R
   BEGIN
-    R@ 4 + C@ 0F AND 0=
+    R@ .MANT 3 + C@ $0F AND 0=
   WHILE
     R@ _F>>
   REPEAT
@@ -542,7 +551,7 @@ MTABLE MULTI
 
   \ we need to _F<< the float as long as 1rst digit is 0
   BEGIN
-    'HEAP 3 + C@ 0F AND 0=
+    'HEAP .MANT 2 + C@ $0F AND 0=
   WHILE
     'HEAP _F>>
   REPEAT
@@ -600,12 +609,12 @@ MTABLE MULTI
   THEN
 
   BEGIN
-    x 4 + C@ 1 AND \ test if x if odd
+    x .MANT 3 + C@ 1 AND \ test if x if odd
     IF
       y z _F+ \ Add y to z
     THEN
 
-    x 1+ BCD2/  \ divide x by 2
+    x .MANT BCD2/  \ divide x by 2
     y _F2*      \ multiply y by 2
 
     \ exit clause: x == 0
@@ -637,7 +646,7 @@ MTABLE MULTI
 CREATE T2^ 1 C, 2 C, 4 C, 8 C,
 
 : BT \ Build multiples table
-   FR2 1+
+   FR2 .MANT
    4 0
    DO
       I MULTI TUCK 4 CMOVE
@@ -657,17 +666,17 @@ CREATE T2^ 1 C, 2 C, 4 C, 8 C,
          DIGIT R@ T2^ + C@ + TO DIGIT
          R@ MULTI FR3 1+ 4 CMOVE \ copy the 2 MULTI to FR3 mantissa
 
-         FR1 1+ FR3 1+ FRM- DROP  \ substract, results in FR3's mantissa
-         FR3 1+ FR1 1+ 4 CMOVE    \ copy result back into FR1's mantissa
+         FR1 .MANT FR3 .MANT FRM- DROP  \ substract, results in FR3's mantissa
+         FR3 .MANT FR1 .MANT 4 CMOVE    \ copy result back into FR1's mantissa
       THEN
       R> DROP
    LOOP
-   FR1 1+ BCDSL
+   FR1 .MANT BCDSL
 ;
 
 : STOREDIGIT ( addr -- )
    \ stores the DIGIT in the mantissa at addr (displacing it to the left)
-   1+ >R
+   .MANT >R
    R@ BCDSL
    R> 3 + DUP C@
    DIGIT OR SWAP C!
