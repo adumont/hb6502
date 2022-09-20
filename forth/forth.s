@@ -1918,7 +1918,7 @@ defword "FRM1STORE","FRM1!",
 	STA G2+1
 
 	; put a 1 on the first nibble (usually after a carry happened)
-	LDY #1
+	LDY #0
 	LDA (G2),Y
 	ORA #$10
 	STA (G2),Y

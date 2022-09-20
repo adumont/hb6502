@@ -228,16 +228,16 @@ _BP BP !
 \ FLOATS
 
 \ Low level Float Register encoding, 7 bytes
-\ 0   1  2  3  4   5   6   7
-\ [  ][  :  :  :  ][  ][  ]
-\    \ \_________/   \   +--> exponent
-\     \          \    +-----> exponent's sign (1: negative)
-\      \          +--> mantissa 4 bytes (BCD)
-\       +--> mantissa's sign (1: negative)
+\ 0  1  2  3   4   5   6   7
+\ [  :  :  :  ][  ][  ][  ]
+\  \_________/   \   \   +--> exponent
+\            \    \   +-----> exponent's sign (1: negative)
+\             \    +--> mantissa's sign (1: negative)
+\              +--> mantissa 4 bytes (BCD)
 
 : FREG CREATE 7 ALLOT ; \ 7 bytes per float register
-: .SIGN      ; IMMEDIATE \ Sign 1 byte
-: .MANT 1+   ; \ Mantisa 4 bytes BCD
+: .MANT      ; IMMEDIATE \ Mantisa 4 bytes BCD (does nothing, compiles nothing)
+: .SIGN 4 +  ; \ Sign 1 byte
 : .EXPS 5 +  ; \ Exponent sign 1 byte
 : .EXP  6 +  ; \ Exponent 1 byte
 
@@ -661,10 +661,10 @@ CREATE T2^ 1 C, 2 C, 4 C, 8 C,
    0 TO DIGIT
    4 0 DO
       3 I - >R
-      R@ MULTI FR1 1+ FRM>? 0=
+      R@ MULTI FR1 .MANT FRM>? 0=
       IF
          DIGIT R@ T2^ + C@ + TO DIGIT
-         R@ MULTI FR3 1+ 4 CMOVE \ copy the 2 MULTI to FR3 mantissa
+         R@ MULTI FR3 .MANT 4 CMOVE \ copy the 2 MULTI to FR3 mantissa
 
          FR1 .MANT FR3 .MANT FRM- DROP  \ substract, results in FR3's mantissa
          FR3 .MANT FR1 .MANT 4 CMOVE    \ copy result back into FR1's mantissa
