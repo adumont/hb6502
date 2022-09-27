@@ -14,9 +14,13 @@ LIB=lib
 %-stage1.bin: %.s
 	$(CL65) $(CLFLAGS) -o $@ $<
 
+# Minify the bootstrap code (remove \ comments and empty lines)
+%.f.min: %.f
+	sed -e 's/ \\ .*//; s/^\\ .*//' $< | grep -v '^\s*$$' > $@
+
 # Builds the 3 .dat files, cross-compiling the bootstrap.f code
-%.dat: forth-stage1.bin bootstrap.f
-	./xcompiler.py -r forth-stage1.bin -l bootstrap.f -s forth-stage1.lbl
+%.dat: forth-stage1.bin bootstrap.f.min
+	./xcompiler.py -r forth-stage1.bin -l bootstrap.f.min -s forth-stage1.lbl
 
 stage1: rom.dat ram.dat last.dat
 
