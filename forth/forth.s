@@ -478,13 +478,14 @@ defword "SP_STORE","SP!",
 
 defword "RP_FETCH","RP@",
 ; RP@ : put the Return Stack Pointer on ToS
-	PHX	;\   This decrements SP by 1
-	TSX	; \
-	INX	;  | Increment X to get the original SP
-	TXA	; /  Put 6502 SP into A
-	PLX	;/ 	 Restore X
-	STA 0,X
-	STZ 1,X
+	STZ 1,X		; clear HI of ToS
+	TXA		; Transfer X...
+	TAY		; ... to Y
+	TSX		; Transfer SP
+	TXA		; ... to A
+	STA 0,Y
+	TYA		; Restore Y
+	TAX		; into X
 	JMP DEX2_NEXT
 
 defword "RP_STORE","RP!",
@@ -812,15 +813,15 @@ defword "QDUP","?DUP",
 :	JMP NEXT
 
 defword "J","J",
-	PHX	;\
-	TSX	; \
-	TXA	;  | put SP into Y
-	TAY	; / (a bit involved...)
-	PLX	;/ we mess A,Y, but don't care...
-	LDA $0106,Y
-	STA 0,X
-	LDA $0107,Y
-	STA 1,X
+	TXA
+	TAY
+	TSX
+	LDA $0105,X
+	STA 0,Y
+	LDA $0106,X
+	STA 1,Y
+	TYA
+	TAX
 	JMP DEX2_NEXT
 
 defword "I",,
@@ -830,15 +831,15 @@ defword "I",,
 defword "R_AT","R@",
 ; R@ : copy the cell from the Return Stack
 ; to the Stack
-	PHX	;\
-	TSX	; \
-	TXA	;  | put SP into Y
-	TAY	; / (a bit involved...)
-	PLX	;/ we mess A,Y, but don't care...
-	LDA $0102,Y
-	STA 0,X
-	LDA $0103,Y
-	STA 1,X
+	TXA
+	TAY
+	TSX
+	LDA $0101,X
+	STA 0,Y
+	LDA $0102,X
+	STA 1,Y
+	TYA
+	TAX
 	JMP DEX2_NEXT
 
 STRCMP:
