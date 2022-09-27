@@ -787,9 +787,15 @@ CR .( SUBSTRACTION ) CR
   .(  9.1  9.0 F- => )
   0091 0000
   0090 0000
-  F- F.
+  F- F. CR
+
+CR .( MUL/DIV ) CR
+  .( 1-PI/PI => )
+  10 0 \ 1E0 in Float
+  PI FINV PI F* F- F.
 
 ;
+
 
 >RAM
 MARKER
