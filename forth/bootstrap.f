@@ -16,7 +16,7 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : = - 0= ;
 : NEG NOT 1+ ; \ ( N -- -N ) Negate N (returns -N)
 : 0< 8000 AND ; \ ( N -- F ) Is N strictly negative? Returns non 0 (~true) if N<0
-: IMMEDIATE LAST SETIMM ; \	; sets the latest word IMMEDIATE
+: IMMEDIATE LAST SETIMM ; \ ; sets the latest word IMMEDIATE
 : ' WORD FIND >CFA ;
 : ['] ' COMPILE LIT , ; IMMEDIATE
 : [,] , ; IMMEDIATE \ take an XT on ToS, commit to dict
