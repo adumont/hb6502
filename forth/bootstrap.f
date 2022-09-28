@@ -379,12 +379,19 @@ _BP BP !
       \ FR2 .SIGN C@ FR2 .SIGN C! \ no need to do this
     THEN
 
-    \ we need to _F<< FR2 as long as 1rst digit is 0
-    BEGIN
-      y .MANT C@ F0 AND 0=
-    WHILE
-      y _F<<
-    REPEAT
+    \ if y is not float 0
+    y .MANT DUP @ SWAP 2+ @ OR
+    IF
+      \ we need to _F<< FR2 as long as 1rst digit is 0
+      BEGIN
+        y .MANT C@ F0 AND 0=
+      WHILE
+        y _F<<
+      REPEAT
+
+    ELSE \ y's mantissa is 0 --> reset y to 0
+      0 0 y F!
+    THEN
 
   ELSE
     \ F1 and F2 are same sign, we add the mantissas
