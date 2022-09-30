@@ -2125,8 +2125,7 @@ defword "BCD_TWICE", "BCD2*",
 	STA (W),Y
 	PHP			; save carry
 	DEY
-	CPY #$FF
-	BNE @next
+	BPL @next	; loop while Y>=0
 
 	PLP			; restore carry
 	CLD			; end decimal mode (after restoring flags!)
