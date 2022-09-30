@@ -1790,11 +1790,11 @@ defword "FIND",,
 	; W points to the previous entry
 	; (W) -> W
 	LDA (W)
-	STA 0,X ; we store it there temporarily
+	PHA 	; we store it there temporarily
 	LDY #1
 	LDA (W),Y
 	STA W+1
-	LDA 0,X
+	PLA		; restore
 	STA W
 	BNE @nxt_word
 	LDA W+1
