@@ -2334,19 +2334,19 @@ noheader "STAR_UM_STAR"
 
 	JMP DEX2_NEXT
 
+defword "PARSE",,
+; parse input buffer with separator SEPR (and advance INP_IDX)
+; ( SEP -- ADDR LEN )
+	lda 2,x
+	inx
+	inx
+	bra _parse
+
 defword "WORD",,
 ; Find next word in input buffer (and advance INP_IDX)
 ; ( -- ADDR LEN )
 	lda #' '
-	bra _parse
 
-defword "PARSE",,
-; parse input buffer with separator SEPR (and advance INP_IDX)
-; ( SEP -- ADDR LEN )
-
-	lda 2,x
-	inx
-	inx
 _parse:
 	sta SEPR
 
