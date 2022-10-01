@@ -20,6 +20,7 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : ' WORD FIND >CFA ;
 : ['] ' COMPILE LIT , ; IMMEDIATE
 : [,] , ; IMMEDIATE \ take an XT on ToS, commit to dict
+: POSTPONE ' , ; IMMEDIATE
 
 : +! SWAP OVER @ + SWAP ! ;
 
@@ -29,19 +30,27 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : <= > 0= ;
 : >= SWAP <= ;
 
-: IF COMPILE 0BR HERE HERE++ ; IMMEDIATE
-: THEN HERE SWAP ! ; IMMEDIATE
-: ELSE COMPILE JUMP HERE HERE++ SWAP HERE SWAP ! ; IMMEDIATE
+: JUMP> HERE HERE++ ; \ Put HERE on the stack, and increment leaving an unfilled placeholder for a forward branch/jump, to be filled by >HERE. Equivalent to " HERE 0 , "
+: >HERE HERE SWAP ! ; \ Store current HERE in the jump/branch placeholder earlier left by JUMP>
 
-: BEGIN HERE ; IMMEDIATE
-: AGAIN COMPILE JUMP , ; IMMEDIATE
+\ condition IF do-this ELSE do-that THEN
+: IF COMPILE 0BR JUMP> ; IMMEDIATE
+: ELSE COMPILE JUMP JUMP> SWAP >HERE ; IMMEDIATE
+: THEN >HERE ; IMMEDIATE
 
-: UNTIL COMPILE 0BR , ; IMMEDIATE
+\ BEGIN do-stuff AGAIN
+: BEGIN HERE ; IMMEDIATE \ HERE leaves the address for a backward branch/jump
+: AGAIN COMPILE JUMP , ; IMMEDIATE \ unconditional backward jump
 
+\ BEGIN do-stuff condition UNTIL
+: UNTIL COMPILE 0BR , ; IMMEDIATE \ conditional backward jump
+
+\ BEGIN condition WHILE do-stuff REPEAT
+: WHILE POSTPONE IF ; IMMEDIATE
+: REPEAT COMPILE JUMP SWAP , >HERE ; IMMEDIATE
+
+\ Inline comments ( )
 : ( BEGIN KEY 29 = UNTIL ; IMMEDIATE \ ; now we can use ( ) inline comments!
-
-: WHILE COMPILE 0BR HERE HERE++ ; IMMEDIATE
-: REPEAT COMPILE JUMP SWAP , HERE SWAP ! ; IMMEDIATE
 
 : >D DUP 0< 0= 0= ; \ ; Extends signed cell into signed double (0= 0= will convert any non 0 into FFFF)
 
@@ -70,7 +79,6 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : CONSTANT VALUE ;
 : TO ' 7 + ?EXEC IF ! ELSE COMPILE LIT , COMPILE ! THEN ; IMMEDIATE
 : DEFER CREATE 0 , DOES> @ EXEC ;
-: POSTPONE ' , ; IMMEDIATE
 : IS POSTPONE TO ; IMMEDIATE
 
 >RAM
