@@ -1974,8 +1974,7 @@ _parse:
 @return0:
 	lda BOOT
 	bne :+		; if boot<>0 (aka boot mode, we don't set the prompt to 1)
-	lda #1		; we mark 1 the OK flag
-	sta OK
+	inc OK		; we mark 1 the OK flag
 :
 	stz 0,X		; we push a 0 on the stack
 	stz 1,X
@@ -2017,8 +2016,7 @@ _parse:
 @return:
 	lda BOOT
 	bne @endW	; if boot<>0 (aka boot mode, we don't set the prompt to 1)
-	lda #1		; we mark 1 the OK flag
-	sta OK
+	inc OK		; we mark 1 the OK flag
 @endW:
 	; compute length
 	LDA INP_IDX
@@ -2338,7 +2336,7 @@ defword "ULESS","U<",
 
 defword "JUMP",,
 ; (IP) points to literal address to jump to
-; instead of next instruction ;)
+; instead of next word ;)
 	LDY #1
 	LDA (IP),y
 	TAY
