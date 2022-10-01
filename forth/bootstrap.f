@@ -60,10 +60,10 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : PICK 1+ 2* SP@ + @ ;
 : DEPTH DTOP SP@ - 2/ ;
 
-: 2SWAP >R -ROT R> -ROT ;
-: 2ROT >R >R 2SWAP R> R> 2SWAP ;
-: 2>R R> -ROT SWAP >R >R >R ;
-: 2R> R> R> R> SWAP ROT >R ;
+\ : 2SWAP >R -ROT R> -ROT ;
+\ : 2ROT >R >R 2SWAP R> R> 2SWAP ;
+\ : 2>R R> -ROT SWAP >R >R >R ;
+\ : 2R> R> R> R> SWAP ROT >R ;
 
 : D< D- NIP 0< ; \ Signed double less
 : M+ >D D+ ;
@@ -107,15 +107,15 @@ _BP BP !
 : DUMP SWAP DUP . ?DO I C@ C. LOOP ; \ ( addr1 addr2 -- ) dumps memory from addr1 to addr2
 : .LDUMP BP @ 4000 DUMP ; \ dump local stack
 
-: .NAME DUP 2+ DUP C@ DUP 40 AND >R 1F AND SWAP 
+: .NAME DUP 2+ DUP C@ DUP 40 AND >R 1F AND SWAP
   1+ SWAP TYPE R> IF SPACE 2A EMIT THEN ;
-: WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA . 
-  .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 = 
+: WORDS 0 LATEST BEGIN @ DUP WHILE DUP . DUP >CFA .
+  .NAME CR SWAP 1+ DUP 10 = IF GETC 20 OR 71 =
   IF 2DROP EXIT THEN DROP 0 THEN SWAP REPEAT 2DROP ;
 
 : .( [ ' S( , ] ?EXEC IF TYPE ELSE COMPILE TYPE THEN ; IMMEDIATE
 
-: STRING CREATE HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE ; \ Example: S( Alex) STRING NAME
+\ : STRING CREATE HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE ; \ Example: S( Alex) STRING NAME
 : CHAR ?EXEC IF KEY ELSE COMPILE CLIT KEY C, THEN ; IMMEDIATE \ Example: CHAR " EMIT
 
 : >HDR ( XT -- HDR/0 ) \ 0 if not found
