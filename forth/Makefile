@@ -8,10 +8,17 @@ LIB=lib
 
 .DEFAULT_GOAL := run
 
+### Version file ###
+
+# we compare the output with the version saved.
+# if not the same we update it
+version.dat: version.sh .force
+	./version.sh | cmp -s - $@ || ./version.sh > $@
+
 ### STAGE 1
 
 # Builds forth-stage1.bin
-%-stage1.bin: %.s
+%-stage1.bin: %.s version.dat
 	$(CL65) $(CLFLAGS) -o $@ $<
 
 # Minify the bootstrap code (remove \ comments and empty lines)
@@ -64,3 +71,5 @@ help:
 
 clean:
 	-rm -f lib/*.o *.o *.hex *.map *.bin *.h *.lbl *.dat
+
+.PHONY: .force

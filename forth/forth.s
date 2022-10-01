@@ -2806,7 +2806,10 @@ NMI_vec:
 	CLI
 	JMP entry_point
 
-VERS_STR: CString {"ALEX FORTH v0", $0A, $0D, "(c) 2021-2022 Alex Dumont", $0A, $0D}
+; Version string is now generated with version.sh
+; VERS_STR: CString {"ALEX FORTH v0", $0A, $0D, "(c) 2021-2022 Alex Dumont", $0A, $0D}
+.include "version.dat"
+
 WHAT_STR: CString {" ?", $0A, $0D}
 OK_STR: CString {"ok "}
 
