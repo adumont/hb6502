@@ -11,12 +11,16 @@ NUMB=$( git log --oneline | wc -l )
 #echo "$REPO($BRANCH):$SHA-$DATE-$NUMB" > .version
 
 #VERSION="$DATE-$NUMB"
-VERSION="$DATE"
+VERSION="$DATE-$SHA"
 
 if [ "$BRANCH" != "main" ]
 then
     VERSION="$VERSION($BRANCH)"
 fi
-VERSION="$VERSION-$SHA"
+
+if [ ! -z "$( git status --porcelain -uno )" ]
+then
+    VERSION="$VERSION*"
+fi
 
 echo "VERS_STR: CString {\"ALEXFORTH $VERSION\", \$0A, \$0D, \"(c) 2021-$YEAR Alex Dumont\", \$0A, \$0D}"
