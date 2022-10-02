@@ -86,17 +86,6 @@ _BP BP !
 
 >ROM
 
-: LOCALS  1+ BP @ DUP ROT 2* - DUP -ROT ! BP ! ; \ ( n -- ) Allocates n local variables
-: -LOCALS BP DUP @ @ SWAP ! ;  \ Dellocates n local variables
-
-: L@ BP @ + @ ; \  ; ( n -- value) helper word to get local var n
-: L! BP @ + ! ; \  ; ( n -- value) helper word to save to local var n
-
-: x 2 L@ ; : x! 2 L! ;
-: y 4 L@ ; : y! 4 L! ;
-: z 6 L@ ; : z! 6 L! ;
-: t 8 L@ ; : t! 8 L! ;
-
 \ Allocates a new n-bytes frame in the heap (top of RAM)
 \ first cell is a pointer to the previous frame
 \ next n-bytes are allocated for user data
@@ -106,7 +95,18 @@ _BP BP !
 ;
 
 : 'HEAP BP @ 2+ ; \ returns the address of the start of the heap frame's data
-: -HEAP -LOCALS ;
+: -HEAP BP DUP @ @ SWAP ! ;
+
+: LOCALS 2* HEAP ; \ ( n -- ) Allocates cells for n local variables
+: -LOCALS -HEAP ;  \ Deallocates local variables
+
+: L@ CREATE C, DOES> C@ BP @ + @ ; \  ; ( n -- value) defining word to get local var n
+: L! CREATE C, DOES> C@ BP @ + ! ; \  ; ( n -- value) defining word to save to local var n
+
+2 L@ x  2 L! x!
+4 L@ y  4 L! y!
+6 L@ z  6 L! z!
+8 L@ t  8 L! t!
 
 : RECURSIVE REVEAL ; IMMEDIATE
 
