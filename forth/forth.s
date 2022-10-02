@@ -600,13 +600,12 @@ head_bcd_shift:
 	STA W+1
 
 ; copy 4 BCD bytes into G1-G2
-	LDY #0
+	LDY #3
 @next1:
 	LDA (W),Y
 	STA G1,Y
-	INY
-	CPY #4
-	BNE @next1
+	DEY
+	BPL @next1
 
 	LDY #4
 
@@ -630,13 +629,12 @@ defword "BCDSR",,
 
 tail_bcd_shift:	; we also call it from BCDSL
 ; copy 4 BCD bytes from G1-G2 to it's old place
-	LDY #0
+	LDY #3
 @next3:
 	LDA G1,Y
 	STA (W),Y
-	INY
-	CPY #4
-	BNE @next3
+	DEY
+	BPL @next3
 
 	JMP do_DROP
 
