@@ -1789,13 +1789,12 @@ defword "FIND",,
 @advance_w:
 	; W points to the previous entry
 	; (W) -> W
-	LDA (W)
-	PHA 	; we store it there temporarily
 	LDY #1
 	LDA (W),Y
-	STA W+1
-	PLA		; restore
+	TAY			; keep in Y temporarily
+	LDA (W)
 	STA W
+	STY W+1		; now we can save Y to W+1
 	BNE @nxt_word
 	LDA W+1
 	BNE @nxt_word
