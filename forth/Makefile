@@ -23,7 +23,7 @@ version.dat: version.sh .force
 
 # Minify the bootstrap code (remove \ comments and empty lines)
 %.f.min: %.f
-	sed -e 's/ \\ .*//; s/^\\ .*//' $< | grep -v '^\s*$$' > $@
+	sed -e 's/ \\ .*//; s/^\\ .*//; s/^\s*//' $< | grep -v '^\s*$$' > $@
 
 # Builds the 3 .dat files, cross-compiling the bootstrap.f code
 %.dat: forth-stage1.bin bootstrap.f.min
