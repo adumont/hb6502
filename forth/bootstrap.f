@@ -730,6 +730,8 @@ CREATE T2^ 1 C, 2 C, 4 C, 8 C,
   -HEAP
 ;
 
+: F/ FINV F* ;
+
 : PI ( piFloat -- ) 0031 4159 ;
 
 : DBG
@@ -799,8 +801,7 @@ CR .( SUBSTRACTION ) CR
 CR .( MUL/DIV ) CR
   .( 1-PI/PI => )
   10 0 \ 1E0 in Float
-  PI FINV PI F* F- F.
-
+  PI PI F/ F- F. CR
 ;
 
 
