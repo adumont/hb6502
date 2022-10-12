@@ -2606,6 +2606,8 @@ getline:
 	LDA BOOT
 	BNE boot_refill
 
+	PHX		; save X as we'll mess with it
+
 @next:	JSR getc
 
 	CMP #$04     ; CTRL-D -> BRK
@@ -2633,10 +2635,10 @@ getline:
 
 	BRA @next
 @maxlen:
-	PHA
+	TAX
 	LDA #BKSPACE	; send bckspace to erase last char
 	JSR putc
-	PLA		; restore new char
+	TXA		; restore new char
 	STA INPUT-1,y	; save char to INPUT
 	JSR putc
 	BRA @next
@@ -2652,6 +2654,7 @@ getline:
 	BRA @next
 @finish:
 	STY INP_LEN
+	PLX			; Restore X
 	JMP _crlf
 
 ; boot_refill will refill only one token (word) from BOOT_PRG
@@ -2741,13 +2744,14 @@ boot_refill:
 ; Print routines
 
 print_byte:
-	PHA	; save A for 2nd nibble
+	; we clobber Y here. (replace with TAY/TYA with PHA/PLA if not acceptable)
+	TAY	; save A for 2nd nibble
 	LSR	; here we shift right
 	LSR	; to get HI nibble
 	LSR
 	LSR
 	JSR print_nibble
-	PLA
+	TYA
 	AND #$0F ; LO nibble
 	; fallthrough to print_nibble
 
