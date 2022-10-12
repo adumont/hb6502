@@ -2141,7 +2141,7 @@ defword "FDOT","F.",
 :
 ; print first digit
 	LDA 4,X
-	PHA	; save A for 2nd nibble
+	TAY	; save A for 2nd nibble
 	LSR	; here we shift right
 	LSR	; to get HI nibble
 	LSR
@@ -2151,7 +2151,7 @@ defword "FDOT","F.",
 	LDA #'.'
 	JSR putc
 ; print second digit
-	PLA
+	TYA
 	AND #$0F ; LO nibble
 	; fallthrough to print_nibble
 	JSR print_nibble
