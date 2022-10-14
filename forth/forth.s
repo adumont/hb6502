@@ -2858,7 +2858,7 @@ BOOTP:	.res 2	; pointer to BOOTstrap code
 BASE:	.res 1	; Base for number conversion
 ERROR:	.res 1	; Error when converting number
 INP_LEN: .res 1	; Length of the text in the input buffer
-INPUT:	.res 128	; CMD string (extend as needed, up to 256!)
+INPUT:	.res MAX_LEN	; CMD string (extend as needed, up to 256!)
 INP_IDX: .res 1	; Index into the INPUT Buffer (for reading it with KEY)
 OK:		.res 1	; 1 -> show OK prompt
 SCRATCH: .res 8	; 8 bytes we can use in routines...
