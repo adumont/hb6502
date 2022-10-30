@@ -1721,6 +1721,14 @@ defword "CPRINT","C.",
 ; ( n -- )
 	JMP cprint
 
+defword "testNEG","0<",
+; ( n -- bool )
+; TRUE  (FFFF) if n is < 0 (msb is 1)
+; FALSE (0000) otherwise
+	LDA 3,X
+	BMI true
+	BRA false
+
 defword "EQZ","0=",
 ; 0=, it's also equivalent to "logical NOT" (not a bitwise NOT)
 ; logical NOT --> use 0=
@@ -1731,12 +1739,12 @@ defword "EQZ","0=",
 ; FALSE (0000) otherwise
 	LDA 2,X
 	ORA 3,X
-	BEQ @true
-@false:
+	BEQ true
+false:
 	STZ 2,X
 	STZ 3,X
 	JMP NEXT
-@true:
+true:
 	LDA #$FF
 	STA 2,X
 	STA 3,X
