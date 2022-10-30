@@ -739,6 +739,81 @@ CREATE T2^ 1 C, 2 C, 4 C, 8 C,
 
 : F/ FINV F* ;
 
+: D16* $10 * SWAP $10 UM* ROT + ;
+
+: PARSE-FLOAT ( ADDR COUNT -- F )
+  \ MANDATORY: YOU NEED TO USE . AND E in the string!
+  \ parse float at addr/count into a float F
+  0 0 FR1 F! \ clears FR1
+  2 LOCALS
+  0 x! \ flag to know if we are parsing mantisa (0) or exponent (1)
+  0 y! \ number of non-zero digits before the decimal "."
+
+  0 -ROT 0 -ROT \ start with a 0 0 mantissa
+
+  OVER + SWAP DO
+    I C@ >R \ R@ holds the char
+
+    \ is it a digit?
+    R@ $2F > R@ $3A < AND IF
+
+      R@ CHAR 0 -
+
+      x IF
+        \ x=1, we're parsing exponent
+        SWAP #10 * +
+      ELSE
+        \ x=0, we're parsing mantissa
+        y 6 < IF
+            -ROT D16* ROT M+
+            y 1+ y! \ 1 more digit to y counter
+        ELSE
+            DROP
+        THEN
+      THEN
+
+    ELSE
+      \ is it a "-"
+      R@ CHAR - = IF
+        1 FR1
+        x IF .EXPS ELSE .SIGN THEN
+        C!
+      THEN
+
+      \ is it an "E"
+      R@ CHAR E = IF
+        1 x!
+        0 \ now leave a 0 on the stack (to build the exponent)
+      THEN
+
+      R@ CHAR . = IF
+        y 1 - FR1 .EXP C!
+      THEN
+    THEN
+
+    R> DROP
+  LOOP
+
+  \ correct and store the exponent
+  FR1 .EXP C@
+  SWAP FR1 .EXPS IF NEG + NEG ELSE + THEN FR1 .EXP C!
+
+  \ store the mantissa
+  BEGIN
+    DUP $F0 AND 0=
+  WHILE
+    D16*
+  REPEAT
+  FR1 .MANT SWAP OVER C!
+  1+ SWAP <> SWAP !
+
+  FR1 F@
+
+  -LOCALS
+;
+
+: S>F WORD PARSE-FLOAT ;
+
 : PI ( piFloat -- ) 0031 4159 ;
 
 : DBG
