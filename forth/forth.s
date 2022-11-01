@@ -884,12 +884,7 @@ defword "DP",,
 ; length on the stack.
 
 defword "COUNT",,
-	LDA 2,X
-	STA W
-	LDA 3,X
-	STA W+1
-
-	LDA (W)		; 1rst byte is length
+	LDA (2,X)		; 1rst byte is length
 	STA 0,X		; add on top of stack
 	STZ 1,X
 
@@ -1920,17 +1915,9 @@ defword "XLOHI","<>",
 
 defword "FRM1STORE","FRM1!",
 ; ( 'f2 -- )
-	; put 'f2 in G2
-	LDA 2,X
-	STA G2
-	LDA 3,X
-	STA G2+1
-
-	; put a 1 on the first nibble (usually after a carry happened)
-	LDY #0
-	LDA (G2),Y
+	LDA (2,X)
 	ORA #$10
-	STA (G2),Y
+	STA (2,X)
 
 	JMP do_DROP
 
@@ -2707,16 +2694,9 @@ defword "CFETCH","C@",
 ; c@ ( ADDR -- byte )
 ; We read the data at the address on the
 ; stack and put the value on the stack
-	; copy address from stack to W
-	LDA 2,X	; LO
-	STA W
-	LDA 3,X	; HI
-	STA W+1
-	; Read data at (W) and save
-	; in the TOS
-	LDA (W)
+	LDA (2,X)
 	STA 2,X
-	STz 3,X
+	STZ 3,X
 	JMP NEXT
 
 defword "EMIT",,
@@ -2876,15 +2856,8 @@ defword "PUSH0","0",
 
 defword "CSTORE","C!",
 ; C! ( value ADDR -- )
-	; copy the address to W
-	LDA 2,X	; LO
-	STA W
-	LDA 3,X	; HI
-	STA W+1
-	; save the value to (W)
-	; LO
 	LDA 4,X
-	STA (W)
+	STA (2,X)
 	BRA end_do_STORE
 
 defword "STORE","!",
