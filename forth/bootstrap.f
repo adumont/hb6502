@@ -17,7 +17,7 @@ HERE 5 !        \ we save the start of RAM area at 0005
 : NEG NOT 1+ ; \ ( N -- -N ) Negate N (returns -N)
 : IMMEDIATE LAST SETIMM ; \ ; sets the latest word IMMEDIATE
 : ' WORD FIND >CFA ;
-: ['] ' COMPILE LIT , ; IMMEDIATE
+: ['] ' LITERAL ; IMMEDIATE
 : [,] , ; IMMEDIATE \ take an XT on ToS, commit to dict
 : POSTPONE ' , ; IMMEDIATE
 
@@ -125,7 +125,7 @@ _BP BP !
 : .( [ ' S( , ] ?EXEC IF TYPE ELSE COMPILE TYPE THEN ; IMMEDIATE
 
 \ : STRING CREATE HERE -ROT 1+ DUP ALLOT SWAP 1 - -ROT CMOVE ; \ Example: S( Alex) STRING NAME
-: CHAR ?EXEC IF KEY ELSE COMPILE CLIT KEY C, THEN ; IMMEDIATE \ Example: CHAR " EMIT
+: CHAR KEY ?EXEC IF EXIT THEN LITERAL ; IMMEDIATE \ Example: CHAR " EMIT
 
 : >HDR ( XT -- HDR/0 ) \ 0 if not found
   LATEST

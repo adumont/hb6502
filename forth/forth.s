@@ -359,6 +359,13 @@ removeW:
 commitN:
 	; ( n )
 	; Add number to the word we are defining
+	.ADDR do_LITERAL
+	.ADDR do_JUMP, loop1
+
+;------------------------------------------------------
+
+defword "LITERAL",,
+	jmp do_COLON
 	.ADDR do_DUP			; ( n n )
 	.ADDR do_LIT, $FF00 	; ( n n FF00 )
 	.ADDR do_AND			; ( n hi ) only keep high nibble
@@ -366,13 +373,11 @@ commitN:
 @commitN16b:
 	.ADDR do_COMPILE, do_LIT	; first add "LIT" ( n )
 	.ADDR do_COMMA				; add n to word (  )
-	.ADDR do_JUMP, loop1
+	.ADDR do_SEMI
 @commitN8b:
 	.ADDR do_COMPILE, do_CLIT	; first add "CLIT" ( n )
 	.ADDR do_CCOMMA				; add n to word (  )
-	.ADDR do_JUMP, loop1
-
-;------------------------------------------------------
+	.ADDR do_SEMI
 
 defword "BASE",,
 	LDA #<BASE
@@ -1069,14 +1074,12 @@ defword "MARKER",,
 
 	.ADDR do_COMPILE, do_COLON	; do_COLON
 
-	.ADDR do_COMPILE, do_LIT	; LIT
-	.ADDR do_COMMA	; stores old LATEST
+	.ADDR do_LITERAL ; stores old LATEST
 
 	.ADDR do_COMPILE, do_LATEST	; LATEST
 	.ADDR do_COMPILE, do_STORE	; !
 
-	.ADDR do_COMPILE, do_LIT	; LIT
-	.ADDR do_COMMA	; stores old HERE
+	.ADDR do_LITERAL ; stores old HERE
 
 	.ADDR do_COMPILE, do_DP	; DP
 	.ADDR do_COMPILE, do_STORE	; !
