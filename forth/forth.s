@@ -1954,25 +1954,12 @@ defword "FRMPLUS","FRM+",
 	LDY #3
 	SED ; set decimal flag
 	CLC ; clear carry
-
+@next:
 	LDA (G1),Y
 	ADC (G2),Y
 	STA (G2),Y
-
 	DEY
-	LDA (G1),Y
-	ADC (G2),Y
-	STA (G2),Y
-
-	DEY
-	LDA (G1),Y
-	ADC (G2),Y
-	STA (G2),Y
-
-	DEY
-	LDA (G1),Y
-	ADC (G2),Y
-	STA (G2),Y
+	BPL @next
 
 	CLD ; clear decimal flag
 
@@ -1992,25 +1979,12 @@ defword "FRMMINUS","FRM-",
 	LDY #3
 	SED ; set decimal flag
 	SEC ; clear carry
-
+@next:
 	LDA (G1),Y
 	SBC (G2),Y
 	STA (G2),Y
-
 	DEY
-	LDA (G1),Y
-	SBC (G2),Y
-	STA (G2),Y
-
-	DEY
-	LDA (G1),Y
-	SBC (G2),Y
-	STA (G2),Y
-
-	DEY
-	LDA (G1),Y
-	SBC (G2),Y
-	STA (G2),Y
+	BPL @next
 
 	CLD ; clear decimal flag
 
