@@ -2134,7 +2134,7 @@ defword "FDOT","F.",
 	LDA 2,X
 	JSR print_byte
 ; print an 'e'
-	LDA #'e'
+	LDA #'E'
 	JSR putc
 ; load exponent again
 	LDA 5,X
