@@ -460,8 +460,6 @@ _BP BP !
   -HEAP
 ;
 
-:  MTABLE CREATE #16 ALLOT DOES> SWAP 2* 2* + ;
-
 >RAM
 
 \ 3 temporary float registers
@@ -470,11 +468,12 @@ FREG FR2
 FREG FR3
 
 \ used in Float division
-MTABLE MULTI
-0 MULTI VALUE 'MULTI \ base add of MULTI table
+VARIABLE MULTI #14 ALLOT \ 2 of variable + 14 of Allot = 16 bytes
 0 VALUE DIGIT
 
 >ROM
+
+: MULTI 2* 2* MULTI + ; \ ( n -- Addr of nth element of array MULTI )
 
 \ high level F+
 : F+ ( f1 f2 ) \ takes two unpacked floats
