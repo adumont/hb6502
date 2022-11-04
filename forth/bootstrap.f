@@ -746,7 +746,6 @@ CREATE T2^ 1 C, 2 C, 4 C, 8 C,
   0 0 FR1 F! \ clears FR1
   2 LOCALS
   0 x! \ flag to know if we are parsing mantisa (0) or exponent (1)
-  0 y! \ number of non-zero digits before the decimal "."
 
   0 -ROT 0 -ROT \ start with a 0 0 mantissa
 
@@ -786,30 +785,38 @@ CREATE T2^ 1 C, 2 C, 4 C, 8 C,
       THEN
 
       R@ CHAR . = IF
-        y 1 - FR1 .EXP C!
+        0 y! \ reset number of digits after the decimal "."
       THEN
     THEN
 
     R> DROP
   LOOP
 
-  \ correct and store the exponent
-  FR1 .EXP C@
-  SWAP FR1 .EXPS IF NEG + NEG ELSE + THEN FR1 .EXP C!
+  FR1 .EXP C! \ store the exp (parsed absolute value)
+  FR1 FSEXP@  \ retrieve signed exponent (as two's complement)
+  5 + y - -ROT \ keep that above the mantissa's digits
 
-  \ store the mantissa
+  \ left justify the mantissa
   BEGIN
     DUP $F0 AND 0=
   WHILE
-    D16*
+    D16* \ move digits 1 to the left
+    ROT 1 - -ROT \ decrease exp by 1
   REPEAT
+
+  \ store the mantissa in FR1
   FR1 .MANT SWAP OVER C!
   1+ SWAP <> SWAP !
 
+  \ store the exponent
+  FR1 FSEXP!
+
+  \ return packed float on the stack
   FR1 F@
 
   -LOCALS
 ;
+
 
 : S>F
   WORD PARSE-FLOAT
