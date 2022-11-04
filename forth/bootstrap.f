@@ -762,12 +762,8 @@ CREATE T2^ 1 C, 2 C, 4 C, 8 C,
         SWAP #10 * +
       ELSE
         \ x=0, we're parsing mantissa
-        y 6 < IF
-            -ROT D16* ROT M+
-            y 1+ y! \ 1 more digit to y counter
-        ELSE
-            DROP
-        THEN
+        -ROT D16* ROT M+
+        y 1+ y! \ 1 more digit to y counter
       THEN
 
     ELSE
