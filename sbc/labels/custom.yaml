@@ -1,0 +1,39 @@
+W65C02S:
+  description: WDC 8-bit CPU
+  type: wide
+  pins: [/VP, RDY, Φ1O, /IRQ, /ML, /NMI, SYNC, VCC, A0, A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11,
+        GND, A12, A13, A14, A15, D7, D6, D5, D4, D3, D2, D1, D0, R/~W, NC, BE, Φ2, /SO, Φ2O, /RES]
+
+6522:
+  description: Versatile Interface Adapter (VIA)
+  type: wide
+  pins: [GND, PA0, PA1, PA2, PA3, PA4, PA5, PA6, PA7, PB0, PB1, PB2, PB3, PB4, PB5, PB6, PB7, CB1, CB2, VCC,
+        /IRQ, R/~W, /CS2, CS1, Φ2, D7, D6, D5, D4, D3, D2, D1, D0, /RES, RS3, RS2, RS1, RS0, CA2, CA1 ]
+
+6551:
+  description: ACIA
+  type: wide
+  pins: [GND, CS0, /CS1, /RES, RxC, XTAL1, XTAL2, /RTS, /CTS, TxD, /DTR, RxD, RS0, RS1,
+        VCC, /DCD, /DSR, D0, D1, D2, D3, D4, D5, D6, D7, /IRQ, Φ2, R/~W]
+
+_quad2in: &quad2in
+  family: 7400
+  description: quad 2-input
+  pins: [1A, 1B, 1Y, 2A, 2B, 2Y, GND, 3Y, 3A, 3B, 4Y, 4A, 4B, VCC]
+
+7400:
+  <<: *quad2in
+  description: 4x 2-input NAND
+
+_28C256: &28C256
+  pins: [A14, A12, A7, A6, A5, A4, A3, A2, A1, A0, D0, D1, D2, GND,
+        D3, D4, D5, D6, D7, /CE, A10, /OE, A11, A9, A8, A13, /WE, VCC]
+
+AT28C256:
+  <<: *28C256
+  description: (32Kx8bit) EEPROM
+  type: wide
+
+UM61256:
+  <<: *28C256
+  description: (32Kx8bit) SRAM
