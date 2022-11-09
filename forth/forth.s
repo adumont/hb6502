@@ -693,9 +693,7 @@ defword "LIT",,
 	JMP DEX2_NEXT
 
 defword "VAR",,
-; Push a literal word (2 bytes)
-; (IP) points to literal
-; instead of next instruction ;)
+; Pushes W+3 to the stack
 	CLC
 	LDA W
 	ADC #3
