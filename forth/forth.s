@@ -756,6 +756,19 @@ defword "LIT",,
 @skip:
 	JMP DEX2_NEXT
 
+defword "VAR",,
+; Push a literal word (2 bytes)
+; (IP) points to literal
+; instead of next instruction ;)
+	CLC
+	LDA W
+	ADC #3
+	STA 0,X
+	LDA W+1
+	ADC #0
+	STA 1,X
+	JMP DEX2_NEXT
+
 defword "DPLUS","D+",
 ; Double cells sum
 ; ( d1 d2 -- sum ) where really it's ( lo1 hi1 lo2 hi2 -- losum hisum )
@@ -1223,12 +1236,12 @@ prep_cfa:	; jump from noname
 	.ADDR do_SEMI
 
 defword "VARIABLE",,
-; : VARIABLE CREATE 0 , ;
-; Creates a variable, initialized to 0
 	JMP do_COLON
-	.ADDR do_CREATE
-	.ADDR do_PUSH0
-	.ADDR do_COMMA
+	.ADDR do_CODE		; creates empty header
+	.ADDR do_STAR_COMMIT_JMP	; adds JMP
+	.ADDR do_COMPILE, do_VAR ; store do_VAR addr
+	.ADDR do_HEREPP
+	.ADDR do_REVEAL
 	.ADDR do_SEMI
 
 defword "SEMICOLON",";",IMMEDIATE_FLAG
