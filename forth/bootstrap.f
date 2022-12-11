@@ -600,6 +600,15 @@ VARIABLE MULTI #14 ALLOT \ 2 of variable + 14 of Allot = 16 bytes
   3 LOCALS \ f1 -> x, f2 -> y, f3 -> z
   z! y! x!
 
+  \ store 0 in z
+  0 0 z F!
+
+  \ if x or y are 0, we exit (z is already cleared so 0 is the correct result)
+  x _F0= y _F0= OR
+  IF
+    -LOCALS EXIT
+  THEN
+
   \ flip y's sign if x's negative
   x .SIGN C@ IF
     y .SIGN C@ 1 XOR y .SIGN C!
@@ -611,15 +620,6 @@ VARIABLE MULTI #14 ALLOT \ 2 of variable + 14 of Allot = 16 bytes
   \ add x' exponent to y's exponent
   x FSEXP@ y FSEXP@ +
   y FSEXP!
-
-  \ store 0 in z
-  0 0 z F!
-
-  \ if x or y are 0, we exit (z is already cleared so 0 is the correct result)
-  x _F0= y _F0= OR
-  IF
-    -LOCALS EXIT
-  THEN
 
   BEGIN
     x .MANT 3 + C@ 1 AND \ test if x if odd
@@ -812,7 +812,6 @@ CREATE T2^ 1 C, 2 C, 4 C, 8 C,
 
   -LOCALS
 ;
-
 
 : S>F
   WORD PARSE-FLOAT
