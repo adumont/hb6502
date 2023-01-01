@@ -1,3 +1,9 @@
+# Alex FORTH for 6502
+#
+# Copyright (C) 2021-2023 Alexandre Dumont <adumont@gmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
 # build tools & options
 CL65 = cl65
 CLFLAGS  = -v -d -t none -O --cpu 65c02 -C $(LIB)/sbc.cfg\

@@ -1,5 +1,5 @@
 \ Alex FORTH for 6502
-\ Copyright (C) 2021-2022 Alexandre Dumont <adumont@gmail.com>
+\ Copyright (C) 2021-2023 Alexandre Dumont <adumont@gmail.com>
 \ SPDX-License-Identifier: GPL-3.0-only
 
 \ DON'T REMOVE THIS CODE block

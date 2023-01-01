@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+# Copyright (C) 2021-2023 Alexandre Dumont <adumont@gmail.com>
+#
+# SPDX-License-Identifier: GPL-3.0-only
+
 import sys
 import argparse
 import time

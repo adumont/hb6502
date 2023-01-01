@@ -1,5 +1,10 @@
 ; ACIA subroutines
-; (C) Alex Dumont, 2021
+;
+; Copyright (C) 2021-2023 Alexandre Dumont <adumont@gmail.com>
+;
+; SPDX-License-Identifier: GPL-3.0-only
+
+
 
 ; __acia_speed = 9600
 __acia_speed = 115200
@@ -27,7 +32,7 @@ acia_init:
     stz ACIA_CTRL       ; 16x EXTERNAL CLOCK, External Receiver Clock, 8 data word length, 1 stop bit
 
 .elseif __acia_speed = 9600
-   
+
     .out    "** ACIA configured at 9600 bauds"
 
     lda #%00011110      ; SBR: 9600, RCS: baud rate

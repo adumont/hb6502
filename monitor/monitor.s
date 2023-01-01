@@ -1,5 +1,10 @@
 ; Monitor by Adumont
-; 
+;
+; Copyright (C) 2021-2023 Alexandre Dumont <adumont@gmail.com>
+;
+; SPDX-License-Identifier: GPL-3.0-only
+
+;
 ; Monitor will show content at ADDR.
 ; You can type:
 ; - an ADDR (4 char, hex) --> set ADDR
@@ -27,11 +32,11 @@
 .export   _init
 
 ; ACIA $4200
-.define   ACIA         $4200 ; 
-.define   ACIA_DATA  ACIA+$0 ; 
-.define   ACIA_STAT  ACIA+$1 ; 
-.define   ACIA_CMD   ACIA+$2 ; 
-.define   ACIA_CTRL  ACIA+$3 ; 
+.define   ACIA         $4200 ;
+.define   ACIA_DATA  ACIA+$0 ;
+.define   ACIA_STAT  ACIA+$1 ;
+.define   ACIA_CMD   ACIA+$2 ;
+.define   ACIA_CTRL  ACIA+$3 ;
 
 _init:
     cli ; clear the interrupt-disable bit so the processor will respond to interrupts
@@ -101,7 +106,7 @@ non_printable:
 	LDA #' '
 	JSR putc
 
-prompt:	
+prompt:
 	LDA #' '
 	JSR putc
 	LDA #'?'
@@ -110,11 +115,11 @@ prompt:
 	JSR putc
 
 	JSR getline
-	
+
 	CMP #$0d ; LF
 	BEQ cmd_return
 	; here user hit ESC
-	
+
 cmd_esc:
 	; here we do whatever to handle an ESC
 	LDA #'E'
@@ -127,7 +132,7 @@ cmd_esc:
 
 cmd_return:
 	; here we do whatever to handle a RETURN
-	
+
 	; decision tree depending on the length
 	; (length is still stored in X at this pointtp)
 
@@ -161,7 +166,7 @@ cmd_return:
 
 	LDX #1
 	JSR scan_ascii_byte
-	
+
 	CPY #'a'		; edit A
 	BEQ editA_cmd
 
@@ -203,11 +208,11 @@ exec_cmd:
 it_is_a_char:
 	LDX #1		; we load the 2nd byte of CMD
 	LDA CMD,x	; into A
-	
+
 	STA (MON_ADDR),y	; and store at ADDR
 
 	JMP inc_addr
-		
+
 it_is_a_value:
 	LDX #0
 	JSR scan_ascii_byte
@@ -282,16 +287,16 @@ CRLF:
 
 getline:
 	LDX #0
-next:	
+next:
 	JSR getc
 
 	CMP #$0D	; LF (enter)?
 	BEQ eol
 
-	CMP #$1B 	; ESC	
+	CMP #$1B 	; ESC
 	BEQ eol
 
-	CMP #$08 	; Backspace	
+	CMP #$08 	; Backspace
 	BEQ backspace
 
 ;	CMP #'9'+1
@@ -299,10 +304,10 @@ next:
 ;	AND #$DF 	; make upper case
 ;skip_uppercase:
 	STA CMD,x	; save in buffer
-	
+
 	CPX #$0F	; x=15 -> end line
 	BEQ eol
-	
+
 	INX
 	JSR putc	; echo char
 	JMP next	; wait for next
@@ -348,7 +353,7 @@ scan_ascii_addr:
 	INX
 	LDA CMD,X	; load char into A
 	JSR nibble_asc_to_value
-	
+
 	ORA z:MON_ADDR+1
 	STA z:MON_ADDR+1
 
@@ -360,13 +365,13 @@ scan_ascii_addr:
 	ASL
 	ASL
 	STA z:MON_ADDR
-	
+
 	INX
 	LDA CMD,X	; load char into A
 	JSR nibble_asc_to_value
 	ORA z:MON_ADDR
 	STA z:MON_ADDR
-	
+
 	RTS
 
 scan_ascii_byte:
