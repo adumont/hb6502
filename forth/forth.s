@@ -364,6 +364,19 @@ commitN:
 
 ;------------------------------------------------------
 
+defword "ABORT",,
+	LDX #$FF
+	STX MODE		; set MODE to FF --> reset to exec mode
+	STX OK			; set the OK flag so the prompt shows
+	STZ BOOT		; force not in BOOT mode. that allow to force interrupt out of boot mode
+	TXS             ; set the stack pointer
+	LDX #DTOP
+	LDA #<rsin
+	STA IP
+	LDA #>rsin
+	STA IP+1
+	JMP NEXT
+
 defword "LITERAL",,
 	jmp do_COLON
 	.ADDR do_DUP			; ( n n )
