@@ -7,6 +7,7 @@
 # build tools & options
 CL65 = cl65
 CLFLAGS  = -v -d -t none -O --cpu 65c02 -C $(LIB)/sbc.cfg\
+  -l  $(basename $@).lst\
   -m  $(basename $@).map\
   -Ln $(basename $@).lbl
 
