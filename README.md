@@ -25,7 +25,9 @@ The ROM is programmed using my self-made [EEPROM programmer](programmer/README.m
 
 ## Schematics
 
-See [this file](sbc/schematics/6502.pdf).
+[Schematics in PDF format](sbc/schematics/easyeda/Schematic_6502.pdf).
+
+![](sbc/schematics/easyeda/Schematic_6502.png)
 
 ## Memory Map
 
