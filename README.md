@@ -7,7 +7,7 @@
   - [Memory Map](#memory-map)
 - [Software](#software)
   - [Monitor](#monitor)
-  - [FORTH](#forth)
+  - [AlexFORTH for 6502](#alexforth-for-6502)
 - [Datasheets](#datasheets)
 - [References](#references)
 
@@ -68,13 +68,13 @@ Early demo of the Monitor in Kowalksi 6502 simulator:
 
 ![](monitor/imgs/monitor.gif)
 
-## FORTH
+## AlexFORTH for 6502
 
 I have implemented my own FORTH kernel for this Homebrew 6502.
 
 ![](forth/imgs/Forth.png)
 
-Read more here [hb6502/forth](https://github.com/adumont/hb6502/tree/main/forth#homebrew-6502-sbc---forth).
+Read more here [hb6502/forth](https://github.com/adumont/hb6502/tree/main/forth#alexforth-for-6502).
 
 # Datasheets
 
