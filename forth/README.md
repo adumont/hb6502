@@ -1,6 +1,6 @@
-# Homebrew 6502 SBC - FORTH
+# AlexFORTH for 6502
 
-- [Homebrew 6502 SBC - FORTH](#homebrew-6502-sbc---forth)
+- [AlexFORTH for 6502](#alexforth-for-6502)
 - [Introduction](#introduction)
 - [Implementation notes](#implementation-notes)
 	- [Direct Threaded Code](#direct-threaded-code)
