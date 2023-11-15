@@ -153,10 +153,8 @@ _BP BP !
   THEN
 ;
 
-\ Call with SEE WORDNAME , for example SEE T
-: SEE
+: (SEE) ( cfa -- )
   2 LOCALS \ x is pointer to XT, y is XT
-  WORD FIND >CFA \ get CFA of name to decompile
   \  x . S( : ) TYPE x >NAME CR
   1+ x! \ skip 4C JMP  // TODO: what if not a colon word??
   BEGIN
@@ -180,6 +178,12 @@ _BP BP !
     y ['] EXIT =
   UNTIL
   -LOCALS
+;
+
+\ Call with SEE WORDNAME , for example SEE T
+: SEE
+  WORD FIND >CFA \ get CFA of name to decompile
+  (SEE)
 ;
 
 \ Base Numbers
