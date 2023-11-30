@@ -18,9 +18,9 @@
   - [?DO +LOOP](#do-loop-3)
 - [Defining words](#defining-words)
   - [CREATE example](#create-example)
-  - [CREATE DOES> example](#create-does-example)
+  - [CREATE DOES\> example](#create-does-example)
 
-The purpose of this page is to document the anatomy of compiled words in AlexFORTH. I'm using my [FORTH Decompiler](https://github.com/adumont/hb6502/blob/main/forth/doc/examples.md#forth-decompiler) word `SEE` and I have added some comments and arrows to illustrate the execution flow inside the words.
+The purpose of this page is to document the anatomy of compiled words in AlexFORTH. I'm using my [FORTH Decompiler](https://github.com/adumont/hb6502/blob/main/forth/doc/examples.md#forth-decompiler) word `SEE` and I have added some comments and arrows to illustrate the execution flow inside the words. Be sure to also read [Headers in AlexForth](headers.md) to understand the header structure.
 
 The output of `SEE` produces 3 columns:
 - The first column shows the address in the code
