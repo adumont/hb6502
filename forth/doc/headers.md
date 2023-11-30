@@ -25,7 +25,7 @@ ok DUMP
 ok
 ```
 
-Let's use `SEE` to see the definition of the words' definitions in HEX, which will help use make sense of most of the memory dump.
+Let's use `SEE` to see the definition of the words' definitions in HEX, which will help us make sense of most of the memory dump.
 
 ```
 ok SEE WORD1
