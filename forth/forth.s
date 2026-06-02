@@ -1415,74 +1415,14 @@ mulG2xBASE:
 
 defword "DIV10","/10",
 ; Divide number by DECIMAL 10
-; copy number in ToS to LONG1 in scratch area
-	LDA 3,X
-	STA LONG1	; HI
-	LDA 2,X
-	STA LONG1+1	; LO
-	STZ LONG1+2	;  0
-	STZ LONG1+3	;  0
-; Divide by 10
-	JSR divide_by_10
-; copy result to ToS
-	LDA LONG2+1
-	STA 2,X
-	LDA LONG2
-	STA 3,X
-; end
-	JMP NEXT
-
-divide_by_10:
-; Divide LONG1 by 10, leave in LONG2
-; Implementation of the algorithm is unefficient. TODO: rewrite.
-; LONG1 and LONG2 format is [HI][LO],[00][00] (2 bytes integer part, 2 bytes of fractional part for precision)
-	; First, add 1 to LONG1 integer part
-	; Deemed necesary to avoid error in 10% of cases otherwise (for ex. 10/10 would give 0)
-	INC LONG1+1
-	BNE :+
-	INC LONG1+0
-; clear result area (LONG2)
-:	stz LONG2+3
-	stz LONG2+2
-	stz LONG2+1
-	stz LONG2+0
-; start dividing by 10:
-	jsr halveLONG1
-	ldy #4
-@again:
-	jsr halveLONG1
-	jsr halveLONG1
-	jsr halveLONG1
-	jsr addLONG1toLONG2
-	jsr halveLONG1
-	jsr addLONG1toLONG2
-	dey
-	bne @again
-	RTS
-
-halveLONG1:
-	; halves LONG1 in place
-	LSR LONG1
-	ROR LONG1+1
-	ROR LONG1+2
-	ROR LONG1+3
-	RTS
-
-addLONG1toLONG2:
-	CLC
-	LDA LONG2+3
-	ADC LONG1+3
-	STA LONG2+3
-	LDA LONG2+2
-	ADC LONG1+2
-	STA LONG2+2
-	LDA LONG2+1
-	ADC LONG1+1
-	STA LONG2+1
-	LDA LONG2+0
-	ADC LONG1+0
-	STA LONG2+0
-	RTS
+;  n/10 = (n * $199A) >> 16
+	JMP do_COLON
+	.ADDR do_LIT
+	.WORD $199A
+	.ADDR do_UM_STAR
+	.ADDR do_SWAP
+	.ADDR do_DROP
+	.ADDR do_SEMI
 
 defword "INPUT",,
 	JSR getline
@@ -2880,8 +2820,6 @@ HERE_ROM: .res 2	; to save/restore the HERE value (when cross compiling)
 TO_ROM:   .res 1	; flag that indicate if we're compiling to ROM
 
 BCD = SCRATCH
-LONG1 = SCRATCH		; Two long (4bytes) numbers in scratch area.
-LONG2 = SCRATCH+4	; both are used in divide_by_10
 
 RAM_BLOCK_DEST:	.res (end_ram_image-start_ram_image)
 
