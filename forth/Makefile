@@ -34,7 +34,7 @@ version.dat: version.sh .force
 
 # Builds the 3 .dat files, cross-compiling the bootstrap.f code
 %.dat: forth-stage1.bin bootstrap.f.min
-	./xcompiler.py -r forth-stage1.bin -l bootstrap.f.min -s forth-stage1.lbl
+	uv run xcompiler.py -r forth-stage1.bin -l bootstrap.f.min -s forth-stage1.lbl
 
 stage1: rom.dat ram.dat last.dat
 
@@ -52,10 +52,10 @@ forth-emu.bin: forth.s rom.dat ram.dat last.dat
 emu: forth-emu.bin
 
 run: forth-emu.bin
-	./py65forth.py -r $<
+	uv run py65forth.py -r $<
 
 debug: forth-emu.bin
-	./debugger.py -r $<
+	uv run debugger.py -r $<
 
 ## For the HW 6502 computer
 
