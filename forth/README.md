@@ -4,9 +4,18 @@
 - [Introduction](#introduction)
 - [Implementation notes](#implementation-notes)
 	- [Direct Threaded Code](#direct-threaded-code)
+		- [Entry point](#entry-point)
+		- [NEXT](#next)
+		- [COLON](#colon)
+		- [SEMI](#semi)
+		- [Charts and images](#charts-and-images)
 	- [Stacks](#stacks)
+		- [Data Stack](#data-stack)
+		- [Return Stack](#return-stack)
+		- [Local Variables Stack](#local-variables-stack)
 	- [Anatomy of compiled words](#anatomy-of-compiled-words)
 	- [Numbers and base](#numbers-and-base)
+- [AlexForth language Reference](#alexforth-language-reference)
 - [Two stages compilation](#two-stages-compilation)
 	- [Source code organization](#source-code-organization)
 	- [One stage compilation process](#one-stage-compilation-process)
@@ -14,9 +23,18 @@
 	- [Pros and cons](#pros-and-cons)
 - [Try it live!](#try-it-live)
 	- [Examples](#examples)
+		- [Hello world](#hello-world)
+		- [Simple Arithmetics](#simple-arithmetics)
+		- [Variables](#variables)
+		- [Memory Manipulation](#memory-manipulation)
+		- [Define new words](#define-new-words)
+		- [Fibonacci Numbers](#fibonacci-numbers)
+		- [Fibonacci Sequence (Double Version)](#fibonacci-sequence-double-version)
+		- [Cellular Automaton](#cellular-automaton)
 - [How to build](#how-to-build)
 	- [Build for the hardware](#build-for-the-hardware)
 	- [Build for py65 simulator](#build-for-py65-simulator)
+		- [Options of the emulator](#options-of-the-emulator)
 	- [Step by step debugger](#step-by-step-debugger)
 - [References](#references)
 
@@ -26,7 +44,7 @@ This page is about AlexForth, my own implementation of FORTH for my Homebrew 650
 
 ![](./imgs/Forth.png) *(screenshot taken in Cool Retro Term)*
 
-To develop this FORTH I have started with Kowalsky 6502 simulator, as it helped me debugging the 6502 code step by step, while introspecting registers and ram. 
+To develop this FORTH I have started with Kowalsky 6502 simulator, as it helped me debugging the 6502 code step by step, while introspecting registers and ram.
 
 I've then maintained two paralel versions of the code:
 
@@ -62,7 +80,7 @@ At the beginning of our code, we'll find this instructions which initialize IP w
 	BRA NEXT
 ```
 
-Where forth_prog is a label. At this address we have our first hand-compiled FORTH code. 
+Where forth_prog is a label. At this address we have our first hand-compiled FORTH code.
 
 Notice that this is the very beginning of our code (after a few initialization code)! We're already running FORTH code (although hand-compiled).
 
@@ -115,7 +133,7 @@ do_COLON: ; COLON aka ENTER
 	LDA IP		; LO
 	PHA
 
-; W+3 --> IP 
+; W+3 --> IP
 ; (Code at W was a JMP, so 3 bytes)
 	CLC
 	LDA W
@@ -220,10 +238,10 @@ Which would produce the desired effect:
 
 ```
 1 2 .S
-0001 0002 
+0001 0002
 
 swap .S
-0002 0001 
+0002 0001
 ```
 
 The stack pointer is defined as a FORTH variable called BP (base pointer).
@@ -252,6 +270,26 @@ While in any BASE, you can always input numbers using a prefix to force a differ
 
 Notice: only base 2, 8, 10 and 16 are supported.
 
+# AlexForth language Reference
+
+Full word-by-word documentation of AlexForth. Each section links to a detailed file.
+
+- **[doc/internals.md](doc/internals.md)** — Inner interpreter (NEXT), DTC architecture, zero page registers, system variables, memory layout
+- **[doc/stack.md](doc/stack.md)** — Data stack primitives: DROP, DUP, OVER, SWAP, ROT, -ROT, ?DUP, NIP, PICK, DEPTH, SP@, SP!, RP@, RP!
+- **[doc/arithmetic.md](doc/arithmetic.md)** — 16-bit and double arithmetic: +, -, 2*, 2/, D+, D-, NEG, 1, 0, UM*, UM/MOD, /10
+- **[doc/logic.md](doc/logic.md)** — Comparisons and bitwise: 0=, 0<, U<, =, <, >, <=, >=, AND, OR, XOR, NOT
+- **[doc/memory.md](doc/memory.md)** — Memory access and dictionary: @, !, C@, C!, HERE, HERE++, DP!, ALLOT, ,, C,, LATEST, LAST, >CFA, CMOVE
+- **[doc/control.md](doc/control.md)** — Control flow primitives: LIT, CLIT, LITSTR, JUMP, 0BR, COMPILE, COLON, EXIT
+- **[doc/defining.md](doc/defining.md)** — Defining words: :, ;, :NONAME, CREATE, VARIABLE, CODE, ;CODE, DOES>, MARKER, REVEAL, HIDDEN, HIDE, UNHIDE, IMMEDIATE, SETIMM, GETIMM
+- **[doc/loops.md](doc/loops.md)** — Control structures: IF, ELSE, THEN, BEGIN, AGAIN, UNTIL, WHILE, REPEAT, DO, ?DO, LOOP, +LOOP, LEAVE, I, J
+- **[doc/io.md](doc/io.md)** — I/O and parsing: KEY, GETC, EMIT, WORD, PARSE, TYPE, SPACE, CR, ., C., D., INPUT, S(
+- **[doc/number.md](doc/number.md)** — Number parsing and base: BASE, DEC, HEX, OCT, BIN, NUMBER, mulG2xBASE
+- **[doc/system.md](doc/system.md)** — System words: ABORT, CLS, BREAK, STATE (?EXEC), MODE, NMI, RESET, system vectors
+- **[doc/bootstrap.md](doc/bootstrap.md)** — High-level words defined in `bootstrap.f`
+
+Each word is documented with its stack effect, description, and implementation notes (assembly or threaded code).
+
+
 # Two stages compilation
 
 ## Source code organization
@@ -268,7 +306,7 @@ AlexFORTH source code is split into two files, to facilitate a two stages compil
 
 ## One stage compilation process
 
-Previous versions of AlexFORTH had the bootstrap code embedded as string into forth.s, and it was built using a one stage compilation process. As a result, the bootstrap code was interpreted and compiled (into RAM) upon every boot of the system: 
+Previous versions of AlexFORTH had the bootstrap code embedded as string into forth.s, and it was built using a one stage compilation process. As a result, the bootstrap code was interpreted and compiled (into RAM) upon every boot of the system:
 
 ![](./imgs/1stage.svg)
 
@@ -287,7 +325,7 @@ AlexForth compilation is a two-stages compilation:
 ![](./imgs/stage1.2.svg)
 - In **Stage 2**:
   - The `forth.s` file is compiled again, but this time embedding the RAM and ROM binary images extracted in Stage 1, thus generating a single `forth-hw.bin` binary image, suitable to be flashed in the target 65C02 hardware computer (or run in a target 65C02 emulator
-  
+
   <img src="./imgs/stage2.1.svg" width="500">
 
   - At runtime, the RAM binary image (containing variables) is copied into RAM:
@@ -309,7 +347,7 @@ The cost of the two stages compilation is a slower compilation time, as it needs
 
 # Try it live!
 
-You can use my Forth here [AlexForth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).  
+You can use my Forth here [AlexForth in Replit](https://replit.com/@AlexandreDumon1/Alex-Forth) (it might not be the latest version).
 
 Notice:
 - It's not ANS Forth, but my own incomplete and free implementation
@@ -358,14 +396,14 @@ VARIABLE Z
 
 ```
 AA01
-Z ! 
+Z !
 ```
 
 - Get value of variable Z and print it:
 
 ```
 Z @ .
-AA01 
+AA01
 ```
 
 ### Memory Manipulation
@@ -426,7 +464,7 @@ Notice how we do not need to use recursion!
 
 ### Fibonacci Sequence (Double Version)
 
-This version will compute Fib(N) using Doubles (2 cells integers). It is capable of computing Fib(N) for N up to 46 ($2E). After that it will overflow. 
+This version will compute Fib(N) using Doubles (2 cells integers). It is capable of computing Fib(N) for N up to 46 ($2E). After that it will overflow.
 
 ```
 : 2SWAP >R -ROT R> -ROT ;
@@ -436,8 +474,8 @@ This version will compute Fib(N) using Doubles (2 cells integers). It is capable
 : Dnext-fib 2DUP 2ROT D+ ;
 
 : fib-seq 1+ 0 DUP DUP . D. CRLF
-  DUP IF 0 0 0 1 0 2ROT DROP 1 DO 
-  Dnext-fib 2DUP I . D. CRLF LOOP 2SWAP ELSE 
+  DUP IF 0 0 0 1 0 2ROT DROP 1 DO
+  Dnext-fib 2DUP I . D. CRLF LOOP 2SWAP ELSE
   0 0 THEN DROP DROP ;
 ```
 
@@ -481,7 +519,7 @@ Minicom config file (~/.minirc.dfl):
 ```
 pu port             /dev/ttyUSB0
 pu baudrate         115200
-pu rtscts           No 
+pu rtscts           No
 ```
 
 ## Build for py65 simulator
