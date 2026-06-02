@@ -1258,12 +1258,12 @@ defword "EXEC",,
 	JMP (W)
 
 defword "NUMBER",,
-; ( ADDR LEN -- VALUE )
+; ( ADDR LEN -- VALUE FLAG )
 ; ADDR points to the string representing the value
 ; LEN length of the string representing the value
 
-; on error (not a number), we set the ERROR variable
-; VALUE on stack is left random (likely we'll drop it later)
+; on error (not a number), we return flag=0000
+; otherwise, non 0
 
 ; temp registers used
 ; W <- ADDR
@@ -1279,8 +1279,6 @@ defword "NUMBER",,
 	STZ G2+1
 ; Y <-- 0, index into the string to parse
 	LDY #0
-; Reset error flag (no error by default)
-	STZ ERROR
 
 ; We save X because we're going to use it to store the base
 	PHX	; save X on the stack
@@ -2872,7 +2870,6 @@ BOOT:	.res 1	; <>0 Boot, 0 not boot anymore
 SEPR:	.res 1	; Separator for parsing input
 BOOTP:	.res 2	; pointer to BOOTstrap code
 BASE:	.res 1	; Base for number conversion
-ERROR:	.res 1	; Error when converting number
 INP_LEN: .res 1	; Length of the text in the input buffer
 INPUT:	.res MAX_LEN	; CMD string (extend as needed, up to 256!)
 INP_IDX: .res 1	; Index into the INPUT Buffer (for reading it with KEY)
