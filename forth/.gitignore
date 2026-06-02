@@ -2,3 +2,4 @@
 *.lbl
 *.map
 *.o
+*.lst
