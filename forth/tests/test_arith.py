@@ -63,3 +63,45 @@ def test_EQZ_nonzero(vm):
     vm.push(0x0001)
     vm.execute('EQZ')
     assert vm.tos() == 0x0000
+
+
+def test_PLUS_overflow(vm):
+    vm.push(0xFFFF)
+    vm.push(0x0001)
+    vm.execute('PLUS')
+    assert vm.tos() == 0x0000
+
+
+def test_PLUS_max(vm):
+    vm.push(0xFFFF)
+    vm.push(0xFFFF)
+    vm.execute('PLUS')
+    assert vm.tos() == 0xFFFE
+
+
+def test_MINUS_underflow(vm):
+    vm.push(0x0000)
+    vm.push(0x0001)
+    vm.execute('MINUS')
+    assert vm.tos() == 0xFFFF
+
+
+def test_AND_zero(vm):
+    vm.push(0xFFFF)
+    vm.push(0x0000)
+    vm.execute('AND')
+    assert vm.tos() == 0x0000
+
+
+def test_OR_zero(vm):
+    vm.push(0x1234)
+    vm.push(0x0000)
+    vm.execute('OR')
+    assert vm.tos() == 0x1234
+
+
+def test_XOR_self(vm):
+    vm.push(0x1234)
+    vm.push(0x1234)
+    vm.execute('XOR')
+    assert vm.tos() == 0x0000

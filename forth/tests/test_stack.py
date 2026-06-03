@@ -85,3 +85,35 @@ def test_QDUP_zero(vm):
     vm.push(0x0000)
     vm.execute('QDUP')
     assert vm.stack_depth() == 1
+
+
+def test_DUP_deep(vm):
+    vm.push(0xAAAA)
+    vm.push(0xBBBB)
+    vm.execute('DUP')
+    assert vm.stack_depth() == 3
+    assert vm.tos() == 0xBBBB
+    assert vm.nos() == 0xBBBB
+    assert vm.stack(3)[2] == 0xAAAA
+
+
+def test_SWAP_same_value(vm):
+    vm.push(0x1234)
+    vm.push(0x1234)
+    vm.execute('SWAP')
+    assert vm.stack_depth() == 2
+    assert vm.tos() == 0x1234
+    assert vm.nos() == 0x1234
+
+
+def test_OVER_empty_below(vm):
+    vm.push(0xABCD)
+    vm.push(0x1234)
+    vm.execute('OVER')
+    assert vm.stack_depth() == 3
+    assert vm.tos() == 0xABCD
+    assert vm.nos() == 0x1234
+    assert vm.stack(3)[2] == 0xABCD
+
+
+
