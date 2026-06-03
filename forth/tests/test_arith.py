@@ -20,10 +20,34 @@ def test_1PLUS(vm):
     assert vm.tos() == 0x0002
 
 
+def test_1PLUS_carry(vm):
+    vm.push(0x00FF)
+    vm.execute('1PLUS')
+    assert vm.tos() == 0x0100
+
+
+def test_1PLUS_wraparound(vm):
+    vm.push(0xFFFF)
+    vm.execute('1PLUS')
+    assert vm.tos() == 0x0000
+
+
 def test_2PLUS(vm):
     vm.push(0x0001)
     vm.execute('2PLUS')
     assert vm.tos() == 0x0003
+
+
+def test_2PLUS_carry(vm):
+    vm.push(0x00FF)
+    vm.execute('2PLUS')
+    assert vm.tos() == 0x0101
+
+
+def test_2PLUS_wraparound(vm):
+    vm.push(0xFFFF)
+    vm.execute('2PLUS')
+    assert vm.tos() == 0x0001
 
 
 def test_AND(vm):
