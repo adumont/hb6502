@@ -14,6 +14,19 @@ def test_DROP(vm):
     assert vm.tos() == 0x1111
 
 
+def test_DROP_to_empty(vm):
+    vm.push(0x1234)
+    vm.execute('DROP')
+    assert vm.stack_depth() == 0
+
+
+def test_2DROP_to_empty(vm):
+    vm.push(0x1111)
+    vm.push(0x2222)
+    vm.execute('2DROP')
+    assert vm.stack_depth() == 0
+
+
 def test_SWAP(vm):
     vm.push(0x1234)
     vm.push(0xABCD)

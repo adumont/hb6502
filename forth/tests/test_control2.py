@@ -8,6 +8,18 @@ def test_LIT(vm):
     assert vm.tos() == 0x1234
 
 
+def test_LIT_zero(vm):
+    cells = [vm.symbols['do_LIT'], 0x0000]
+    vm.execute_thread(cells)
+    assert vm.tos() == 0x0000
+
+
+def test_LIT_FFFF(vm):
+    cells = [vm.symbols['do_LIT'], 0xFFFF]
+    vm.execute_thread(cells)
+    assert vm.tos() == 0xFFFF
+
+
 def test_LIT_negative(vm):
     cells = [vm.symbols['do_LIT'], 0x8000]
     vm.execute_thread(cells)

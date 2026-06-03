@@ -21,6 +21,13 @@ def test_0BR_fallthrough_when_nonzero(vm):
     assert vm.stack_depth() == 0
 
 
+def test_0BR_fallthrough_when_FFFF(vm):
+    vm.push(0xFFFF)
+    cells = [vm.symbols['do_0BR'], 0x0000]
+    vm.execute_thread(cells)
+    assert vm.stack_depth() == 0
+
+
 def test_0BR_pops_only_tos(vm):
     vm.push(99)
     vm.push(0)

@@ -109,6 +109,36 @@ def test_CMOVE(vm):
         assert vm.peek(0x0300 + i) == 0xAA + i
 
 
+def test_CMOVE_single_byte(vm):
+    vm.poke(0x0200, 0x42)
+    vm.push(0x0200)
+    vm.push(0x0300)
+    vm.push(1)
+    vm.execute('CMOVE')
+    assert vm.peek(0x0300) == 0x42
+
+
+def test_ALLOT_zero(vm):
+    vm.execute('HERE')
+    before = vm.tos()
+    vm.reset_stack()
+    vm.push(0)
+    vm.execute('ALLOT')
+    vm.reset_stack()
+    vm.execute('HERE')
+    assert vm.tos() == before
+
+
+def test_COMMAv3_zero(vm):
+    vm.execute('HERE')
+    addr = vm.tos()
+    vm.reset_stack()
+    vm.push(0x0000)
+    vm.execute('COMMA')
+    addr_val = vm.peek(addr) | (vm.peek(addr + 1) << 8)
+    assert addr_val == 0x0000
+
+
 def test_LATEST(vm):
     vm.execute('LATEST')
     assert vm.stack_depth() == 1
