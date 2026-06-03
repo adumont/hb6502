@@ -57,6 +57,9 @@ run: forth-emu.bin
 debug: forth-emu.bin
 	uv run debugger.py -r $<
 
+test: forth-emu.bin
+	uv run python -m pytest tests/ -v
+
 ## For the HW 6502 computer
 
 # Builds the hw image (using ACIA flag!)
@@ -71,12 +74,14 @@ flash: forth-hw.bin
 ## HELP
 
 help:
-	@echo "usage: make [run | flash]"
+	@echo "usage: make [run | debug | test | flash]"
 	@echo ""
 	@echo "  run:    build and execute the rom in 6502 emulator"
+	@echo "  debug:  build and debug the rom in 6502 debugger"
+	@echo "  test:   build and run pytest test suite"
 	@echo "  flash:  build and flash the rom for 6502 hw computer"
 
 clean:
 	-rm -f lib/*.o *.o *.hex *.map *.bin *.h *.lbl *.dat
 
-.PHONY: .force
+.PHONY: .force test
