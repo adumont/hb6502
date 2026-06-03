@@ -26,6 +26,27 @@ def test_ULESS_wraparound(vm):
     assert vm.tos() == 0xFFFF
 
 
+def test_ULESS_zero_equal(vm):
+    vm.push(0x0000)
+    vm.push(0x0000)
+    vm.execute('ULESS')
+    assert vm.tos() == 0x0000
+
+
+def test_ULESS_FFFF_vs_zero(vm):
+    vm.push(0xFFFF)
+    vm.push(0x0000)
+    vm.execute('ULESS')
+    assert vm.tos() == 0x0000
+
+
+def test_ULESS_zero_vs_FFFF(vm):
+    vm.push(0x0000)
+    vm.push(0xFFFF)
+    vm.execute('ULESS')
+    assert vm.tos() == 0xFFFF
+
+
 def test_UM_STAR(vm):
     vm.push(0x0003)
     vm.push(0x0005)
@@ -42,6 +63,15 @@ def test_UM_STAR_large(vm):
     assert vm.stack_depth() == 2
     hi, lo = vm.tos(), vm.nos()
     assert (hi << 16) | lo == 0x10000
+
+
+def test_UM_STAR_max_times_max(vm):
+    vm.push(0xFFFF)
+    vm.push(0xFFFF)
+    vm.execute('UM_STAR')
+    assert vm.stack_depth() == 2
+    hi, lo = vm.tos(), vm.nos()
+    assert (hi << 16) | lo == 0xFFFE0001
 
 
 def test_UM_STAR_zero(vm):
@@ -64,6 +94,18 @@ def test_DIV10_remainder(vm):
     assert vm.tos() == 10
 
 
+def test_DIV10_zero(vm):
+    vm.push(0)
+    vm.execute('DIV10')
+    assert vm.tos() == 0
+
+
+def test_DIV10_max(vm):
+    vm.push(0xFFFF)
+    vm.execute('DIV10')
+    assert vm.tos() == 0x1999
+
+
 def test_testNEG_positive(vm):
     vm.push(0x0001)
     vm.execute('testNEG')
@@ -82,6 +124,18 @@ def test_testNEG_zero(vm):
     assert vm.tos() == 0x0000
 
 
+def test_testNEG_FFFF(vm):
+    vm.push(0xFFFF)
+    vm.execute('testNEG')
+    assert vm.tos() == 0xFFFF
+
+
+def test_testNEG_7FFF(vm):
+    vm.push(0x7FFF)
+    vm.execute('testNEG')
+    assert vm.tos() == 0x0000
+
+
 def test_DPLUS(vm):
     vm.push(0x0001)
     vm.push(0x0002)
@@ -91,6 +145,28 @@ def test_DPLUS(vm):
     assert vm.stack_depth() == 2
     hi, lo = vm.tos(), vm.nos()
     assert (hi << 16) | lo == 0x00060004
+
+
+def test_DPLUS_overflow(vm):
+    vm.push(0xFFFF)
+    vm.push(0xFFFF)
+    vm.push(0x0001)
+    vm.push(0x0000)
+    vm.execute('DPLUS')
+    assert vm.stack_depth() == 2
+    hi, lo = vm.tos(), vm.nos()
+    assert (hi << 16) | lo == 0x00000000
+
+
+def test_DMINUS_underflow(vm):
+    vm.push(0x0000)
+    vm.push(0x0000)
+    vm.push(0x0001)
+    vm.push(0x0000)
+    vm.execute('DMINUS')
+    assert vm.stack_depth() == 2
+    hi, lo = vm.tos(), vm.nos()
+    assert (hi << 16) | lo == 0xFFFFFFFF
 
 
 def test_DMINUS(vm):
@@ -144,6 +220,17 @@ def test_STAR_UM_DIV_MOD_overflow_returns_ffff(vm):
     vm.push(0x0000)
     vm.push(0x8000)
     vm.push(0x0001)
+    cells = [vm.symbols['do_STAR_UM_DIV_MOD']]
+    vm.execute_thread(cells)
+    assert vm.stack_depth() == 2
+    assert vm.tos() == 0xFFFF
+    assert vm.nos() == 0xFFFF
+
+
+def test_STAR_UM_DIV_MOD_zero_divisor(vm):
+    vm.push(0x1234)
+    vm.push(0x5678)
+    vm.push(0x0000)
     cells = [vm.symbols['do_STAR_UM_DIV_MOD']]
     vm.execute_thread(cells)
     assert vm.stack_depth() == 2

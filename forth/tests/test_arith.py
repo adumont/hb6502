@@ -77,6 +77,74 @@ def test_NOT(vm):
     assert vm.tos() == 0x5555
 
 
+def test_MINUS_borrow_max(vm):
+    vm.push(0x0000)
+    vm.push(0xFFFF)
+    vm.execute('MINUS')
+    assert vm.tos() == 0x0001
+
+
+def test_MINUS_signed_boundary(vm):
+    vm.push(0x8000)
+    vm.push(0x0001)
+    vm.execute('MINUS')
+    assert vm.tos() == 0x7FFF
+
+
+def test_AND_self(vm):
+    vm.push(0x1234)
+    vm.push(0x1234)
+    vm.execute('AND')
+    assert vm.tos() == 0x1234
+
+
+def test_AND_FFFF(vm):
+    vm.push(0x1234)
+    vm.push(0xFFFF)
+    vm.execute('AND')
+    assert vm.tos() == 0x1234
+
+
+def test_OR_FFFF(vm):
+    vm.push(0x1234)
+    vm.push(0xFFFF)
+    vm.execute('OR')
+    assert vm.tos() == 0xFFFF
+
+
+def test_OR_self(vm):
+    vm.push(0x1234)
+    vm.push(0x1234)
+    vm.execute('OR')
+    assert vm.tos() == 0x1234
+
+
+def test_XOR_FFFF(vm):
+    vm.push(0x1234)
+    vm.push(0xFFFF)
+    vm.execute('XOR')
+    assert vm.tos() == 0xEDCB
+
+
+def test_XOR_zero(vm):
+    vm.push(0x1234)
+    vm.push(0x0000)
+    vm.execute('XOR')
+    assert vm.tos() == 0x1234
+
+
+def test_NOT_zero(vm):
+    vm.push(0x0000)
+    vm.execute('NOT')
+    assert vm.tos() == 0xFFFF
+
+
+def test_NOT_FFFF(vm):
+    vm.push(0xFFFF)
+    vm.execute('NOT')
+    assert vm.tos() == 0x0000
+
+
 def test_EQZ_zero(vm):
     vm.push(0x0000)
     vm.execute('EQZ')
@@ -85,6 +153,12 @@ def test_EQZ_zero(vm):
 
 def test_EQZ_nonzero(vm):
     vm.push(0x0001)
+    vm.execute('EQZ')
+    assert vm.tos() == 0x0000
+
+
+def test_EQZ_FFFF(vm):
+    vm.push(0xFFFF)
     vm.execute('EQZ')
     assert vm.tos() == 0x0000
 

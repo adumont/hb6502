@@ -27,6 +27,24 @@ def test_COUNT(vm):
     assert addr == 0x0201
 
 
+def test_COUNT_zero_length(vm):
+    vm.poke(0x0200, 0)
+    vm.push(0x0200)
+    vm.execute('COUNT')
+    assert vm.stack_depth() == 2
+    assert vm.tos() == 0
+    assert vm.nos() == 0x0201
+
+
+def test_COUNT_max_length(vm):
+    vm.poke(0x0200, 0xFF)
+    vm.push(0x0200)
+    vm.execute('COUNT')
+    assert vm.stack_depth() == 2
+    assert vm.tos() == 0x00FF
+    assert vm.nos() == 0x0201
+
+
 def test_CLS(vm):
     vm.push(1)
     vm.push(2)

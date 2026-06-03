@@ -48,6 +48,22 @@ def test_NUMBER_zero(vm):
     assert value == 0
 
 
+def test_NUMBER_empty_string(vm):
+    vm.push(NUM_BUF)
+    vm.push(0)
+    vm.execute('NUMBER')
+    assert vm.stack_depth() == 2
+    assert vm.tos() == 0
+
+
+def test_NUMBER_invalid_prefix(vm):
+    vm.mpu.memory[NUM_BUF] = 0x21
+    vm.push(NUM_BUF)
+    vm.push(1)
+    vm.execute('NUMBER')
+    assert vm.tos() == 0
+
+
 def test_NUMBER_error_returns_zero_flag(vm):
     for i, b in enumerate([0x58, 0x59, 0x5A]):
         vm.mpu.memory[NUM_BUF + i] = b

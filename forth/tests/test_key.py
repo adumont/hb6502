@@ -34,6 +34,15 @@ def test_GETC_reads_from_io_port(vm):
     assert vm.tos() == 0x005A
 
 
+def test_KEY_getline_refills_buffer(vm):
+    vm.mpu.memory[0x0208] = 0
+    vm.mpu.memory[0x0289] = 0
+    vm.mpu.memory[0xF004] = 0x0A
+    vm.execute('KEY')
+    assert vm.stack_depth() == 1
+    assert vm.tos() == 0x000A
+
+
 def test_GETC_multiple_calls(vm):
     vm.mpu.memory[0xF004] = 0x31
     vm.execute('GETC')
