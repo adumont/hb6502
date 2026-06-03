@@ -124,3 +124,12 @@ class ForthTestVM:
             self.mpu.memory[0x100 + sp] = v & 0xFF
             sp = (sp - 1) & 0xFF
         self.mpu.sp = sp
+
+    def execute_raw(self, raw_bytes):
+        """Write raw bytes to thread area and execute (for CLIT, LITSTR etc)."""
+        self._setup_trap()
+        for i, b in enumerate(raw_bytes):
+            self.mpu.memory[THREAD_ADDR + i] = b & 0xFF
+        self._set_word(IP_ADDR, THREAD_ADDR)
+        self.mpu.pc = self.symbols['NEXT']
+        self._run_until_trap()

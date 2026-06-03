@@ -28,3 +28,26 @@ def test_CSTORE(vm):
     vm.push(0x0400)
     vm.execute('CSTORE')
     assert vm.peek(0x0400) == 0x42
+
+
+def test_FETCH_FFFF(vm):
+    vm.poke(0x0400, 0xFF)
+    vm.poke(0x0401, 0xFF)
+    vm.push(0x0400)
+    vm.execute('FETCH')
+    assert vm.tos() == 0xFFFF
+
+
+def test_STORE_zero(vm):
+    vm.push(0x0000)
+    vm.push(0x0400)
+    vm.execute('STORE')
+    assert vm.peek(0x0400) == 0x00
+    assert vm.peek(0x0401) == 0x00
+
+
+def test_CFETCH_FF(vm):
+    vm.poke(0x0400, 0xFF)
+    vm.push(0x0400)
+    vm.execute('CFETCH')
+    assert vm.tos() == 0x00FF
