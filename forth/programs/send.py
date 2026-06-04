@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-import serial
-import time
 import os.path
+import time
+from glob import glob
 from time import sleep
 
+import serial
 
-from glob import glob
 
 def get_response(show=False):
   exit = False

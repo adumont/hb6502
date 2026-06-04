@@ -4,15 +4,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-only
 
-import sys
 import argparse
+import sys
 
 from py65.devices.mpu65c02 import MPU as CMOS65C02
 from py65.memory import ObservableMemory
 from py65.utils import console
-
-from PyQt5.QtWidgets import QWidget,QApplication,QLabel,QVBoxLayout
 from PyQt5.QtCore import QTimer
+from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 # Argument parsing
 parser = argparse.ArgumentParser()
