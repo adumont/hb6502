@@ -1,2 +1,6 @@
 .venv
 __pycache__
+*.dat
+*.f.min
+version.dat
+TESTS_TODO.md
