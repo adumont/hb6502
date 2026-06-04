@@ -1,5 +1,4 @@
 import pytest
-from .helpers import THREAD_ADDR, TRAP_ADDR
 
 
 def test_STATE(vm):

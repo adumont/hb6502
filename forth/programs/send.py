@@ -5,8 +5,6 @@ import serial
 import time
 import os.path
 from time import sleep
-import math
-import zlib
 
 
 from glob import glob

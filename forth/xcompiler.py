@@ -4,16 +4,13 @@
 #
 # SPDX-License-Identifier: GPL-3.0-only
 
-import sys
 import argparse
-import time
 import threading
 from queue import Queue, Empty
 import signal
 
 from py65.devices.mpu65c02 import MPU as CMOS65C02
 from py65.memory import ObservableMemory
-from py65.utils import console
 
 # Argument parsing
 parser = argparse.ArgumentParser()
