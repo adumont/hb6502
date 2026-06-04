@@ -52,17 +52,16 @@ def getByte(address):
 def getWord(address):
     return mpu.memory[address] + 256*mpu.memory[address+1]
 
-def getCountedStr(addr,l=None):
-    if l is None:
-      l = getByte(addr) # length byte
-    ba = mpu.memory[addr+1:addr+l+1]
+def getCountedStr(addr,length=None):
+    if length is None:
+      length = getByte(addr) # length byte
+    ba = mpu.memory[addr+1:addr+length+1]
     return "".join(map(chr,ba))
 
 def getWordName(addr):
-    l = getByte(addr+2) # length byte with flags
-    imm = l & 0x80      # immediate flag
-    l = l & 0x1F        # real length (we mask off the 3 MSB (flags))
-    return getCountedStr(addr,l)
+    ln = getByte(addr+2) # length byte with flags
+    ln = ln & 0x1F        # real length (we mask off the 3 MSB (flags))
+    return getCountedStr(addr,ln)
 
 # when boot gets to 0:
 # - scanForthDict --> update dictionary (H,NAME,Flags,CFA)
@@ -119,16 +118,16 @@ last_latest = 0
 def updateDict():
     d = []
     next = 0
-    l = 0
+    ln = 0
     imm = 0
     header = getWord(0x0200) # LATEST
     while True:
         next = getWord(header)
-        l = getByte(header+2) # length byte with flags
-        imm = l & 0x80        # immediate flag
-        l = l & 0x1F          # real length (we mask off the 3 MSB (flags))
-        name = getCountedStr(header+2,l)
-        w = {'header':header, 'cfa':(header+3+l), 'name':name, 'imm':imm }
+        ln = getByte(header+2) # length byte with flags
+        imm = ln & 0x80        # immediate flag
+        ln = ln & 0x1F          # real length (we mask off the 3 MSB (flags))
+        name = getCountedStr(header+2,ln)
+        w = {'header':header, 'cfa':(header+3+ln), 'name':name, 'imm':imm }
         d.append( w )
         # next word:
         if next==0:
@@ -141,9 +140,9 @@ def printDict(d):
         print("$%04X $%04X %s $%02X" % (w['header'], w['cfa'], w['name'], w['imm']))
 
 def wordFromCFA(cfa):
-    l = [ i for i in forthDict if i['cfa'] == cfa ]
-    if len(l)>0:
-        return l[0]
+    matches = [ i for i in forthDict if i['cfa'] == cfa ]
+    if len(matches)>0:
+        return matches[0]
     else:
         return None
 

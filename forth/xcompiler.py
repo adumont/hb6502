@@ -82,8 +82,6 @@ addr_do_0BR = getLabelAddr("do_0BR")
 addr_numberError = getLabelAddr("numberError")
 
 def cpuThread(ch, queue, emu_queue):
-    started = False
-
     def load(memory, start_address, bytes):
         memory[start_address:start_address + len(bytes)] = bytes
 
@@ -100,10 +98,10 @@ def cpuThread(ch, queue, emu_queue):
     def getWord(address):
         return mpu.memory[address] + 256*mpu.memory[address+1]
 
-    def getCountedStr(addr,l=None):
-        if l is None:
-            l = getByte(addr) # length byte
-        ba = mpu.memory[addr+1:addr+l+1]
+    def getCountedStr(addr,length=None):
+        if length is None:
+            length = getByte(addr) # length byte
+        ba = mpu.memory[addr+1:addr+length+1]
         return "".join(map(chr,ba))
 
     def do_0BR():
@@ -122,8 +120,8 @@ def cpuThread(ch, queue, emu_queue):
         global last_lookedup_word
 
         addr = getWord( 4 + mpu.x )
-        l = getWord( 2 + mpu.x )
-        word = "".join(map(chr, mpu.memory[addr:addr+l] ))
+        length = getWord( 2 + mpu.x )
+        word = "".join(map(chr, mpu.memory[addr:addr+length] ))
 
         last_lookedup_word = word
 
@@ -133,14 +131,14 @@ def cpuThread(ch, queue, emu_queue):
 
         header = getWord(addr_LATEST)
         while True:
-            l = getByte(header+2) # get length & flags
+            ln = getByte(header+2) # get length & flags
 
-            if l & 0x40: # Hidden word, skip!
+            if ln & 0x40: # Hidden word, skip!
                 header = getWord(header)
                 continue
 
-            l = l &  0x1F # length, no flags
-            str = getCountedStr(header+2, l)
+            ln = ln &  0x1F # length, no flags
+            str = getCountedStr(header+2, ln)
 
             if str == word:
                 # put  header addr in 5,X, 4,X (NOS)
@@ -179,8 +177,6 @@ def cpuThread(ch, queue, emu_queue):
     load(mpu.memory, args.addr, program)
 
     mpu.pc=getWord(mpu.RESET)
-
-    started = True
 
     while True:
         if mpu.pc == addr_do_FIND:
