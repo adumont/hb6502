@@ -294,7 +294,7 @@ def exit():
 def main(stdscr):
     global symbols
 
-    if curses.has_colors() == True:
+    if curses.has_colors():
         curses.start_color()
         curses.use_default_colors()
         curses.init_pair(1,curses.COLOR_GREEN ,curses.COLOR_BLUE)
