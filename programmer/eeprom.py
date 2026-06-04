@@ -9,13 +9,13 @@ import math
 from glob import glob
 
 def flash(args):
-  l = os.stat(args.file).st_size
+  size = os.stat(args.file).st_size
 
   if args.len:
-    l = min(l, math.ceil(args.len/64)*64)
+    size = min(size, math.ceil(args.len/64)*64)
   
-  print("put %s %s\r" % ( args.addr, l))
-  ser.write( str.encode("put %s %s\r" % ( args.addr, l) ) )
+  print("put %s %s\r" % ( args.addr, size))
+  ser.write( str.encode("put %s %s\r" % ( args.addr, size) ) )
 
   with open(args.file, "rb") as f:
     count = 0
@@ -25,8 +25,9 @@ def flash(args):
         break
       ser.write(c)
       count = count + len(c)
-      print("  %3.2f %%" % (100.0*count/l), end="\r")
-      if count >= l: break
+      print("  %3.2f %%" % (100.0*count/size), end="\r")
+      if count >= size:
+        break
   print()
 
 def save(args):
