@@ -140,7 +140,7 @@ def main(stdscr):
 
 
     if args.load:
-        f = open(args.load, 'r')
+        f = open(args.load)
         program = f.read()
         f.close()
 

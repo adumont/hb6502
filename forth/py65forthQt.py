@@ -87,7 +87,7 @@ if args.addr and str(args.addr).startswith("0x"):
     args.addr = int(args.addr,16)
 
 if args.rom:
-    print("Loading %s at $%04X" % ( args.rom, args.addr ) )
+    print(f"Loading {args.rom} at ${args.addr:04X}" )
     f = open(args.rom, 'rb')
     program = f.read()
     f.close()
@@ -136,7 +136,7 @@ def updateDict():
 
 def printDict(d):
     for w in d:
-        print("$%04X $%04X %s $%02X" % (w['header'], w['cfa'], w['name'], w['imm']))
+        print("${:04X} ${:04X} {} ${:02X}".format(w['header'], w['cfa'], w['name'], w['imm']))
 
 def wordFromCFA(cfa):
     matches = [ i for i in forthDict if i['cfa'] == cfa ]
@@ -155,7 +155,7 @@ def nameFromWord(w):
 
 class WinForm(QWidget):
     def __init__(self,parent=None):
-        super(WinForm, self).__init__(parent)
+        super().__init__(parent)
         self.setWindowTitle('Alex FORTH Debugger')
 
         layout=QVBoxLayout()
@@ -190,18 +190,18 @@ class WinForm(QWidget):
         self.timerUI.start(200)
 
     def updateUI(self):
-        self.label1.setText( "LATEST: $%04X" % getWord( 0x0200 ) )
-        self.label2.setText( " MODE : $%02X" % getByte( 0x0200+2 ) )
-        self.label3.setText( " BOOT : $%02X" % getByte( 0x0200+3 ) )
-        self.label4.setText( " HERE : $%04X" % getWord( 0x0200+89 ) )
+        self.label1.setText( f"LATEST: ${getWord( 0x0200 ):04X}" )
+        self.label2.setText( f" MODE : ${getByte( 0x0200+2 ):02X}" )
+        self.label3.setText( f" BOOT : ${getByte( 0x0200+3 ):02X}" )
+        self.label4.setText( f" HERE : ${getWord( 0x0200+89 ):04X}" )
         w = getWord( addrW )
         name = nameFromWord(wordFromCFA( w ))
-        self.label5.setText( "    W : $%04X %s" % (w, name ) )
+        self.label5.setText( f"    W : ${w:04X} {name}" )
         ip = getWord( addrIP )
         name = nameFromWord(wordFromCFA( getWord(ip) ))
-        self.label6.setText( "   IP : $%04X %s" % (ip, name ) )
-        self.label7.setText( "   G2 : $%04X" % getWord( addrG2 ) )
-        self.label8.setText( "   G1 : $%04X" % getWord( addrG1 ) )
+        self.label6.setText( f"   IP : ${ip:04X} {name}" )
+        self.label7.setText( f"   G2 : ${getWord( addrG2 ):04X}" )
+        self.label8.setText( f"   G1 : ${getWord( addrG1 ):04X}" )
  
     def mystep(self):
         global boot, forthDict, last_ip, last_w, last_latest
@@ -214,7 +214,7 @@ class WinForm(QWidget):
             latest = getWord( 0x0200 )
             if last_latest != latest:
                 last_latest = latest
-                self.label1.setText( "LATEST: $%04X" % latest )
+                self.label1.setText( f"LATEST: ${latest:04X}" )
                 ud = True
 
             # ip = getWord( addrIP )
