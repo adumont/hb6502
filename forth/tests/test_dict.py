@@ -1,5 +1,3 @@
-import pytest
-from .helpers import THREAD_ADDR
 
 
 def test_HIDE(vm):

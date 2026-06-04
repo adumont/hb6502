@@ -1,5 +1,4 @@
-import pytest
-from .helpers import THREAD_ADDR, TRAP_ADDR
+from .helpers import THREAD_ADDR
 
 
 def test_JUMP(vm):

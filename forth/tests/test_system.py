@@ -1,5 +1,5 @@
 import pytest
-from .helpers import DTOP_VALUE, THREAD_ADDR, TRAP_ADDR
+from .helpers import DTOP_VALUE
 
 
 def test_ABORT_resets_data_stack(vm):
