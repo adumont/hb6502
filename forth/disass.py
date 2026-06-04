@@ -305,7 +305,7 @@ def render_instr(_args):
                 dest -= 0x100 - operand
             else:
                 dest += operand
-            operand = "%04X" % dest
+            operand = f"{dest:04X}"
         else:
             # add an extra unknown byte
             operand = unknown + operand
@@ -325,4 +325,4 @@ def render_instr(_args):
         operand = "A"
     
     # return ("%04X: %-10s %s %-8s %-4s %s " % (addr, hexdump.upper(), o, operand, m, comment))
-    return ("%04X: %s %-8s " % (addr, o, operand))
+    return (f"{addr:04X}: {o} {operand:<8} ")

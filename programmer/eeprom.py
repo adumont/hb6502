@@ -15,8 +15,8 @@ def flash(args):
   if args.len:
     size = min(size, math.ceil(args.len/64)*64)
   
-  print("put %s %s\r" % ( args.addr, size))
-  ser.write( str.encode("put %s %s\r" % ( args.addr, size) ) )
+  print(f"put {args.addr} {size}\r")
+  ser.write( str.encode(f"put {args.addr} {size}\r" ) )
 
   with open(args.file, "rb") as f:
     count = 0
@@ -32,8 +32,8 @@ def flash(args):
   print()
 
 def save(args):
-  print("get %s %d\r" % ( args.addr, args.len))
-  ser.write( str.encode("get %s %d\r" % ( args.addr, args.len)) )
+  print(f"get {args.addr} {args.len}\r")
+  ser.write( str.encode(f"get {args.addr} {args.len}\r") )
   with open(args.file, "wb") as f:
     count = 0
     while True:
@@ -49,12 +49,12 @@ def save(args):
   print()
 
 def dump(args):
-  print("d %s %s %s\r" % ( args.addr, args.pages, args.offset))
-  ser.write( str.encode("d %s %s %s\r" % ( args.addr, args.pages, args.offset) ) )
+  print(f"d {args.addr} {args.pages} {args.offset}\r")
+  ser.write( str.encode(f"d {args.addr} {args.pages} {args.offset}\r" ) )
 
 def erase(args):
-  print("erase %s\r" % args.fill)
-  ser.write( str.encode("erase %s\r" % args.fill ) )
+  print(f"erase {args.fill}\r")
+  ser.write( str.encode(f"erase {args.fill}\r" ) )
 
 def lock(args):
   print("lock\r")
@@ -112,7 +112,7 @@ def wait_for_prompt(show=True, timeout=0):
         prompt = True
         break
       if show:
-        print("%c" % c, end='', flush=True)
+        print(f"{c:c}", end='', flush=True)
 
 if __name__ == '__main__':
   args = parser.parse_args()

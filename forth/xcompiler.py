@@ -198,9 +198,9 @@ def cpuThread(ch, queue, emu_queue):
     print("ROM Dictionary:")
     rom_start = getWord(0x0001)
     rom_end   = getWord(0x0003)
-    print("  Starts: %04X" % rom_start )
-    print("  End   : %04X" % rom_end   )
-    print("  Length: %d bytes" % int(rom_end-rom_start) )
+    print(f"  Starts: {rom_start:04X}" )
+    print(f"  End   : {rom_end:04X}"   )
+    print(f"  Length: {int(rom_end-rom_start)} bytes" )
     print()
 
     f = open("rom.dat", 'wb')
@@ -210,9 +210,9 @@ def cpuThread(ch, queue, emu_queue):
     print("RAM Dictionary:")
     ram_start = getWord(0x0005)
     ram_end   = getWord(0x0007)
-    print("  Starts: %04X" % ram_start )
-    print("  End   : %04X" % ram_end   )
-    print("  Length: %d bytes" % int(ram_end-ram_start) )
+    print(f"  Starts: {ram_start:04X}" )
+    print(f"  End   : {ram_end:04X}"   )
+    print(f"  Length: {int(ram_end-ram_start)} bytes" )
     print()
 
     f = open("ram.dat", 'wb')
@@ -220,22 +220,22 @@ def cpuThread(ch, queue, emu_queue):
     f.close()
 
     LAST = getWord(0x0009)
-    print("LAST: %04X" % LAST )
+    print(f"LAST: {LAST:04X}" )
 
     HERE = getWord(0x0007)
-    print("HERE: %04X" % HERE )
+    print(f"HERE: {HERE:04X}" )
 
     f = open("last.dat", 'w')
     f.write( "; LATEST     \n")
-    f.write( "LDA #$%02X   \n" % getByte(0x0009+0) )
+    f.write( f"LDA #${getByte(0x0009+0):02X}   \n" )
     f.write( "STA LATEST   \n" )
-    f.write( "LDA #$%02X   \n" % getByte(0x0009+1) )
+    f.write( f"LDA #${getByte(0x0009+1):02X}   \n" )
     f.write( "STA LATEST+1 \n" )
 
     f.write( "; HERE       \n")
-    f.write( "LDA #$%02X   \n" % getByte(0x0007+0) ) # ram_end = RAM's HERE
+    f.write( f"LDA #${getByte(0x0007+0):02X}   \n" ) # ram_end = RAM's HERE
     f.write( "STA DP       \n" )
-    f.write( "LDA #$%02X   \n" % getByte(0x0007+1) )
+    f.write( f"LDA #${getByte(0x0007+1):02X}   \n" )
     f.write( "STA DP+1     \n" )
     f.close()
 
@@ -253,7 +253,7 @@ t.start()
 # it's queued into a FIFO so no worries of FORTH taking it's time to
 # interpret and compiling
 if args.load:
-    f = open(args.load, 'r')
+    f = open(args.load)
     program = f.read()
     f.close()
 
