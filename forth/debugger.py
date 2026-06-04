@@ -119,18 +119,18 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
 
 
     def disass_pane(mode, instr, syms):
-        dbgwin.addstr(0,10, "Cycles: %d" % mpu.processorCycles )
+        dbgwin.addstr(0,10, f"Cycles: {mpu.processorCycles}" )
 
-        log_registers = "A:%02X  X:%02X  Y:%02X  S:%02X  P:%s" % ( mpu.a, mpu.x, mpu.y, mpu.sp, ( itoa(mpu.p, 2).rjust(8, '0') ) )
+        log_registers = "A:{:02X}  X:{:02X}  Y:{:02X}  S:{:02X}  P:{}".format( mpu.a, mpu.x, mpu.y, mpu.sp, ( itoa(mpu.p, 2).rjust(8, '0') ) )
 
         _w=getWord(addr_W)
         _ip=getWord(addr_IP)
-        log_forth_reg1 = " W: %04X  IP: %04X" % ( _w, _ip )
+        log_forth_reg1 = f" W: {_w:04X}  IP: {_ip:04X}"
 
         _here = getWord(addr_DP)
-        dbgwin.addstr(8,0, "LATEST: %04X  DP: %04X" % ( getWord(addr_LATEST), _here ) )
+        dbgwin.addstr(8,0, f"LATEST: {getWord(addr_LATEST):04X}  DP: {_here:04X}" )
 
-        curr_instr = render_instr( [ "%04X" % mpu.pc, "%02X" % getByte(mpu.pc), "%02X" % getByte(mpu.pc+1), "%02X" % getByte(mpu.pc+2) ] )
+        curr_instr = render_instr( [ f"{mpu.pc:04X}", f"{getByte(mpu.pc):02X}", f"{getByte(mpu.pc+1):02X}", f"{getByte(mpu.pc+2):02X}" ] )
         if symbols:
             curr_instr += getSymbol(mpu.pc)
 
@@ -139,11 +139,11 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
 
         if mode == 1: #step-by-step mode
             # these registers will only be updated in step-by-step mode
-            dbgwin.addstr(0, 0, "PC: %04X" % mpu.pc )
+            dbgwin.addstr(0, 0, f"PC: {mpu.pc:04X}" )
 
             dbgwin.addstr(2,0, log_registers )
 
-            log_forth_reg2 = "G1: %04X  G2: %04X" % ( getWord(addr_G1), getWord(addr_G2) )
+            log_forth_reg2 = f"G1: {getWord(addr_G1):04X}  G2: {getWord(addr_G2):04X}"
             dbgwin.addstr(6,4, log_forth_reg1 )
             dbgwin.addstr(7,4, log_forth_reg2 )
 
@@ -156,16 +156,16 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
             # Show some bytes before HERE
             for j in [1,0]:
                 a=_here-9-10*j
-                dbgwin.addstr(10-j, 0, "%04X:" % (a) )
+                dbgwin.addstr(10-j, 0, f"{a:04X}:" )
                 for i in range(10):
-                    dbgwin.addstr(10-j, 6+3*i, "%02X" % getByte( a+i ) )
+                    dbgwin.addstr(10-j, 6+3*i, f"{getByte( a+i ):02X}" )
 
             # Show Data Stack
             for i in range(5):
                 a = mpu.x + 2*i
                 v = getWord(a)
                 if a<=addr_DTOP:
-                    dbgwin.addstr(28-i, 0, "%d %04X: %04X" % (i, a, v) )
+                    dbgwin.addstr(28-i, 0, f"{i} {a:04X}: {v:04X}" )
                 else:
                     dbgwin.addstr(28-i, 0, "             " )
 
@@ -174,7 +174,7 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
                 a = 0x100 + mpu.sp + i + 1
                 v = getByte(a)
                 if a<=0x1FF:
-                    dbgwin.addstr(28-i, 20, "%02X: %02X" % (a & 0xFF, v) )
+                    dbgwin.addstr(28-i, 20, f"{a & 0xFF:02X}: {v:02X}" )
                 else:
                     dbgwin.addstr(28-i, 20, "       " )
 
@@ -366,9 +366,9 @@ def main(stdscr):
         else:
             msgwin.erase()
             if key == 0x0A :
-                msgwin.addstr(0,0, 'received [$%02X]' % (key) )
+                msgwin.addstr(0,0, f'received [${key:02X}]' )
             else:
-                msgwin.addstr(0,0, 'received [%s] [$%02X]' % (chr(key) , key) )
+                msgwin.addstr(0,0, f'received [{chr(key)}] [${key:02X}]' )
 
             if key in (0x7f, 0x107):
                 key=8

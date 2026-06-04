@@ -18,7 +18,7 @@ def get_response(show=False):
       if c not in (0x0d, 0x0a):
         b.append(c)
       if show:
-        print("%c %02X   " % (c,c), end='', flush=True)
+        print(f"{c:c} {c:02X}   ", end='', flush=True)
       if c == 0x0A:
         exit = True
         break
@@ -33,7 +33,7 @@ def cmd_send(args):
 
   batch = 10
 
-  with open(args.file, "r") as f:
+  with open(args.file) as f:
     count = 0
     while True:
       data=f.read(batch)
@@ -92,7 +92,7 @@ def wait_for_prompt(show=True, timeout=0):
         prompt = True
         break
       if show:
-        print("%c" % c, end='', flush=True)
+        print(f"{c:c}", end='', flush=True)
 
 if __name__ == '__main__':
   args = parser.parse_args()
