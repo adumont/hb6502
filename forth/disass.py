@@ -248,8 +248,8 @@ def decode(b):
         b=hex2dec(b)
     if isValidOpcode(b):
         o, m = opcodes[b]
-        m, l = modes[m]
-        return o, m, l
+        m, length = modes[m]
+        return o, m, length
     else:
         return None,None,None
 
@@ -275,16 +275,14 @@ def render_instr(_args):
     # if isinstance(opcode,str):
     #     opcode=hex2dec(opcode)
 
-    comment = ""
-
     unknown = ".."
 
-    o,m,l = decode(opcode)
+    o,m,length = decode(opcode)
 
     miss = 0
 
     while True:
-        miss = l - len(args) - 1 # how many operands bytes we are missing
+        miss = length - len(args) - 1 # how many operands bytes we are missing
         if miss >= 0:
             break
         # too much args, remove
@@ -292,11 +290,11 @@ def render_instr(_args):
 
     args.reverse()
     operand="".join(args)
-    args.reverse() # now we need it again in the chronological order, for hexdump
+    args.reverse()
 
     operand = unknown*miss + operand
 
-    hexdump = " ".join( [opcode] + args + [ unknown for _ in range(miss) ])
+
 
     #if o.startswith("b") and o not in ["bit", "brk"] :
     if m == "r" :
@@ -312,7 +310,7 @@ def render_instr(_args):
             # add an extra unknown byte
             operand = unknown + operand
     
-    if l>1:
+    if length>1:
         operand = "$"+operand
 
     if m == "#":
