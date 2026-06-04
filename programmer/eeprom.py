@@ -116,7 +116,7 @@ if __name__ == '__main__':
   args = parser.parse_args()
   print(vars(args))
 
-  if args.port == None:
+  if args.port is None:
     port = glob("/dev/ttyACM*")
     assert( len(port) > 0 )
     port = port[0]
