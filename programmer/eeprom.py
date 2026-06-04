@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-import serial
-import time
-import os.path
 import math
-
+import os.path
+import time
 from glob import glob
+
+import serial
+
 
 def flash(args):
   size = os.stat(args.file).st_size

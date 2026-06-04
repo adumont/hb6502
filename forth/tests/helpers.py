@@ -1,4 +1,5 @@
 from pathlib import Path
+
 from py65.devices.mpu65c02 import MPU as CMOS65C02
 
 HERE = Path(__file__).parent

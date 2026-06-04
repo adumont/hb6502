@@ -8,3 +8,9 @@ dependencies = [
     "py65>=1.2.0",
     "pytest>=8.0",
 ]
+
+[tool.ruff.lint]
+select = ["I"]
+
+[tool.ruff]
+target-version = "py310"

@@ -5,9 +5,9 @@
 # SPDX-License-Identifier: GPL-3.0-only
 
 import argparse
-import threading
-from queue import Queue, Empty
 import signal
+import threading
+from queue import Empty, Queue
 
 from py65.devices.mpu65c02 import MPU as CMOS65C02
 from py65.memory import ObservableMemory
