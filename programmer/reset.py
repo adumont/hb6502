@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # https://github.com/nicholaskell/Arduino_Loader/blob/master/reset.py
 
-import serial, sys
+import serial
+import sys
 
 serialPort = sys.argv[1]
 
