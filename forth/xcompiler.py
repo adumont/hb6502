@@ -101,7 +101,7 @@ def cpuThread(ch, queue, emu_queue):
         return mpu.memory[address] + 256*mpu.memory[address+1]
 
     def getCountedStr(addr,l=None):
-        if l==None:
+        if l is None:
             l = getByte(addr) # length byte
         ba = mpu.memory[addr+1:addr+l+1]
         return "".join(map(chr,ba))
