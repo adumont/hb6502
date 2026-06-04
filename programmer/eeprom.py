@@ -2,11 +2,8 @@
 
 import argparse
 import serial
-import contextlib
 import time
 import os.path
-import logging
-from time import sleep
 import math
 
 from glob import glob
