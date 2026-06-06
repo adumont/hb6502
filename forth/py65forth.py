@@ -102,9 +102,8 @@ def cpuThread(ch, queue, int_queue):
 
     if args.rom:
         # print("Loading %s at $%04X" % ( args.rom, args.addr ) )
-        f = open(args.rom, 'rb')
-        program = f.read()
-        f.close()
+        with open(args.rom, 'rb') as f:
+            program = f.read()
     else:
         # Dummy prog
         program = [ 0xA9, 97, 0x8D, 0x01, 0xF0 ]
@@ -140,9 +139,8 @@ def main(stdscr):
 
 
     if args.load:
-        f = open(args.load)
-        program = f.read()
-        f.close()
+        with open(args.load) as f:
+            program = f.read()
 
         for c in program:
             queue.put( ord(c) )

@@ -181,10 +181,9 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
         dbgwin.noutrefresh()
 
     def dumpMemory():
-        f = open("/tmp/memory", "wb")
-        for i in range(0x10000):
-            f.write(mpu.memory[i].to_bytes(1, 'big'))
-        f.close()
+        with open("/tmp/memory", "wb") as f:
+            for i in range(0x10000):
+                f.write(mpu.memory[i].to_bytes(1, 'big'))
 
     def nmi():
         # triggers a NMI IRQ in the processor
@@ -212,9 +211,8 @@ def cpuThreadFunction(ch,win,dbgwin, queue, queue_step, logfile):
         args.addr = int(args.addr,16)
 
     if args.rom:
-        f = open(args.rom, 'rb')
-        program = f.read()
-        f.close()
+        with open(args.rom, 'rb') as f:
+            program = f.read()
     else:
         # Dummy prog
         program = [ 0xA9, 97, 0x8D, 0x01, 0xF0 ]
@@ -329,10 +327,7 @@ def main(stdscr):
     queue = Queue()
     queue_step = Queue()
 
-    if args.logfile:
-        logfile = open(args.logfile, "w")  # a=append mode
-    else:
-        logfile=None
+    logfile = open(args.logfile, "w") if args.logfile else None  # noqa: SIM115 - kept open for thread logging
 
     # create computer thread
     t=threading.Thread( target=cpuThreadFunction, args=("", cpuwin, dbgwin, queue, queue_step, logfile) )

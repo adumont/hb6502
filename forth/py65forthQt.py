@@ -39,10 +39,7 @@ def putc(address, value):
 
 def getc(address):
     char = console.getch_noblock(sys.stdin)
-    if char:
-        byte = ord(char)
-    else:
-        byte = 0
+    byte = ord(char) if char else 0
     return byte
 
 def getByte(address):
@@ -88,9 +85,8 @@ if args.addr and str(args.addr).startswith("0x"):
 
 if args.rom:
     print(f"Loading {args.rom} at ${args.addr:04X}" )
-    f = open(args.rom, 'rb')
-    program = f.read()
-    f.close()
+    with open(args.rom, 'rb') as f:
+        program = f.read()
 else:
     # Dummy prog
     program = [ 0xA9, 97, 0x8D, 0x01, 0xF0 ]

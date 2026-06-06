@@ -1,15 +1,14 @@
 import pytest
 
 from .helpers import DTOP_VALUE
+import contextlib
 
 
 def test_ABORT_resets_data_stack(vm):
     vm.push(1)
     vm.push(2)
-    try:
+    with contextlib.suppress(RuntimeError):
         vm.execute('ABORT')
-    except RuntimeError:
-        pass
     assert vm.mpu.x == DTOP_VALUE
 
 
