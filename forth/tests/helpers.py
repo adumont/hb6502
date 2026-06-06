@@ -89,16 +89,16 @@ class ForthTestVM:
         if steps >= timeout:
             pc = self.mpu.pc
             depth = self.stack_depth()
-            raise RuntimeError(
-                f"Execution timed out at PC=${pc:04X} stack={depth} items"
-            )
+            msg = f"Execution timed out at PC=${pc:04X} stack={depth} items"
+            raise RuntimeError(msg)
 
     def execute(self, name):
         word_addr = self.symbols.get(f"do_{name}")
         if word_addr is None:
             word_addr = self.symbols.get(name)
         if word_addr is None:
-            raise ValueError(f"Unknown word: {name}")
+            msg = f"Unknown word: {name}"
+            raise ValueError(msg)
 
         self._setup_trap()
         self._set_word(THREAD_ADDR, word_addr)

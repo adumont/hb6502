@@ -10,7 +10,7 @@ dependencies = [
 ]
 
 [tool.ruff.lint]
-select = ["I", "UP", "SIM", "B", "C4", "ARG", "RUF100", "PIE", "T10", "ISC", "RET", "RSE", "LOG"]
+select = ["I", "UP", "SIM", "B", "C4", "ARG", "RUF100", "PIE", "T10", "ISC", "RET", "RSE", "LOG", "PT", "EM", "A"]
 
 [dependency-groups]
 dev = [

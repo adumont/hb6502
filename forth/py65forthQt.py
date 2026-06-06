@@ -28,8 +28,8 @@ addrG2 = addrIP - 2
 addrG1 = addrG2 - 2
 
 
-def load(memory, start_address, bytes):
-    memory[start_address : start_address + len(bytes)] = bytes
+def load(memory, start_address, data):
+    memory[start_address : start_address + len(data)] = data
 
 
 def putc(_address, value):
@@ -120,12 +120,12 @@ last_latest = 0
 
 def updateDict():
     d = []
-    next = 0
+    next_addr = 0
     ln = 0
     imm = 0
     header = getWord(0x0200)  # LATEST
     while True:
-        next = getWord(header)
+        next_addr = getWord(header)
         ln = getByte(header + 2)  # length byte with flags
         imm = ln & 0x80  # immediate flag
         ln = ln & 0x1F  # real length (we mask off the 3 MSB (flags))
@@ -133,9 +133,9 @@ def updateDict():
         w = {"header": header, "cfa": (header + 3 + ln), "name": name, "imm": imm}
         d.append(w)
         # next word:
-        if next == 0:
+        if next_addr == 0:
             break
-        header = next
+        header = next_addr
     return d
 
 
