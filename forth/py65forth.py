@@ -40,17 +40,17 @@ queue = ClearableQueue()
 int_queue = Queue()
 
 
-def signal_handler(signum, frame):
+def signal_handler(_signum, _frame):
     exit()
 
 
-def cpuThread(ch, queue, int_queue):
+def cpuThread(_ch, queue, int_queue):
     started = False
 
     def load(memory, start_address, bytes):
         memory[start_address : start_address + len(bytes)] = bytes
 
-    def putc(address, value):
+    def putc(_address, value):
         if not started:
             return
         try:
@@ -62,7 +62,7 @@ def cpuThread(ch, queue, int_queue):
             sys.stdout.write("?")
         sys.stdout.flush()
 
-    def getc(address):
+    def getc(_address):
         if queue.empty():
             return 0
         else:

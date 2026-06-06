@@ -90,7 +90,7 @@ getc_addr = 0xF004
 putc_addr = 0xF001
 
 
-def cpuThreadFunction(ch, win, dbgwin, queue, queue_step, logfile):
+def cpuThreadFunction(_ch, win, dbgwin, queue, queue_step, logfile):
     global symbols
 
     started = False
@@ -108,14 +108,14 @@ def cpuThreadFunction(ch, win, dbgwin, queue, queue_step, logfile):
     def getByte(address):
         return mpu.memory[address]
 
-    def putc(address, value):
+    def putc(_address, value):
         if not started:
             return
         win.addch(chr(value))
         win.noutrefresh()
         curses.doupdate()
 
-    def getc(address):
+    def getc(_address):
         if queue.empty():
             return 0
         else:
@@ -124,7 +124,7 @@ def cpuThreadFunction(ch, win, dbgwin, queue, queue_step, logfile):
     def getWord(address):
         return mpu.memory[address] + 256 * mpu.memory[address + 1]
 
-    def disass_pane(mode, instr, syms):
+    def disass_pane(mode, instr, _syms):
         dbgwin.addstr(0, 10, f"Cycles: {mpu.processorCycles}")
 
         log_registers = "A:{:02X}  X:{:02X}  Y:{:02X}  S:{:02X}  P:{}".format(
@@ -405,7 +405,7 @@ def main(stdscr):
     exit()
 
 
-def signal_handler(signum, frame):
+def signal_handler(_signum, _frame):
     exit()
 
 

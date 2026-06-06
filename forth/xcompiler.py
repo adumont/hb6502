@@ -40,7 +40,7 @@ queue = ClearableQueue()
 emu_queue = Queue()  # CPU --> Emulator
 
 
-def signal_handler(signum, frame):
+def signal_handler(_signum, _frame):
     exit()
 
 
@@ -91,11 +91,11 @@ addr_do_0BR = getLabelAddr("do_0BR")
 addr_numberError = getLabelAddr("numberError")
 
 
-def cpuThread(ch, queue, emu_queue):
+def cpuThread(_ch, queue, emu_queue):
     def load(memory, start_address, bytes):
         memory[start_address : start_address + len(bytes)] = bytes
 
-    def getc(address):
+    def getc(_address):
         while queue.empty():
             pass
         c = queue.get()
