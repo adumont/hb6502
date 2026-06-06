@@ -7,4 +7,4 @@ from .helpers import ForthTestVM
 def vm():
     _vm = ForthTestVM()
     _vm.reset_stack()
-    yield _vm
+    return _vm

@@ -102,8 +102,8 @@ def cpuThreadFunction(_ch, win, dbgwin, queue, queue_step, logfile):
     symbol_depth = 3
     syms = symbol_depth * [""]
 
-    def load(memory, start_address, bytes):
-        memory[start_address : start_address + len(bytes)] = bytes
+    def load(memory, start_address, data):
+        memory[start_address : start_address + len(data)] = data
 
     def getByte(address):
         return mpu.memory[address]
@@ -295,7 +295,7 @@ def cpuThreadFunction(_ch, win, dbgwin, queue, queue_step, logfile):
         time.sleep(delay)
 
 
-def exit():
+def do_exit():
     exit_event.set()
 
     curses.nocbreak()

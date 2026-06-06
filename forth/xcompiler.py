@@ -92,8 +92,8 @@ addr_numberError = getLabelAddr("numberError")
 
 
 def cpuThread(_ch, queue, emu_queue):
-    def load(memory, start_address, bytes):
-        memory[start_address : start_address + len(bytes)] = bytes
+    def load(memory, start_address, data):
+        memory[start_address : start_address + len(data)] = data
 
     def getc(_address):
         while queue.empty():
@@ -148,9 +148,9 @@ def cpuThread(_ch, queue, emu_queue):
                 continue
 
             ln = ln & 0x1F  # length, no flags
-            str = getCountedStr(header + 2, ln)
+            name = getCountedStr(header + 2, ln)
 
-            if str == word:
+            if name == word:
                 # put  header addr in 5,X, 4,X (NOS)
                 mpu.memory[4 + mpu.x] = header & 0xFF
                 mpu.memory[5 + mpu.x] = header >> 8

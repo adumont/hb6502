@@ -10,7 +10,7 @@ import serial
 
 
 def get_response(show=False):
-    exit = False
+    done = False
     b = []
 
     while True:
@@ -20,9 +20,9 @@ def get_response(show=False):
             if show:
                 print(f"{c:c} {c:02X}   ", end="", flush=True)
             if c == 0x0A:
-                exit = True
+                done = True
                 break
-        if exit:
+        if done:
             break
 
     return b

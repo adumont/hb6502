@@ -47,8 +47,8 @@ def signal_handler(_signum, _frame):
 def cpuThread(_ch, queue, int_queue):
     started = False
 
-    def load(memory, start_address, bytes):
-        memory[start_address : start_address + len(bytes)] = bytes
+    def load(memory, start_address, data):
+        memory[start_address : start_address + len(data)] = data
 
     def putc(_address, value):
         if not started:
