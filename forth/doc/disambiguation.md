@@ -156,7 +156,7 @@ Finds the next word in the input stream **at the time it runs** and leaves its X
 Finds the next word at **compile time** (because it's IMMEDIATE, it runs during compilation), then compiles its XT as a literal value into the definition.
 
 ```
-: foo ' DUP ;        \ TICK runs when foo executes → finds DUP at runtime
+: foo ' DUP ;        \ TICK runs when foo executes → TICK will run when foo is executed, and find the next word in the input stream (not DUP)
 : foo ['] DUP ;      \ ['] runs when foo is compiled → compiles DUP's XT as literal
 ```
 
