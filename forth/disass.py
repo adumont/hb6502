@@ -252,8 +252,7 @@ def decode(b):
         o, m = opcodes[b]
         m, length = modes[m]
         return o, m, length
-    else:
-        return None, None, None
+    return None, None, None
 
 
 def hex2dec(s):
