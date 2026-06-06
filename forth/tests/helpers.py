@@ -3,8 +3,8 @@ from pathlib import Path
 from py65.devices.mpu65c02 import MPU as CMOS65C02
 
 HERE = Path(__file__).parent
-ROM_PATH = HERE.parent / 'forth-emu.bin'
-LBL_PATH = HERE.parent / 'forth-emu.lbl'
+ROM_PATH = HERE.parent / "forth-emu.bin"
+LBL_PATH = HERE.parent / "forth-emu.lbl"
 ROM_ADDR = 0x8000
 TRAP_ADDR = 0x0300
 THREAD_ADDR = 0x0310
@@ -17,9 +17,9 @@ class ForthTestVM:
         self.symbols = self._parse_lbl(LBL_PATH)
         self.mpu = CMOS65C02()
         self.mpu.memory = [0xEA] * 0x10000
-        with open(ROM_PATH, 'rb') as f:
+        with open(ROM_PATH, "rb") as f:
             program = f.read()
-        self.mpu.memory[ROM_ADDR:ROM_ADDR + len(program)] = list(program)
+        self.mpu.memory[ROM_ADDR : ROM_ADDR + len(program)] = list(program)
         self._init_forth()
 
     @staticmethod
@@ -28,21 +28,22 @@ class ForthTestVM:
         with open(path) as f:
             for line in f:
                 parts = line.strip().split()
-                if len(parts) >= 3 and parts[0] == 'al':
+                if len(parts) >= 3 and parts[0] == "al":
                     addr = int(parts[1], 16)
-                    name = parts[2].lstrip('.')
+                    name = parts[2].lstrip(".")
                     symbols[name] = addr
         return symbols
 
     def _init_forth(self):
         self.mpu.pc = self._get_word(self.mpu.RESET)
-        entry_point = self.symbols['entry_point']
+        entry_point = self.symbols["entry_point"]
         steps = 0
         while self.mpu.pc != entry_point and steps < 10000:
             self.mpu.step()
             steps += 1
-        assert self.mpu.pc == entry_point, \
+        assert self.mpu.pc == entry_point, (
             f"Forth init failed to reach entry_point, PC=${self.mpu.pc:04X}"
+        )
 
     def _get_word(self, addr):
         return self.mpu.memory[addr] | (self.mpu.memory[addr + 1] << 8)
@@ -93,7 +94,7 @@ class ForthTestVM:
             )
 
     def execute(self, name):
-        word_addr = self.symbols.get(f'do_{name}')
+        word_addr = self.symbols.get(f"do_{name}")
         if word_addr is None:
             word_addr = self.symbols.get(name)
         if word_addr is None:
@@ -103,7 +104,7 @@ class ForthTestVM:
         self._set_word(THREAD_ADDR, word_addr)
         self._set_word(THREAD_ADDR + 2, TRAP_ADDR)
         self._set_word(IP_ADDR, THREAD_ADDR)
-        self.mpu.pc = self.symbols['NEXT']
+        self.mpu.pc = self.symbols["NEXT"]
 
         self._run_until_trap()
 
@@ -113,7 +114,7 @@ class ForthTestVM:
         for i, w in enumerate(cells):
             self._set_word(THREAD_ADDR + i * 2, w)
         self._set_word(IP_ADDR, THREAD_ADDR)
-        self.mpu.pc = self.symbols['NEXT']
+        self.mpu.pc = self.symbols["NEXT"]
 
         self._run_until_trap()
 
@@ -132,5 +133,5 @@ class ForthTestVM:
         for i, b in enumerate(raw_bytes):
             self.mpu.memory[THREAD_ADDR + i] = b & 0xFF
         self._set_word(IP_ADDR, THREAD_ADDR)
-        self.mpu.pc = self.symbols['NEXT']
+        self.mpu.pc = self.symbols["NEXT"]
         self._run_until_trap()

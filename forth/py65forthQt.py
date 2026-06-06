@@ -15,55 +15,63 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 # Argument parsing
 parser = argparse.ArgumentParser()
-parser.add_argument('-r','--rom', help='binary rom file', default="forth.bin")
-parser.add_argument('-a','--addr', help='address to load to', default=0x8000)
+parser.add_argument("-r", "--rom", help="binary rom file", default="forth.bin")
+parser.add_argument("-a", "--addr", help="address to load to", default=0x8000)
 args = parser.parse_args()
 
-getc_addr=0xF004
-putc_addr=0xF001
+getc_addr = 0xF004
+putc_addr = 0xF001
 
-addrW=0xFE
-addrIP=addrW-2
-addrG2=addrIP-2
-addrG1=addrG2-2
+addrW = 0xFE
+addrIP = addrW - 2
+addrG2 = addrIP - 2
+addrG1 = addrG2 - 2
+
 
 def load(memory, start_address, bytes):
-    memory[start_address:start_address + len(bytes)] = bytes
+    memory[start_address : start_address + len(bytes)] = bytes
+
 
 def putc(address, value):
     try:
         sys.stdout.write(chr(value))
-    except UnicodeEncodeError: # Python 3
+    except UnicodeEncodeError:  # Python 3
         sys.stdout.write("?")
     sys.stdout.flush()
+
 
 def getc(address):
     char = console.getch_noblock(sys.stdin)
     byte = ord(char) if char else 0
     return byte
 
+
 def getByte(address):
     return mpu.memory[address]
 
-def getWord(address):
-    return mpu.memory[address] + 256*mpu.memory[address+1]
 
-def getCountedStr(addr,length=None):
+def getWord(address):
+    return mpu.memory[address] + 256 * mpu.memory[address + 1]
+
+
+def getCountedStr(addr, length=None):
     if length is None:
-      length = getByte(addr) # length byte
-    ba = mpu.memory[addr+1:addr+length+1]
-    return "".join(map(chr,ba))
+        length = getByte(addr)  # length byte
+    ba = mpu.memory[addr + 1 : addr + length + 1]
+    return "".join(map(chr, ba))
+
 
 def getWordName(addr):
-    ln = getByte(addr+2) # length byte with flags
-    ln = ln & 0x1F        # real length (we mask off the 3 MSB (flags))
-    return getCountedStr(addr,ln)
+    ln = getByte(addr + 2)  # length byte with flags
+    ln = ln & 0x1F  # real length (we mask off the 3 MSB (flags))
+    return getCountedStr(addr, ln)
+
 
 # when boot gets to 0:
 # - scanForthDict --> update dictionary (H,NAME,Flags,CFA)
 # - call scanForthDict when LATEST changes
 # - function to find the NAME based on the CFA (usara el d)
-# - 
+# -
 
 mpu = CMOS65C02()
 mpu.memory = 0x10000 * [0xEA]
@@ -81,15 +89,15 @@ m.subscribe_to_read([getc_addr], getc)
 mpu.memory = m
 
 if args.addr and str(args.addr).startswith("0x"):
-    args.addr = int(args.addr,16)
+    args.addr = int(args.addr, 16)
 
 if args.rom:
-    print(f"Loading {args.rom} at ${args.addr:04X}" )
-    with open(args.rom, 'rb') as f:
+    print(f"Loading {args.rom} at ${args.addr:04X}")
+    with open(args.rom, "rb") as f:
         program = f.read()
 else:
     # Dummy prog
-    program = [ 0xA9, 97, 0x8D, 0x01, 0xF0 ]
+    program = [0xA9, 97, 0x8D, 0x01, 0xF0]
 
 load(mpu.memory, args.addr, program)
 
@@ -102,7 +110,7 @@ print(args)
 # print( "NMI  :", "$%04X" % getWord(mpu.NMI))
 
 # Reset: RESET vector => PC
-mpu.pc=getWord(mpu.RESET)
+mpu.pc = getWord(mpu.RESET)
 
 forthDict = []
 boot = 1
@@ -110,60 +118,68 @@ last_ip = 0
 last_w = 0
 last_latest = 0
 
+
 def updateDict():
     d = []
     next = 0
     ln = 0
     imm = 0
-    header = getWord(0x0200) # LATEST
+    header = getWord(0x0200)  # LATEST
     while True:
         next = getWord(header)
-        ln = getByte(header+2) # length byte with flags
-        imm = ln & 0x80        # immediate flag
-        ln = ln & 0x1F          # real length (we mask off the 3 MSB (flags))
-        name = getCountedStr(header+2,ln)
-        w = {'header':header, 'cfa':(header+3+ln), 'name':name, 'imm':imm }
-        d.append( w )
+        ln = getByte(header + 2)  # length byte with flags
+        imm = ln & 0x80  # immediate flag
+        ln = ln & 0x1F  # real length (we mask off the 3 MSB (flags))
+        name = getCountedStr(header + 2, ln)
+        w = {"header": header, "cfa": (header + 3 + ln), "name": name, "imm": imm}
+        d.append(w)
         # next word:
-        if next==0:
+        if next == 0:
             break
         header = next
     return d
 
+
 def printDict(d):
     for w in d:
-        print("${:04X} ${:04X} {} ${:02X}".format(w['header'], w['cfa'], w['name'], w['imm']))
+        print(
+            "${:04X} ${:04X} {} ${:02X}".format(
+                w["header"], w["cfa"], w["name"], w["imm"]
+            )
+        )
+
 
 def wordFromCFA(cfa):
-    matches = [ i for i in forthDict if i['cfa'] == cfa ]
-    if len(matches)>0:
+    matches = [i for i in forthDict if i["cfa"] == cfa]
+    if len(matches) > 0:
         return matches[0]
     else:
         return None
+
 
 def nameFromWord(w):
     # w is a python dict. returned by wordFromCFA
     if w is None:
         return ""
-    
-    return w['name']
-        
+
+    return w["name"]
+
 
 class WinForm(QWidget):
-    def __init__(self,parent=None):
+    def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle('Alex FORTH Debugger')
+        self.setWindowTitle("Alex FORTH Debugger")
 
-        layout=QVBoxLayout()
+        layout = QVBoxLayout()
 
-        self.label1=QLabel()
-        self.label2=QLabel()
-        self.label3=QLabel()
-        self.label4=QLabel()
-        self.label5=QLabel()
-        self.label6=QLabel()
-        self.label7=QLabel()
-        self.label8=QLabel()
+        self.label1 = QLabel()
+        self.label2 = QLabel()
+        self.label3 = QLabel()
+        self.label4 = QLabel()
+        self.label5 = QLabel()
+        self.label6 = QLabel()
+        self.label7 = QLabel()
+        self.label8 = QLabel()
 
         layout.addWidget(self.label5)
         layout.addWidget(self.label6)
@@ -174,10 +190,10 @@ class WinForm(QWidget):
         layout.addWidget(self.label3)
         layout.addWidget(self.label4)
 
-        self.timer0=QTimer()
+        self.timer0 = QTimer()
         self.timer0.timeout.connect(self.mystep)
 
-        self.timerUI=QTimer()
+        self.timerUI = QTimer()
         self.timerUI.timeout.connect(self.updateUI)
 
         self.setLayout(layout)
@@ -186,31 +202,31 @@ class WinForm(QWidget):
         self.timerUI.start(200)
 
     def updateUI(self):
-        self.label1.setText( f"LATEST: ${getWord( 0x0200 ):04X}" )
-        self.label2.setText( f" MODE : ${getByte( 0x0200+2 ):02X}" )
-        self.label3.setText( f" BOOT : ${getByte( 0x0200+3 ):02X}" )
-        self.label4.setText( f" HERE : ${getWord( 0x0200+89 ):04X}" )
-        w = getWord( addrW )
-        name = nameFromWord(wordFromCFA( w ))
-        self.label5.setText( f"    W : ${w:04X} {name}" )
-        ip = getWord( addrIP )
-        name = nameFromWord(wordFromCFA( getWord(ip) ))
-        self.label6.setText( f"   IP : ${ip:04X} {name}" )
-        self.label7.setText( f"   G2 : ${getWord( addrG2 ):04X}" )
-        self.label8.setText( f"   G1 : ${getWord( addrG1 ):04X}" )
- 
+        self.label1.setText(f"LATEST: ${getWord(0x0200):04X}")
+        self.label2.setText(f" MODE : ${getByte(0x0200 + 2):02X}")
+        self.label3.setText(f" BOOT : ${getByte(0x0200 + 3):02X}")
+        self.label4.setText(f" HERE : ${getWord(0x0200 + 89):04X}")
+        w = getWord(addrW)
+        name = nameFromWord(wordFromCFA(w))
+        self.label5.setText(f"    W : ${w:04X} {name}")
+        ip = getWord(addrIP)
+        name = nameFromWord(wordFromCFA(getWord(ip)))
+        self.label6.setText(f"   IP : ${ip:04X} {name}")
+        self.label7.setText(f"   G2 : ${getWord(addrG2):04X}")
+        self.label8.setText(f"   G1 : ${getWord(addrG1):04X}")
+
     def mystep(self):
         global boot, forthDict, last_ip, last_w, last_latest
 
         mpu.step()
-        
+
         ud = False
 
-        if boot == 0: 
-            latest = getWord( 0x0200 )
+        if boot == 0:
+            latest = getWord(0x0200)
             if last_latest != latest:
                 last_latest = latest
-                self.label1.setText( f"LATEST: ${latest:04X}" )
+                self.label1.setText(f"LATEST: ${latest:04X}")
                 ud = True
 
             # ip = getWord( addrIP )
@@ -229,8 +245,7 @@ class WinForm(QWidget):
             last_latest = latest
             ud = True
 
-
-        if boot==1 and getByte( 0x0200+3 ) == 0x00:
+        if boot == 1 and getByte(0x0200 + 3) == 0x00:
             boot = 0
             ud = True
 
@@ -239,8 +254,8 @@ class WinForm(QWidget):
             # printDict(forthDict)
 
 
-if __name__ == '__main__':
-    app=QApplication(sys.argv)
-    form=WinForm()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    form = WinForm()
     form.show()
     sys.exit(app.exec_())

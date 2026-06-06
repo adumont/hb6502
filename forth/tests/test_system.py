@@ -1,20 +1,21 @@
+import contextlib
+
 import pytest
 
 from .helpers import DTOP_VALUE
-import contextlib
 
 
 def test_ABORT_resets_data_stack(vm):
     vm.push(1)
     vm.push(2)
     with contextlib.suppress(RuntimeError):
-        vm.execute('ABORT')
+        vm.execute("ABORT")
     assert vm.mpu.x == DTOP_VALUE
 
 
 def test_EXEC(vm):
-    vm.push(vm.symbols['do_PUSH0'])
-    vm.execute('EXEC')
+    vm.push(vm.symbols["do_PUSH0"])
+    vm.execute("EXEC")
     assert vm.tos() == 0
 
 
@@ -34,7 +35,7 @@ def test_CODE(vm):
 
 
 def test_END_CODE(vm):
-    cells = [vm.symbols['do_END_CODE']]
+    cells = [vm.symbols["do_END_CODE"]]
     vm.execute_thread(cells)
 
 

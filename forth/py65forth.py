@@ -17,17 +17,17 @@ from py65.memory import ObservableMemory
 
 # Argument parsing
 parser = argparse.ArgumentParser()
-parser.add_argument('-e','--exec', help='sentence to execute in Forth')
-parser.add_argument('-r','--rom', help='binary rom file', default="forth.bin")
-parser.add_argument('-a','--addr', help='address to load to', default=0x8000)
-parser.add_argument('-l','--load', help='forth program to load')
+parser.add_argument("-e", "--exec", help="sentence to execute in Forth")
+parser.add_argument("-r", "--rom", help="binary rom file", default="forth.bin")
+parser.add_argument("-a", "--addr", help="address to load to", default=0x8000)
+parser.add_argument("-l", "--load", help="forth program to load")
 args = parser.parse_args()
 
-getc_addr=0xF004
-putc_addr=0xF001
+getc_addr = 0xF004
+putc_addr = 0xF001
+
 
 class ClearableQueue(Queue):
-
     def clear(self):
         try:
             while True:
@@ -35,27 +35,30 @@ class ClearableQueue(Queue):
         except Empty:
             pass
 
+
 queue = ClearableQueue()
 int_queue = Queue()
 
+
 def signal_handler(signum, frame):
     exit()
+
 
 def cpuThread(ch, queue, int_queue):
     started = False
 
     def load(memory, start_address, bytes):
-        memory[start_address:start_address + len(bytes)] = bytes
+        memory[start_address : start_address + len(bytes)] = bytes
 
     def putc(address, value):
         if not started:
             return
         try:
-            if value==0x08:
+            if value == 0x08:
                 sys.stdout.write(chr(value))
-                sys.stdout.write(' ')
+                sys.stdout.write(" ")
             sys.stdout.write(chr(value))
-        except UnicodeEncodeError: # Python 3
+        except UnicodeEncodeError:  # Python 3
             sys.stdout.write("?")
         sys.stdout.flush()
 
@@ -63,14 +66,14 @@ def cpuThread(ch, queue, int_queue):
         if queue.empty():
             return 0
         else:
-            c=queue.get()
+            c = queue.get()
             return c
 
     def getByte(address):
         return mpu.memory[address]
 
     def getWord(address):
-        return mpu.memory[address] + 256*mpu.memory[address+1]
+        return mpu.memory[address] + 256 * mpu.memory[address + 1]
 
     def nmi():
         # triggers a NMI IRQ in the processor
@@ -98,19 +101,19 @@ def cpuThread(ch, queue, int_queue):
     mpu.memory = m
 
     if args.addr and str(args.addr).startswith("0x"):
-        args.addr = int(args.addr,16)
+        args.addr = int(args.addr, 16)
 
     if args.rom:
         # print("Loading %s at $%04X" % ( args.rom, args.addr ) )
-        with open(args.rom, 'rb') as f:
+        with open(args.rom, "rb") as f:
             program = f.read()
     else:
         # Dummy prog
-        program = [ 0xA9, 97, 0x8D, 0x01, 0xF0 ]
+        program = [0xA9, 97, 0x8D, 0x01, 0xF0]
 
     load(mpu.memory, args.addr, program)
 
-    mpu.pc=getWord(mpu.RESET)
+    mpu.pc = getWord(mpu.RESET)
 
     started = True
 
@@ -125,40 +128,41 @@ def cpuThread(ch, queue, int_queue):
 
         mpu.step()
 
-def main(stdscr):
-    stdscr.keypad(True)     # receive special messages.
 
-    t=threading.Thread( target=cpuThread, args=("", queue, int_queue))
+def main(stdscr):
+    stdscr.keypad(True)  # receive special messages.
+
+    t = threading.Thread(target=cpuThread, args=("", queue, int_queue))
     t.daemon = True
     t.start()
 
     if args.exec:
         for c in args.exec:
-            queue.put( ord(c) )
-        queue.put( ord('\n') )
-
+            queue.put(ord(c))
+        queue.put(ord("\n"))
 
     if args.load:
         with open(args.load) as f:
             program = f.read()
 
         for c in program:
-            queue.put( ord(c) )
+            queue.put(ord(c))
 
     while True:
         key = stdscr.getch()
-        if key == 0x1b:     # ESC
-            int_queue.put(0)     # Send an NMI signal to the thread
+        if key == 0x1B:  # ESC
+            int_queue.put(0)  # Send an NMI signal to the thread
 
         elif key == 0x107:  # Backspace key in REPL.it
-            queue.put( 0x08 )    # we send the normal 0x08 supported by our code
+            queue.put(0x08)  # we send the normal 0x08 supported by our code
 
         else:
-            queue.put( key )
+            queue.put(key)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     # Must happen BEFORE calling the wrapper, else escape key has a 1 second delay after pressing:
-    os.environ.setdefault('ESCDELAY','100') # in mS; default: 1000
+    os.environ.setdefault("ESCDELAY", "100")  # in mS; default: 1000
 
     signal.signal(signal.SIGINT, signal_handler)
 

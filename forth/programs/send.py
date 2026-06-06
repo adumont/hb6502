@@ -10,116 +10,119 @@ import serial
 
 
 def get_response(show=False):
-  exit = False
-  b = []
+    exit = False
+    b = []
 
-  while True:
-    for c in ser.read():
-      if c not in (0x0d, 0x0a):
-        b.append(c)
-      if show:
-        print(f"{c:c} {c:02X}   ", end='', flush=True)
-      if c == 0x0A:
-        exit = True
-        break
-    if exit:
-      break
+    while True:
+        for c in ser.read():
+            if c not in (0x0D, 0x0A):
+                b.append(c)
+            if show:
+                print(f"{c:c} {c:02X}   ", end="", flush=True)
+            if c == 0x0A:
+                exit = True
+                break
+        if exit:
+            break
 
-  return b
+    return b
 
 
 def cmd_send(args):
-  size = os.stat(args.file).st_size
+    size = os.stat(args.file).st_size
 
-  batch = 10
+    batch = 10
 
-  with open(args.file) as f:
-    count = 0
-    while True:
-      data=f.read(batch)
-      if not data:
-        break
-      
-      for c in data:
-        print(c , end="")
-        ser.write( str.encode( c ) )
-        if c in [ 0x0A, 0x0D ]:
-          sleep(0.8)
-        else:
-          sleep(0.03)
+    with open(args.file) as f:
+        count = 0
+        while True:
+            data = f.read(batch)
+            if not data:
+                break
 
-      count += len(data)
+            for c in data:
+                print(c, end="")
+                ser.write(str.encode(c))
+                if c in [0x0A, 0x0D]:
+                    sleep(0.8)
+                else:
+                    sleep(0.03)
 
-      # print("  %3.2f %%" % (100.0*count/size), end="\r")
+            count += len(data)
 
-      if count >= size:
-        break
+            # print("  %3.2f %%" % (100.0*count/size), end="\r")
 
-  # print("%d bytes written from %04X to %04X, CRC32: %04X.%04X" % (addr-addr_start, addr_start, addr-1, crc32>>16, crc32 & 0xFFFF) )
+            if count >= size:
+                break
+
+    # print("%d bytes written from %04X to %04X, CRC32: %04X.%04X" % (addr-addr_start, addr_start, addr-1, crc32>>16, crc32 & 0xFFFF) )
 
 
 def cmd_run(args):
 
-  print("run")
-  ser.write( str.encode( "run\r") )
+    print("run")
+    ser.write(str.encode("run\r"))
 
-  print()
+    print()
+
 
 parser = argparse.ArgumentParser(
-        description='FORTH Serial Programmer',
-        epilog='Written by @adumont')
+    description="FORTH Serial Programmer", epilog="Written by @adumont"
+)
 
-parser.add_argument('-p', '--port', help='USB port to use', default="/dev/ttyUSB0" )
+parser.add_argument("-p", "--port", help="USB port to use", default="/dev/ttyUSB0")
 
 subparsers = parser.add_subparsers()
 
-parser_put = subparsers.add_parser('send', help='sends a text program to FORTH')
-parser_put.add_argument('file', help='File to send')
+parser_put = subparsers.add_parser("send", help="sends a text program to FORTH")
+parser_put.add_argument("file", help="File to send")
 parser_put.set_defaults(func=cmd_send)
 
-parser_put = subparsers.add_parser('run', help='Send the run command')
+parser_put = subparsers.add_parser("run", help="Send the run command")
 parser_put.set_defaults(func=cmd_run)
 
+
 def wait_for_prompt(show=True, timeout=0):
-  prompt = False
-  t0=time.time()
-  while not prompt:
-    t1=time.time()
-    if timeout !=0 and 1000*(t1-t0) > timeout:
-      break
-    for c in ser.read():
-      if c == ord(">"):
-        prompt = True
-        break
-      if show:
-        print(f"{c:c}", end='', flush=True)
+    prompt = False
+    t0 = time.time()
+    while not prompt:
+        t1 = time.time()
+        if timeout != 0 and 1000 * (t1 - t0) > timeout:
+            break
+        for c in ser.read():
+            if c == ord(">"):
+                prompt = True
+                break
+            if show:
+                print(f"{c:c}", end="", flush=True)
 
-if __name__ == '__main__':
-  args = parser.parse_args()
-  print(vars(args))
 
-  if args.port is None:
-    port = glob("/dev/ttyUSB*")
-    assert( len(port) > 0 )
-    port = port[0]
-  else:
-    port = args.port
+if __name__ == "__main__":
+    args = parser.parse_args()
+    print(vars(args))
 
-  ser = serial.Serial(
-      port=port,
-      baudrate=115200,
-      parity=serial.PARITY_NONE,
-      stopbits=serial.STOPBITS_ONE,
-      bytesize=serial.EIGHTBITS,
-      timeout=0
-  )
-  print("Connected to FORTH on port: " + ser.portstr)
+    if args.port is None:
+        port = glob("/dev/ttyUSB*")
+        assert len(port) > 0
+        port = port[0]
+    else:
+        port = args.port
 
-  sleep(1)
+    ser = serial.Serial(
+        port=port,
+        baudrate=115200,
+        parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_ONE,
+        bytesize=serial.EIGHTBITS,
+        timeout=0,
+    )
+    print("Connected to FORTH on port: " + ser.portstr)
 
-  # wait_for_prompt(show=False, timeout=200)
+    sleep(1)
 
-  args.func(args)
+    # wait_for_prompt(show=False, timeout=200)
 
-  # wait_for_prompt()
-  ser.close()
+    args.func(args)
+
+    # wait_for_prompt()
+    ser.close()
