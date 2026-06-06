@@ -286,6 +286,7 @@ Full word-by-word documentation of AlexForth. Each section links to a detailed f
 - **[doc/number.md](doc/number.md)** — Number parsing and base: BASE, DEC, HEX, OCT, BIN, NUMBER, mulG2xBASE
 - **[doc/system.md](doc/system.md)** — System words: ABORT, CLS, BREAK, STATE (?EXEC), MODE, NMI, RESET, system vectors
 - **[doc/bootstrap.md](doc/bootstrap.md)** — High-level words defined in `bootstrap.f`
+- **[doc/disambiguation.md](doc/disambiguation.md)** — Disambiguation of confusing word pairs (`COMPILE,` vs `POSTPONE`, `LITERAL` vs `LIT`, `;` vs `EXIT`, and more)
 
 Each word is documented with its stack effect, description, and implementation notes (assembly or threaded code).
 
