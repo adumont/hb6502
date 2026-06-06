@@ -65,9 +65,7 @@ def cpuThread(_ch, queue, int_queue):
     def getc(_address):
         if queue.empty():
             return 0
-        else:
-            c = queue.get()
-            return c
+        return queue.get()
 
     def getByte(address):
         return mpu.memory[address]

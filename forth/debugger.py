@@ -118,8 +118,7 @@ def cpuThreadFunction(_ch, win, dbgwin, queue, queue_step, logfile):
     def getc(_address):
         if queue.empty():
             return 0
-        else:
-            return queue.get()
+        return queue.get()
 
     def getWord(address):
         return mpu.memory[address] + 256 * mpu.memory[address + 1]

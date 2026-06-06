@@ -42,8 +42,7 @@ def putc(_address, value):
 
 def getc(_address):
     char = console.getch_noblock(sys.stdin)
-    byte = ord(char) if char else 0
-    return byte
+    return ord(char) if char else 0
 
 
 def getByte(address):
@@ -153,8 +152,7 @@ def wordFromCFA(cfa):
     matches = [i for i in forthDict if i["cfa"] == cfa]
     if len(matches) > 0:
         return matches[0]
-    else:
-        return None
+    return None
 
 
 def nameFromWord(w):
