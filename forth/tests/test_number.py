@@ -6,7 +6,7 @@ def test_NUMBER_decimal(vm):
         vm.mpu.memory[NUM_BUF + i] = b
     vm.push(NUM_BUF)
     vm.push(4)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.stack_depth() == 2
     flag, value = vm.tos(), vm.nos()
     assert flag != 0
@@ -18,7 +18,7 @@ def test_NUMBER_hex(vm):
         vm.mpu.memory[NUM_BUF + i] = b
     vm.push(NUM_BUF)
     vm.push(3)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.stack_depth() == 2
     flag, value = vm.tos(), vm.nos()
     assert flag != 0
@@ -30,7 +30,7 @@ def test_NUMBER_binary(vm):
         vm.mpu.memory[NUM_BUF + i] = b
     vm.push(NUM_BUF)
     vm.push(6)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.stack_depth() == 2
     flag, value = vm.tos(), vm.nos()
     assert flag != 0
@@ -41,7 +41,7 @@ def test_NUMBER_zero(vm):
     vm.mpu.memory[NUM_BUF] = 0x30
     vm.push(NUM_BUF)
     vm.push(1)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.stack_depth() == 2
     flag, value = vm.tos(), vm.nos()
     assert flag != 0
@@ -51,7 +51,7 @@ def test_NUMBER_zero(vm):
 def test_NUMBER_empty_string(vm):
     vm.push(NUM_BUF)
     vm.push(0)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.stack_depth() == 2
     assert vm.tos() == 0
 
@@ -60,7 +60,7 @@ def test_NUMBER_invalid_prefix(vm):
     vm.mpu.memory[NUM_BUF] = 0x21
     vm.push(NUM_BUF)
     vm.push(1)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.tos() == 0
 
 
@@ -69,7 +69,7 @@ def test_NUMBER_error_returns_zero_flag(vm):
         vm.mpu.memory[NUM_BUF + i] = b
     vm.push(NUM_BUF)
     vm.push(3)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.tos() == 0
 
 
@@ -78,7 +78,7 @@ def test_NUMBER_octal(vm):
         vm.mpu.memory[NUM_BUF + i] = b
     vm.push(NUM_BUF)
     vm.push(4)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.stack_depth() == 2
     flag, value = vm.tos(), vm.nos()
     assert flag != 0
@@ -90,7 +90,7 @@ def test_NUMBER_FFFF(vm):
         vm.mpu.memory[NUM_BUF + i] = b
     vm.push(NUM_BUF)
     vm.push(5)
-    vm.execute('NUMBER')
+    vm.execute("NUMBER")
     assert vm.stack_depth() == 2
     flag, value = vm.tos(), vm.nos()
     assert flag != 0

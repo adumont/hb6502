@@ -12,7 +12,7 @@ ser = serial.Serial(
     baudrate=1200,
     parity=serial.PARITY_NONE,
     stopbits=serial.STOPBITS_ONE,
-    bytesize=serial.EIGHTBITS
+    bytesize=serial.EIGHTBITS,
 )
 
 ser.setRTS(True)

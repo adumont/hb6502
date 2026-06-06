@@ -1,32 +1,30 @@
-
-
 def test_HIDE(vm):
-    cells = [vm.symbols['do_HIDE']]
+    cells = [vm.symbols["do_HIDE"]]
     vm.execute_thread(cells)
 
 
 def test_UNHIDE(vm):
-    cells = [vm.symbols['do_UNHIDE']]
+    cells = [vm.symbols["do_UNHIDE"]]
     vm.execute_thread(cells)
 
 
 def test_REVEAL(vm):
-    cells = [vm.symbols['do_REVEAL']]
+    cells = [vm.symbols["do_REVEAL"]]
     vm.execute_thread(cells)
 
 
 def test_HIDDEN(vm):
-    cells = [vm.symbols['do_HIDDEN']]
+    cells = [vm.symbols["do_HIDDEN"]]
     vm.execute_thread(cells)
 
 
 def test_CLEAR_OK(vm):
-    cells = [vm.symbols['do_CLEAR_OK']]
+    cells = [vm.symbols["do_CLEAR_OK"]]
     vm.execute_thread(cells)
 
 
 def test_FETCH_OK(vm):
-    cells = [vm.symbols['do_FETCH_OK']]
+    cells = [vm.symbols["do_FETCH_OK"]]
     vm.execute_thread(cells)
     assert vm.stack_depth() == 1
 
@@ -39,7 +37,7 @@ def test_FIND_finds_DUP(vm):
         vm.mpu.memory[STR_BUF + i] = b
     vm.push(STR_BUF)
     vm.push(3)
-    vm.execute('FIND')
+    vm.execute("FIND")
     assert vm.stack_depth() == 1
     assert vm.tos() != 0
 
@@ -49,7 +47,7 @@ def test_FIND_finds_SWAP(vm):
         vm.mpu.memory[STR_BUF + i] = b
     vm.push(STR_BUF)
     vm.push(4)
-    vm.execute('FIND')
+    vm.execute("FIND")
     assert vm.stack_depth() == 1
     assert vm.tos() != 0
 
@@ -59,7 +57,7 @@ def test_FIND_not_found(vm):
         vm.mpu.memory[STR_BUF + i] = b
     vm.push(STR_BUF)
     vm.push(5)
-    vm.execute('FIND')
+    vm.execute("FIND")
     assert vm.stack_depth() == 1
     assert vm.tos() == 0
 
@@ -69,6 +67,6 @@ def test_FIND_finds_DROP(vm):
         vm.mpu.memory[STR_BUF + i] = b
     vm.push(STR_BUF)
     vm.push(4)
-    vm.execute('FIND')
+    vm.execute("FIND")
     assert vm.stack_depth() == 1
     assert vm.tos() != 0

@@ -14,18 +14,20 @@ from py65.memory import ObservableMemory
 
 # Argument parsing
 parser = argparse.ArgumentParser()
-parser.add_argument('-r','--rom', help='binary rom file', default="forth.bin")
-parser.add_argument('-a','--addr', help='address to load to', default=0x8000)
-parser.add_argument('-l','--load', help='forth program to load')
-parser.add_argument('-f','--dfo', help='disable FIND offloading', default=False, action='store_true')
-parser.add_argument('-s','--symbols', help='symbols file', default="forth.lbl")
+parser.add_argument("-r", "--rom", help="binary rom file", default="forth.bin")
+parser.add_argument("-a", "--addr", help="address to load to", default=0x8000)
+parser.add_argument("-l", "--load", help="forth program to load")
+parser.add_argument(
+    "-f", "--dfo", help="disable FIND offloading", default=False, action="store_true"
+)
+parser.add_argument("-s", "--symbols", help="symbols file", default="forth.lbl")
 args = parser.parse_args()
 
-getc_addr=0xF004
-putc_addr=0xF001
+getc_addr = 0xF004
+putc_addr = 0xF001
+
 
 class ClearableQueue(Queue):
-
     def clear(self):
         try:
             while True:
@@ -33,11 +35,14 @@ class ClearableQueue(Queue):
         except Empty:
             pass
 
+
 queue = ClearableQueue()
-emu_queue = Queue() # CPU --> Emulator
+emu_queue = Queue()  # CPU --> Emulator
+
 
 def signal_handler(signum, frame):
     exit()
+
 
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -47,6 +52,7 @@ CPU_EXIT_ERROR = 1
 
 symbols = None
 last_lookedup_word = ""
+
 
 def parseSymbolsFile(filename):
     # file content should look like this:
@@ -61,29 +67,33 @@ def parseSymbolsFile(filename):
             if s.startswith(".__word_") or s.startswith(".h_"):
                 # we discard those symbols
                 continue
-            symbols[int(a,16)]=s.strip()[1:]
+            symbols[int(a, 16)] = s.strip()[1:]
     return symbols
+
 
 def getSymbol(addr):
     return symbols[max(k for k in symbols if k <= addr)]
 
+
 def getLabelAddr(label):
-    return [ k for k in symbols if symbols[k] == label ][0]
+    return [k for k in symbols if symbols[k] == label][0]
+
 
 if args.symbols:
-    symbols=parseSymbolsFile(args.symbols)
+    symbols = parseSymbolsFile(args.symbols)
 
 # Address of symbols
 addr_NEXT = getLabelAddr("NEXT")
-addr_IP = 0xFE-2
+addr_IP = 0xFE - 2
 addr_LATEST = getLabelAddr("LATEST")
 addr_do_FIND = getLabelAddr("do_FIND")
 addr_do_0BR = getLabelAddr("do_0BR")
 addr_numberError = getLabelAddr("numberError")
 
+
 def cpuThread(ch, queue, emu_queue):
     def load(memory, start_address, bytes):
-        memory[start_address:start_address + len(bytes)] = bytes
+        memory[start_address : start_address + len(bytes)] = bytes
 
     def getc(address):
         while queue.empty():
@@ -96,20 +106,20 @@ def cpuThread(ch, queue, emu_queue):
         return mpu.memory[address]
 
     def getWord(address):
-        return mpu.memory[address] + 256*mpu.memory[address+1]
+        return mpu.memory[address] + 256 * mpu.memory[address + 1]
 
-    def getCountedStr(addr,length=None):
+    def getCountedStr(addr, length=None):
         if length is None:
-            length = getByte(addr) # length byte
-        ba = mpu.memory[addr+1:addr+length+1]
-        return "".join(map(chr,ba))
+            length = getByte(addr)  # length byte
+        ba = mpu.memory[addr + 1 : addr + length + 1]
+        return "".join(map(chr, ba))
 
     def do_0BR():
-        if getWord( 2 + mpu.x ) != 0x0000:
-            return # not taking the branch, do nothing here
-        addr_jump_to = getWord( getWord( addr_IP ) )
+        if getWord(2 + mpu.x) != 0x0000:
+            return  # not taking the branch, do nothing here
+        addr_jump_to = getWord(getWord(addr_IP))
         if addr_jump_to == addr_numberError:
-            print("FATAL: Word not found:",last_lookedup_word)
+            print("FATAL: Word not found:", last_lookedup_word)
             print("COMPILATION ABORTED")
             emu_queue.put(CPU_EXIT_ERROR)
             quit(1)
@@ -119,9 +129,9 @@ def cpuThread(ch, queue, emu_queue):
         # Saves a lot of cycles
         global last_lookedup_word
 
-        addr = getWord( 4 + mpu.x )
-        length = getWord( 2 + mpu.x )
-        word = "".join(map(chr, mpu.memory[addr:addr+length] ))
+        addr = getWord(4 + mpu.x)
+        length = getWord(2 + mpu.x)
+        word = "".join(map(chr, mpu.memory[addr : addr + length]))
 
         last_lookedup_word = word
 
@@ -131,28 +141,28 @@ def cpuThread(ch, queue, emu_queue):
 
         header = getWord(addr_LATEST)
         while True:
-            ln = getByte(header+2) # get length & flags
+            ln = getByte(header + 2)  # get length & flags
 
-            if ln & 0x40: # Hidden word, skip!
+            if ln & 0x40:  # Hidden word, skip!
                 header = getWord(header)
                 continue
 
-            ln = ln &  0x1F # length, no flags
-            str = getCountedStr(header+2, ln)
+            ln = ln & 0x1F  # length, no flags
+            str = getCountedStr(header + 2, ln)
 
             if str == word:
                 # put  header addr in 5,X, 4,X (NOS)
-                mpu.memory[4+mpu.x] = header & 0xFF
-                mpu.memory[5+mpu.x] = header >> 8
-                mpu.x = mpu.x + 2   # DROP
+                mpu.memory[4 + mpu.x] = header & 0xFF
+                mpu.memory[5 + mpu.x] = header >> 8
+                mpu.x = mpu.x + 2  # DROP
                 mpu.pc = addr_NEXT  #  JMP NEXT
                 break
 
             header = getWord(header)
 
             if header == 0:
-                mpu.memory[4+mpu.x] = 0
-                mpu.memory[5+mpu.x] = 0
+                mpu.memory[4 + mpu.x] = 0
+                mpu.memory[5 + mpu.x] = 0
                 mpu.x = mpu.x + 2
                 mpu.pc = addr_NEXT
                 break
@@ -168,14 +178,14 @@ def cpuThread(ch, queue, emu_queue):
     mpu.memory = m
 
     if args.addr and str(args.addr).startswith("0x"):
-        args.addr = int(args.addr,16)
+        args.addr = int(args.addr, 16)
 
-    with open(args.rom, 'rb') as f:
+    with open(args.rom, "rb") as f:
         program = f.read()
 
     load(mpu.memory, args.addr, program)
 
-    mpu.pc=getWord(mpu.RESET)
+    mpu.pc = getWord(mpu.RESET)
 
     while True:
         if mpu.pc == addr_do_FIND:
@@ -192,55 +202,56 @@ def cpuThread(ch, queue, emu_queue):
 
         mpu.step()
 
-    print("Reached end of compilation! Starting the dumping" )
+    print("Reached end of compilation! Starting the dumping")
 
     print("ROM Dictionary:")
     rom_start = getWord(0x0001)
-    rom_end   = getWord(0x0003)
-    print(f"  Starts: {rom_start:04X}" )
-    print(f"  End   : {rom_end:04X}"   )
-    print(f"  Length: {int(rom_end-rom_start)} bytes" )
+    rom_end = getWord(0x0003)
+    print(f"  Starts: {rom_start:04X}")
+    print(f"  End   : {rom_end:04X}")
+    print(f"  Length: {int(rom_end - rom_start)} bytes")
     print()
 
-    with open("rom.dat", 'wb') as f:
+    with open("rom.dat", "wb") as f:
         f.write(bytearray(mpu.memory[rom_start:rom_end]))
 
     print("RAM Dictionary:")
     ram_start = getWord(0x0005)
-    ram_end   = getWord(0x0007)
-    print(f"  Starts: {ram_start:04X}" )
-    print(f"  End   : {ram_end:04X}"   )
-    print(f"  Length: {int(ram_end-ram_start)} bytes" )
+    ram_end = getWord(0x0007)
+    print(f"  Starts: {ram_start:04X}")
+    print(f"  End   : {ram_end:04X}")
+    print(f"  Length: {int(ram_end - ram_start)} bytes")
     print()
 
-    with open("ram.dat", 'wb') as f:
+    with open("ram.dat", "wb") as f:
         f.write(bytearray(mpu.memory[ram_start:ram_end]))
 
     LAST = getWord(0x0009)
-    print(f"LAST: {LAST:04X}" )
+    print(f"LAST: {LAST:04X}")
 
     HERE = getWord(0x0007)
-    print(f"HERE: {HERE:04X}" )
+    print(f"HERE: {HERE:04X}")
 
-    with open("last.dat", 'w') as f:
-        f.write( "; LATEST     \n")
-        f.write( f"LDA #${getByte(0x0009+0):02X}   \n" )
-        f.write( "STA LATEST   \n" )
-        f.write( f"LDA #${getByte(0x0009+1):02X}   \n" )
-        f.write( "STA LATEST+1 \n" )
-        f.write( "; HERE       \n")
-        f.write( f"LDA #${getByte(0x0007+0):02X}   \n" ) # ram_end = RAM's HERE
-        f.write( "STA DP       \n" )
-        f.write( f"LDA #${getByte(0x0007+1):02X}   \n" )
-        f.write( "STA DP+1     \n" )
+    with open("last.dat", "w") as f:
+        f.write("; LATEST     \n")
+        f.write(f"LDA #${getByte(0x0009 + 0):02X}   \n")
+        f.write("STA LATEST   \n")
+        f.write(f"LDA #${getByte(0x0009 + 1):02X}   \n")
+        f.write("STA LATEST+1 \n")
+        f.write("; HERE       \n")
+        f.write(f"LDA #${getByte(0x0007 + 0):02X}   \n")  # ram_end = RAM's HERE
+        f.write("STA DP       \n")
+        f.write(f"LDA #${getByte(0x0007 + 1):02X}   \n")
+        f.write("STA DP+1     \n")
 
     print(mpu.processorCycles, "clock cycles")
 
     # Signal main thread it's the end
     emu_queue.put(CPU_EXIT_OK)
 
+
 # We start the "computer"
-t=threading.Thread( target=cpuThread, args=("", queue, emu_queue))
+t = threading.Thread(target=cpuThread, args=("", queue, emu_queue))
 t.daemon = True
 t.start()
 
@@ -252,7 +263,7 @@ if args.load:
         program = f.read()
 
     for c in program:
-        queue.put( ord(c) )
+        queue.put(ord(c))
 
 # Now we wait FORTH to signal us it has finished the compilation.
 # This happens when we save "1 into 0x0000"
