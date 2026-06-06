@@ -49,7 +49,7 @@ def parseSymbolsFile(filename):
     with open(filename) as file:
         for line in file:
             _, a, s = line.split(" ")
-            if s.startswith(".__word_") or s.startswith(".h_"):
+            if s.startswith((".__word_", ".h_")):
                 # we discard those symbols
                 continue
             symbols[int(a, 16)] = s.strip()[1:]
