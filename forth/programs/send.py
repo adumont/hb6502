@@ -58,7 +58,7 @@ def cmd_send(args):
     # print("%d bytes written from %04X to %04X, CRC32: %04X.%04X" % (addr-addr_start, addr_start, addr-1, crc32>>16, crc32 & 0xFFFF) )
 
 
-def cmd_run(args):
+def cmd_run(_args):
 
     print("run")
     ser.write(str.encode("run\r"))

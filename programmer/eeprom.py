@@ -60,12 +60,12 @@ def erase(args):
     ser.write(str.encode(f"erase {args.fill}\r"))
 
 
-def lock(args):
+def lock(_args):
     print("lock\r")
     ser.write(str.encode("lock\r"))
 
 
-def unlock(args):
+def unlock(_args):
     print("unlock\r")
     ser.write(str.encode("unlock\r"))
 

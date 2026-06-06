@@ -32,7 +32,7 @@ def load(memory, start_address, bytes):
     memory[start_address : start_address + len(bytes)] = bytes
 
 
-def putc(address, value):
+def putc(_address, value):
     try:
         sys.stdout.write(chr(value))
     except UnicodeEncodeError:  # Python 3
@@ -40,7 +40,7 @@ def putc(address, value):
     sys.stdout.flush()
 
 
-def getc(address):
+def getc(_address):
     char = console.getch_noblock(sys.stdin)
     byte = ord(char) if char else 0
     return byte
