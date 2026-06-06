@@ -239,7 +239,7 @@ modes = {
 }
 
 def isValidOpcode(b):
-    return b in opcodes.keys()
+    return b in opcodes
 
 # decode an opcode byte b
 # returns mnemonic, mode, length

@@ -170,9 +170,8 @@ def cpuThread(ch, queue, emu_queue):
     if args.addr and str(args.addr).startswith("0x"):
         args.addr = int(args.addr,16)
 
-    f = open(args.rom, 'rb')
-    program = f.read()
-    f.close()
+    with open(args.rom, 'rb') as f:
+        program = f.read()
 
     load(mpu.memory, args.addr, program)
 
@@ -203,9 +202,8 @@ def cpuThread(ch, queue, emu_queue):
     print(f"  Length: {int(rom_end-rom_start)} bytes" )
     print()
 
-    f = open("rom.dat", 'wb')
-    f.write(bytearray(mpu.memory[rom_start:rom_end]))
-    f.close()
+    with open("rom.dat", 'wb') as f:
+        f.write(bytearray(mpu.memory[rom_start:rom_end]))
 
     print("RAM Dictionary:")
     ram_start = getWord(0x0005)
@@ -215,9 +213,8 @@ def cpuThread(ch, queue, emu_queue):
     print(f"  Length: {int(ram_end-ram_start)} bytes" )
     print()
 
-    f = open("ram.dat", 'wb')
-    f.write(bytearray(mpu.memory[ram_start:ram_end]))
-    f.close()
+    with open("ram.dat", 'wb') as f:
+        f.write(bytearray(mpu.memory[ram_start:ram_end]))
 
     LAST = getWord(0x0009)
     print(f"LAST: {LAST:04X}" )
@@ -225,19 +222,17 @@ def cpuThread(ch, queue, emu_queue):
     HERE = getWord(0x0007)
     print(f"HERE: {HERE:04X}" )
 
-    f = open("last.dat", 'w')
-    f.write( "; LATEST     \n")
-    f.write( f"LDA #${getByte(0x0009+0):02X}   \n" )
-    f.write( "STA LATEST   \n" )
-    f.write( f"LDA #${getByte(0x0009+1):02X}   \n" )
-    f.write( "STA LATEST+1 \n" )
-
-    f.write( "; HERE       \n")
-    f.write( f"LDA #${getByte(0x0007+0):02X}   \n" ) # ram_end = RAM's HERE
-    f.write( "STA DP       \n" )
-    f.write( f"LDA #${getByte(0x0007+1):02X}   \n" )
-    f.write( "STA DP+1     \n" )
-    f.close()
+    with open("last.dat", 'w') as f:
+        f.write( "; LATEST     \n")
+        f.write( f"LDA #${getByte(0x0009+0):02X}   \n" )
+        f.write( "STA LATEST   \n" )
+        f.write( f"LDA #${getByte(0x0009+1):02X}   \n" )
+        f.write( "STA LATEST+1 \n" )
+        f.write( "; HERE       \n")
+        f.write( f"LDA #${getByte(0x0007+0):02X}   \n" ) # ram_end = RAM's HERE
+        f.write( "STA DP       \n" )
+        f.write( f"LDA #${getByte(0x0007+1):02X}   \n" )
+        f.write( "STA DP+1     \n" )
 
     print(mpu.processorCycles, "clock cycles")
 
@@ -253,9 +248,8 @@ t.start()
 # it's queued into a FIFO so no worries of FORTH taking it's time to
 # interpret and compiling
 if args.load:
-    f = open(args.load)
-    program = f.read()
-    f.close()
+    with open(args.load) as f:
+        program = f.read()
 
     for c in program:
         queue.put( ord(c) )

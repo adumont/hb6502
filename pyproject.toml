@@ -10,7 +10,12 @@ dependencies = [
 ]
 
 [tool.ruff.lint]
-select = ["I", "UP"]
+select = ["I", "UP", "SIM"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.15.16",
+]
 
 [tool.ruff]
 target-version = "py310"
