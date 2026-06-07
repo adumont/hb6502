@@ -147,4 +147,7 @@ TWO TWO  ) CONSTANT FOUR
 K S K ) S )) K ) S ) S K ) S ))
 CONSTANT ADD
 
+I K ) K S K ) S )) K K ) S )) S K ) S )) S ))
+CONSTANT MUL
+
 #endif
