@@ -28,8 +28,12 @@ version.dat: version.sh .force
 %-stage1.bin: %.s version.dat
 	$(CL65) $(CLFLAGS) -o $@ $<
 
+# Preprocess .f files with cpp (expand #include, #ifdef, etc.)
+%.f.p: %.f
+	cpp -P -traditional-cpp $< > $@
+
 # Minify the bootstrap code (remove \ comments and empty lines)
-%.f.min: %.f
+%.f.min: %.f.p
 	sed -e 's/ \\ .*//; s/^\\ .*//; s/^\s*//' $< | grep -v '^\s*$$' > $@
 
 # Builds the 3 .dat files, cross-compiling the bootstrap.f code
