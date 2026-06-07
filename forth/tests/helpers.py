@@ -127,6 +127,29 @@ class ForthTestVM:
             sp = (sp - 1) & 0xFF
         self.mpu.sp = sp
 
+    def lookup(self, name):
+        """Walk the Forth dictionary at runtime to find a word's CFA (XT).
+
+        This works for any word in the dictionary, including those defined
+        in bootstrap.f (which have no symbol table entries).
+        """
+        latest_addr = self.symbols.get("LATEST", 0x0200)
+        header = self._get_word(latest_addr)
+        while header != 0:
+            ln_byte = self.mpu.memory[header + 2]
+            if ln_byte & 0x40:
+                header = self._get_word(header)
+                continue
+            name_len = ln_byte & 0x1F
+            raw = bytes(
+                self.mpu.memory[header + 3 : header + 3 + name_len]
+            )
+            stored = raw.decode("ascii", errors="replace")
+            if stored == name:
+                return header + 3 + name_len
+            header = self._get_word(header)
+        raise ValueError(f"Word not found in dictionary: {name}")
+
     def execute_raw(self, raw_bytes):
         """Write raw bytes to thread area and execute (for CLIT, LITSTR etc)."""
         self._setup_trap()
