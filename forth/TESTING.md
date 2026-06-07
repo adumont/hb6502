@@ -26,7 +26,7 @@ All constants in `helpers.py`:
 | ------------- | ------- | --------------------------------- |
 | `ROM_ADDR`    | `$8000` | ROM load address                  |
 | `TRAP_ADDR`   | `$0300` | Trap: `JMP $0300` stops execution |
-| `THREAD_ADDR` | `$0310` | Scratch area for test threads     |
+| `THREAD_ADDR` | `end_ram_image+8` | Scratch area for test threads (computed) |
 | `IP_ADDR`     | `$FC`   | Forth IP variable (2 bytes in ZP) |
 | `DTOP_VALUE`  | `$F4`   | Initial data stack pointer (in X) |
 
@@ -117,12 +117,12 @@ First arg ends up deepest on the stack — so `(END, I)` matches *DO's layout.
 | Range         | Usage                                                 |
 | ------------- | ----------------------------------------------------- |
 | `$0300`       | Trap code: `JMP $0300`                                |
-| `$0310+`      | Test thread (written by `execute` / `execute_thread`) |
+| `$7FF0+`      | Test thread (written by `execute` / `execute_thread`) |
 | `$00FC-$00FD` | Forth IP variable                                     |
 | `$0400`       | Scratch RAM (FETCH/STORE tests)                       |
 
-Do not use `$0300` or `$0310-$031F` for scratch data — they conflict with
-the test harness.
+Do not use `$0300` (trap) or `$7FF0-$7FFF` (thread) for scratch data — they
+conflict with the test harness.
 
 ## Adding a new test file
 

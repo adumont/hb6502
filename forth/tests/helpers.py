@@ -7,10 +7,10 @@ ROM_PATH = HERE.parent / "forth-emu.bin"
 LBL_PATH = HERE.parent / "forth-emu.lbl"
 ROM_ADDR = 0x8000
 TRAP_ADDR = 0x0300
+THREAD_CELLS = 8
 IP_ADDR = 0xFC
 DP_ADDR = 0xF6
 DTOP_VALUE = 0xF4
-THREAD_PAD = 0x100
 
 
 class ForthTestVM:
@@ -22,8 +22,9 @@ class ForthTestVM:
             program = f.read()
         self.mpu.memory[ROM_ADDR : ROM_ADDR + len(program)] = list(program)
         self._init_forth()
-        dp = self._get_word(DP_ADDR)
-        self.thread_addr = dp + THREAD_PAD
+        thread_size = THREAD_CELLS * 2
+        rom_end = self.symbols.get("end_ram_image", ROM_ADDR)
+        self.thread_addr = rom_end + 8
 
     @staticmethod
     def _parse_lbl(path):
@@ -79,6 +80,26 @@ class ForthTestVM:
 
     def poke(self, addr, value):
         self.mpu.memory[addr] = value
+
+    def _check_thread_safe(self):
+        thread_end = self.thread_addr + 16
+        sym_addrs = set(self.symbols.values())
+        overlap = [a for a in range(self.thread_addr, thread_end) if a in sym_addrs]
+        if overlap:
+            msg = (
+                f"THREAD_ADDR=${self.thread_addr:04X} overlaps symbols at "
+                + ", ".join(f"${a:04X}" for a in overlap[:5])
+            )
+            raise RuntimeError(msg)
+        non_ea = [
+            a for a in range(self.thread_addr, thread_end) if self.mpu.memory[a] != 0xEA
+        ]
+        if non_ea:
+            msg = (
+                f"THREAD_ADDR=${self.thread_addr:04X} area not pristine: "
+                + ", ".join(f"${a:04X}={self.mpu.memory[a]:02X}" for a in non_ea[:5])
+            )
+            raise RuntimeError(msg)
 
     def _setup_trap(self):
         self.mpu.memory[TRAP_ADDR] = 0x4C
@@ -144,9 +165,7 @@ class ForthTestVM:
                 header = self._get_word(header)
                 continue
             name_len = ln_byte & 0x1F
-            raw = bytes(
-                self.mpu.memory[header + 3 : header + 3 + name_len]
-            )
+            raw = bytes(self.mpu.memory[header + 3 : header + 3 + name_len])
             stored = raw.decode("ascii", errors="replace")
             if stored == name:
                 return header + 3 + name_len
