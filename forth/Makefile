@@ -67,6 +67,7 @@ run: forth-emu.bin
 debug: forth-emu.bin
 	uv run debugger.py -r $<
 
+test: FPPFLAGS = -DBOOTSTRAP_SKI -DBOOTSTRAP_TEST_SKI
 test: forth-emu.bin
 	uv run python -m pytest tests/ -v
 
