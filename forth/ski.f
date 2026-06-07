@@ -106,13 +106,9 @@ KI CONSTANT F    \ FALSE λxy.y
 \ .F .T K  )))  --> TRUE
 \ .F .T KI )))  --> FALSE
 
-\ We define the INCR function so we
-\ can check results of church numerals operations
-:FUNC INCR 1+ ;
-: CN 0 INCR ;
-
 #ifdef BOOTSTRAP_TEST_SKI
 
+\ Boolean operations
 K K ) I S K ) S )) K K ) S )) S K ) S )) S ))
 CONSTANT NOT
 
@@ -129,10 +125,26 @@ K K ) I K ) K ) I S )) S )) K ) I K ) K ) K K ) I S )) S )) K ) K S K )
 S )) S )) S K ) S )) S ))
 CONSTANT XNOR
 
+\ Church Numerals
 KI                  CONSTANT ZERO
 I                   CONSTANT ONE
 I K S K ) S )) S )) CONSTANT TWO
 
+K K ) F K ) K ) I S )) S ))
+CONSTANT IS0
 
+K S K ) S )) S )
+CONSTANT SUCC
+
+\ We define the INCR function so we
+\ can check results of church numerals operations
+:FUNC INCR 1+ ;
+: CN 0 INCR ;
+
+TWO SUCC ) CONSTANT THREE
+TWO TWO  ) CONSTANT FOUR
+
+K S K ) S )) K ) S ) S K ) S ))
+CONSTANT ADD
 
 #endif
