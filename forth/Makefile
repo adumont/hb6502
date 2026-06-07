@@ -69,7 +69,7 @@ debug: forth-emu.bin
 
 test: FPPFLAGS = -DBOOTSTRAP_SKI -DBOOTSTRAP_TEST_SKI
 test: forth-emu.bin
-	uv run python -m pytest tests/ -v
+	uv run python -m pytest
 
 ## For the HW 6502 computer
 
