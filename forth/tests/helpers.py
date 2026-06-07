@@ -7,9 +7,10 @@ ROM_PATH = HERE.parent / "forth-emu.bin"
 LBL_PATH = HERE.parent / "forth-emu.lbl"
 ROM_ADDR = 0x8000
 TRAP_ADDR = 0x0300
-THREAD_ADDR = 0x0310
 IP_ADDR = 0xFC
+DP_ADDR = 0xF6
 DTOP_VALUE = 0xF4
+THREAD_PAD = 0x100
 
 
 class ForthTestVM:
@@ -21,6 +22,8 @@ class ForthTestVM:
             program = f.read()
         self.mpu.memory[ROM_ADDR : ROM_ADDR + len(program)] = list(program)
         self._init_forth()
+        dp = self._get_word(DP_ADDR)
+        self.thread_addr = dp + THREAD_PAD
 
     @staticmethod
     def _parse_lbl(path):
@@ -101,9 +104,9 @@ class ForthTestVM:
             raise ValueError(msg)
 
         self._setup_trap()
-        self._set_word(THREAD_ADDR, word_addr)
-        self._set_word(THREAD_ADDR + 2, TRAP_ADDR)
-        self._set_word(IP_ADDR, THREAD_ADDR)
+        self._set_word(self.thread_addr, word_addr)
+        self._set_word(self.thread_addr + 2, TRAP_ADDR)
+        self._set_word(IP_ADDR, self.thread_addr)
         self.mpu.pc = self.symbols["NEXT"]
 
         self._run_until_trap()
@@ -112,8 +115,8 @@ class ForthTestVM:
         cells = list(cells) + [TRAP_ADDR]
         self._setup_trap()
         for i, w in enumerate(cells):
-            self._set_word(THREAD_ADDR + i * 2, w)
-        self._set_word(IP_ADDR, THREAD_ADDR)
+            self._set_word(self.thread_addr + i * 2, w)
+        self._set_word(IP_ADDR, self.thread_addr)
         self.mpu.pc = self.symbols["NEXT"]
 
         self._run_until_trap()
@@ -154,7 +157,7 @@ class ForthTestVM:
         """Write raw bytes to thread area and execute (for CLIT, LITSTR etc)."""
         self._setup_trap()
         for i, b in enumerate(raw_bytes):
-            self.mpu.memory[THREAD_ADDR + i] = b & 0xFF
-        self._set_word(IP_ADDR, THREAD_ADDR)
+            self.mpu.memory[self.thread_addr + i] = b & 0xFF
+        self._set_word(IP_ADDR, self.thread_addr)
         self.mpu.pc = self.symbols["NEXT"]
         self._run_until_trap()
