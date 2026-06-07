@@ -3,3 +3,5 @@
 *.map
 *.o
 *.lst
+*.f.p
+.f.ppflags

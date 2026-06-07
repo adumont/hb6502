@@ -232,8 +232,19 @@ _BP BP !
 
 : .S DEPTH DUP IF 1+ DUP 1 DO DUP I - PICK . LOOP CR THEN DROP ;
 
+#ifdef BOOTSTRAP_SKI
+#include "ski.f"
+#endif
+
 >RAM
 MARKER
+
+\ Garbage collection
+DEFER _FORGET
+:NONAME ; IS _FORGET \ NOP
+: GC _FORGET MARKER ; GC
+' FORGET IS _FORGET
+
 
 \ DON'T REMOVE THIS CODE block
 >ROM

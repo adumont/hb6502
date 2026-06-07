@@ -1,4 +1,5 @@
-from .helpers import THREAD_ADDR
+
+
 
 
 def test_LIT(vm):
@@ -27,7 +28,7 @@ def test_LIT_negative(vm):
 
 
 def test_LEAVE_sets_I_to_end(vm):
-    vm.set_return_stack(THREAD_ADDR + 6)
+    vm.set_return_stack(vm.thread_addr + 6)
     vm.push(10)
     vm.push(0)
     cells = [
@@ -43,7 +44,7 @@ def test_LEAVE_sets_I_to_end(vm):
 def test_QDO_skips_when_equal(vm):
     vm.push(5)
     vm.push(5)
-    cells = [vm.symbols["do_STAR_SKIP_DO"], THREAD_ADDR + 6, vm.symbols["do_I"]]
+    cells = [vm.symbols["do_STAR_SKIP_DO"], vm.thread_addr + 6, vm.symbols["do_I"]]
     vm.execute_thread(cells)
     assert vm.stack_depth() == 0
 
@@ -57,7 +58,7 @@ def test_PLUS_LOOP_positive_inc(vm):
         vm.symbols["do_LIT"],
         2,
         vm.symbols["do_STAR_PLUS_LOOP"],
-        THREAD_ADDR + 2,
+        vm.thread_addr + 2,
     ]
     vm.execute_thread(cells)
     assert vm.stack_depth() == 3
@@ -73,7 +74,7 @@ def test_PLUS_LOOP_negative_inc_exits_on_first_check(vm):
         vm.symbols["do_LIT"],
         0xFFFF,
         vm.symbols["do_STAR_PLUS_LOOP"],
-        THREAD_ADDR + 2,
+        vm.thread_addr + 2,
     ]
     vm.execute_thread(cells)
     assert vm.stack_depth() == 1

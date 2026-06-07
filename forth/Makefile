@@ -28,8 +28,18 @@ version.dat: version.sh .force
 %-stage1.bin: %.s version.dat
 	$(CL65) $(CLFLAGS) -o $@ $<
 
+FPPFLAGS ?=
+
+# Stamp file that tracks FPPFLAGS — forces rebuild when flags change
+.f.ppflags: .force
+	@echo "$(FPPFLAGS)" | cmp -s - $@ || echo "$(FPPFLAGS)" > $@
+
+# Preprocess .f files with cpp (expand #include, #ifdef, etc.)
+%.f.p: %.f .f.ppflags
+	cpp -P -traditional-cpp $(FPPFLAGS) $< > $@
+
 # Minify the bootstrap code (remove \ comments and empty lines)
-%.f.min: %.f
+%.f.min: %.f.p
 	sed -e 's/ \\ .*//; s/^\\ .*//; s/^\s*//' $< | grep -v '^\s*$$' > $@
 
 # Builds the 3 .dat files, cross-compiling the bootstrap.f code
@@ -57,8 +67,9 @@ run: forth-emu.bin
 debug: forth-emu.bin
 	uv run debugger.py -r $<
 
+test: FPPFLAGS = -DBOOTSTRAP_SKI -DBOOTSTRAP_TEST_SKI
 test: forth-emu.bin
-	uv run python -m pytest tests/ -v
+	uv run python -m pytest
 
 ## For the HW 6502 computer
 
@@ -82,6 +93,6 @@ help:
 	@echo "  flash:  build and flash the rom for 6502 hw computer"
 
 clean:
-	-rm -f lib/*.o *.o *.hex *.map *.bin *.h *.lbl *.dat
+	-rm -f lib/*.o *.o *.hex *.map *.bin *.h *.lbl *.dat *.f.p *.f.min *.lst .f.ppflags
 
 .PHONY: .force test
