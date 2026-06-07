@@ -1,24 +1,28 @@
-def test_K(vm):
+def test_NOT_TRUE_is_FALSE(vm):
     vm.push(vm.symbols["do_FALSE"])
     vm.push(vm.symbols["do_TRUE"])
     vm.execute_thread(
         [
-            vm.lookup("K"),
+            vm.lookup("T"),
+            vm.lookup("NOT"),
+            vm.lookup(")"),
             vm.lookup(")))"),
         ]
     )
     assert vm.stack_depth() == 1
-    assert vm.tos() == 0xFFFF  # TRUE
+    assert vm.tos() == 0
 
 
-def test_KI(vm):
-    vm.push(vm.symbols["do_PUSH1"])
+def test_NOT_FALSE_is_TRUE(vm):
+    vm.push(vm.symbols["do_FALSE"])
     vm.push(vm.symbols["do_TRUE"])
     vm.execute_thread(
         [
-            vm.lookup("KI"),
+            vm.lookup("F"),
+            vm.lookup("NOT"),
+            vm.lookup(")"),
             vm.lookup(")))"),
         ]
     )
     assert vm.stack_depth() == 1
-    assert vm.tos() == 1
+    assert vm.tos() == 0xFFFF
