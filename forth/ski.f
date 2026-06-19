@@ -9,11 +9,9 @@
 \ $4C is 6502's JMP
 : ENTER, ( -- ) 4C C, COMPILE COLON ;
 
-\ Create a Function (or combinator)
 \ Combinators are Higher Order Functions, meaning
 \ they take a function as an Argument and return a function
 \ which we will eventually apply later using ")"
-: :FUNC ( "name" -- ) CREATE ENTER, ] ;
 
 
 \ Application operator
@@ -29,11 +27,11 @@
 
 \ Identity Combinator
 \ Ix=x    λx.x
-:FUNC I ;
+:NONAME ; CONSTANT I
 
 \ Constant Combinator, aka Kestrel
 \ Kxy=x   λxy.x
-:FUNC K
+:NONAME
   HERE \ leaves the XT of the :NONAME word on the stack
   \ now we compile the :NONAME word
   ENTER,
@@ -42,7 +40,7 @@
   SWAP \ put Y back on TOS
   ,  \ store Y into the definition
   COMPILE EXIT
-;
+; CONSTANT K
 
 \ Kite Combinator
 \ KIxy=y    λxy.y
@@ -50,7 +48,7 @@ I K )   CONSTANT   KI
 
 \ Cardinal combinator
 \ λfab.fba  Cfab=fba
-:FUNC C ( f -- CF )
+:NONAME ( f -- CF )
   HERE
   ENTER,
   COMPILE HERE
@@ -67,11 +65,11 @@ I K )   CONSTANT   KI
   COMPILE COMPILE COMPILE ))
   COMPILE COMPILE COMPILE EXIT
   COMPILE EXIT
-;
+; CONSTANT C
 
 \ S combinator
 \ λxyz.xz(yz)  Sxyz = xz(yz)
-:FUNC S
+:NONAME
   HERE
   ENTER,
   COMPILE HERE
@@ -90,11 +88,11 @@ I K )   CONSTANT   KI
   COMPILE COMPILE COMPILE ))
   COMPILE COMPILE COMPILE EXIT
   COMPILE EXIT
-;
+; CONSTANT S
 
 \ Hack: we define those two functions so we can check results of boolean operations
-:FUNC .T .( TRUE )  ;
-:FUNC .F .( FALSE ) ;
+:NONAME .( TRUE )  ; CONSTANT .T
+:NONAME .( FALSE ) ; CONSTANT .F
 
 : BOOL .F .T ;
 
@@ -138,7 +136,7 @@ CONSTANT SUCC
 
 \ We define the INCR function so we
 \ can check results of church numerals operations
-:FUNC INCR 1+ ;
+' 1+ CONSTANT INCR
 : CN 0 INCR ;
 
 TWO SUCC ) CONSTANT THREE
